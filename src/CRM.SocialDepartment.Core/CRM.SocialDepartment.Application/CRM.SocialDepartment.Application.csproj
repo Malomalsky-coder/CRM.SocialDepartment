@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\CRM.SocialDepartment.Infrastructure\Interfaces\CRM.SocialDepartment.Infrastructure.Interfaces\CRM.SocialDepartment.Infrastructure.Interfaces.csproj" />
+    <ProjectReference Include="..\CRM.SocialDepartment.Domain\CRM.SocialDepartment.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DTOs\" />
+    <Folder Include="Handlers\" />
+  </ItemGroup>
+
+</Project>

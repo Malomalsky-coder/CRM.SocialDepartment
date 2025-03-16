@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Entities\Patient\**" />
+    <EmbeddedResource Remove="Entities\Patient\**" />
+    <None Remove="Entities\Patient\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Entities\Patietns\" />
+    <Folder Include="Repositories\" />
+    <Folder Include="Specifications\" />
+  </ItemGroup>
+
+</Project>
