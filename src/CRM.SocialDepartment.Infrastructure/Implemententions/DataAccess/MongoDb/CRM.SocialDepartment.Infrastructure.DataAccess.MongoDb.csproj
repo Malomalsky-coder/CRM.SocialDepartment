@@ -9,16 +9,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Interfaces\CRM.SocialDepartment.Infrastructure.Interfaces\CRM.SocialDepartment.Infrastructure.Interfaces.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Data\Migrations\" />
-  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="AspNetCore.Identity.MongoDbCore" Version="6.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.1" />
-    <PackageReference Include="MongoDB.Driver" Version="3.1.0" />
-    <PackageReference Include="MongoDB.EntityFrameworkCore" Version="8.2.2" />
+    <PackageReference Include="MongoDB.Driver" Version="2.30.0" />
+    <PackageReference Include="MongoDbGenericRepository" Version="1.6.3" />
   </ItemGroup>
 
 </Project>
