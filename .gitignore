@@ -398,3 +398,4 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/appsettings.Development.json
