@@ -1,9 +1,10 @@
-﻿using System;
+﻿using DDD.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
-namespace DDD.Entities
+namespace DDD.Repositories
 {
     public interface IReadOnlyRepository<TEntity> where TEntity : class, IEntity
     {

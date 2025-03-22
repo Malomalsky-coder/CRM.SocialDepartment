@@ -1,6 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using DDD.Entities;
+using System.Threading.Tasks;
 
-namespace DDD.Entities
+namespace DDD.Repositories
 {
     public interface IRepository<TEntity> where TEntity : class, IEntity
     {
