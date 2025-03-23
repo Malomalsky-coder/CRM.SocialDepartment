@@ -1,6 +1,6 @@
 ﻿using DDD.Values;
 
-namespace CRM.SocialDepartment.Domain.Entities.Patietns
+namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
     /// <summary>
     /// Дееспособный
