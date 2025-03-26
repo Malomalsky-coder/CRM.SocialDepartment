@@ -5,14 +5,12 @@
 
 $(document).ready(function () {
 
-    //var dataTable = new DataTable('#table', {
-
     var dataTable = $('#table').DataTable({
         "bAutoWidth": false,
         "processing": true,
         "serverSide": true,
         "filter": true,
-        //"order": [[6, "asc"], [7, "asc"]],
+        //"order": [[6, "asc"], [7, "asc"]],`
         "language": {
             "processing": "Загрузка данных...",
             "lengthMenu": "Показать _MENU_ записей на странице",

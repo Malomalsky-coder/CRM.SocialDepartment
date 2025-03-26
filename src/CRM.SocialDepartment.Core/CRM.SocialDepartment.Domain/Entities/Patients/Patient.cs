@@ -1,4 +1,5 @@
 ﻿using DDD.Entities;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients
 {

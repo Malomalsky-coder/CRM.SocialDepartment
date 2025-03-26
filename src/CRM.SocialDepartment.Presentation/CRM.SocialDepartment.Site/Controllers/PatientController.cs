@@ -97,7 +97,7 @@ namespace CRM.SocialDepartment.Site.Controllers
             {
                 //var historyOfIllness = i.HistoryOfIllnesses.FirstOrDefault(h => h.IsActive);
 
-                return new
+                return new //TODO: Сделать DTO
                 {
                     i.Id,
                     //HospitalizationType = historyOfIllness?.HospitalizationType.GetAttribute<DisplayAttribute>()?.Name,
@@ -121,7 +121,7 @@ namespace CRM.SocialDepartment.Site.Controllers
                 };
             });
 
-            return new JsonResult(new //TODO: Сделать DTO
+            return new JsonResult(new
             {
                 draw = input.Draw,
                 recordsTotal = totalRecords,
