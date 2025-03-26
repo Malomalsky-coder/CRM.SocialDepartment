@@ -1,4 +1,4 @@
-﻿namespace CRM.SocialDepartment.Domain.Entities.Patietns.Documents
+﻿namespace CRM.SocialDepartment.Domain.Entities.Patients.Documents
 {
     public class Snils
     {

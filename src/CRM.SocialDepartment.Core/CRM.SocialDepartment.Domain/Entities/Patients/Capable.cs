@@ -1,6 +1,7 @@
 ﻿using DDD.Values;
+using MongoDB.Bson.Serialization.Attributes;
 
-namespace CRM.SocialDepartment.Domain.Entities.Patietns
+namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
     /// <summary>
     /// Дееспособный
@@ -15,7 +16,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patietns
         /// <summary>
         /// Дата проведения суда
         /// </summary>
-        public DateTime? TrialDate { get; private set; }
+        public DateTime TrialDate { get; private set; }
 
         /// <summary>
         /// Опекун
@@ -27,12 +28,9 @@ namespace CRM.SocialDepartment.Domain.Entities.Patietns
         /// </summary>
         public string GuardianOrderAppointment { get; private set; }
 
-#pragma warning disable CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
-        private Capable()
-#pragma warning restore CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
-        {
-            
-        }
+        #pragma warning disable CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
+        private Capable() { }
+        #pragma warning restore CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
 
         public Capable(string courtDecision, DateTime trialDate, string guardian, string guardianOrderAppointment)
         {
@@ -42,21 +40,19 @@ namespace CRM.SocialDepartment.Domain.Entities.Patietns
             GuardianOrderAppointment = guardianOrderAppointment;
         }
 
-        public void SetCourtDecision(string courtDecision)
-        {
-            CourtDecision = courtDecision;
-        }
-
-        public void SetTrialDate(DateTime trialDate)
-        {
-            TrialDate = trialDate;
-        }
-
+        /// <summary>
+        /// Изменить опекуна
+        /// </summary>
+        /// <param name="guardian"></param>
         public void SetGuardian(string guardian)
         {
             Guardian = guardian;
         }
 
+        /// <summary>
+        /// Изменить распоряжение о назначение опекуна
+        /// </summary>
+        /// <param name="guardianOrderAppointment"></param>
         public void SetGuardianOrderAppointment(string guardianOrderAppointment)
         {
             GuardianOrderAppointment = guardianOrderAppointment;
@@ -65,7 +61,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patietns
         protected override IEnumerable<object> GetAtomicValues()
         {
             yield return CourtDecision;
-            yield return TrialDate ?? default;
+            yield return TrialDate;
             yield return Guardian;
             yield return GuardianOrderAppointment;
         }

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace CRM.SocialDepartment.Domain.Entities.Patietns
+namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
     /// <summary>
     /// Способ получения пенсии

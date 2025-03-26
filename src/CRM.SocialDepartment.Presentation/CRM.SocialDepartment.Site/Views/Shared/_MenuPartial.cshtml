@@ -1,0 +1,13 @@
+﻿<div class="dropdown">
+    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Пациенты</button>
+    <ul class="dropdown-menu" data-popper-placement="bottom-start">
+        <li><a class="dropdown-item" asp-controller="Patient" asp-action="Active">В больнице</a></li>
+        <li><a class="dropdown-item" asp-controller="Patient" asp-action="Archive">Архив</a></li>
+    </ul>
+</div>
+
+<ul class="navbar-nav flex-grow-1">
+    <li class="nav-item">
+        <a class="nav-link btn btn-secondary btn-sm text-white mx-2" asp-controller="" asp-action="Index">Список задач</a>
+    </li>
+</ul>

@@ -31,7 +31,7 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
             await _collection.DeleteOneAsync(e => e.Id!.Equals(entity.Id), cancellationToken);
         }
 
-        public async Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+        public async Task<TEntity?> GetAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
         {
             return await _collection.Find(predicate).FirstOrDefaultAsync(cancellationToken);
         }
@@ -41,6 +41,11 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
             return predicate == null
                 ? await _collection.Find(_ => true).ToListAsync(cancellationToken)
                 : await _collection.Find(predicate).ToListAsync(cancellationToken);
+        }
+
+        public IMongoCollection<TEntity> GetCollection()
+        {
+            return _collection;
         }
     }
 }

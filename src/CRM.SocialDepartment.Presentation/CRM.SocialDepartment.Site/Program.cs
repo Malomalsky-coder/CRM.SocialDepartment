@@ -1,7 +1,9 @@
 using CRM.SocialDepartment.Application.Patients;
-using CRM.SocialDepartment.Domain.Entities.Patietns;
+using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
+using CRM.SocialDepartment.Site.MappingProfile;
+using CRM.SocialDepartment.Site.Services;
 using CRM.SocialDepartment.WebApp.Settings;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Driver;
@@ -14,29 +16,16 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Подключение базы данных ///////////////////////////////////////////////////////////////////////////////
+        // Подключение базы данных //////////////////////////////////////////////////////////////////////////////////
 
         var mongoDbConfiguration = builder.Configuration.GetSection(nameof(MongoDbSetting)).Get<MongoDbSetting>()
                 ?? throw new InvalidOperationException("Connection string MongoDbSetting not found.");
 
-        //Подключение MongoDB.EntityFrameworkCore
-        //builder.Services.AddDbContext<IDbContext, ApplicationDbContext>(options =>
-        //            options.UseMongoDB(mongoDbConfiguration.ConnectionString, mongoDbConfiguration.Name)
-        //                .EnableSensitiveDataLogging());
-
-        //Подключение MongoDB.Driver
         builder.Services.AddSingleton<IMongoDatabase>(provider =>
         {
             var mongoClient = new MongoClient(mongoDbConfiguration.ConnectionString);
             return mongoClient.GetDatabase(mongoDbConfiguration.Database);
         });
-
-        //TODO: Разобраться как подключать при MongoDB.Driver
-        //builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<ApplicationDbContext>();
-
-        //Подробнее:
-        //1. https://dev.to/ashirafumiiro/using-the-new-ef-core-provider-for-mongodb-with-aspnet-core-identity-311
-        //2. https://www.freecodecamp.org/news/using-entity-framework-core-with-mongodb/
 
         builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
         {
@@ -47,16 +36,10 @@ public class Program
             mongoDbConfiguration.Database)
         .AddDefaultTokenProviders();
 
-        //Реализация подключения базы данных по умолчанию
-        //var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-        //builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        //    options.UseSqlServer(connectionString));
-        //builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
-        //builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-        //    .AddEntityFrameworkStores<ApplicationDbContext>();
+        //BsonConfiguration.RegisterMappings(); // Настройка маппинга для MongoDB
 
         // Регистрация репозиториев /////////////////////////////////////////////////////////////////////////////////
+
         builder.Services.AddScoped(provider =>
         {
             var database = provider.GetRequiredService<IMongoDatabase>();
@@ -64,9 +47,16 @@ public class Program
         });
 
         // Регистрация сервисов /////////////////////////////////////////////////////////////////////////////////////
-        builder.Services.AddControllersWithViews();
-        builder.Services.AddControllers();
+
+        builder.Services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.PropertyNameCaseInsensitive = true; // True говорит, что регистр названий свойств не учитывается.
+            options.JsonSerializerOptions.PropertyNamingPolicy = null; // Отключает camelCase
+            options.JsonSerializerOptions.WriteIndented = true; // Включает форматирование JSON
+        });
         builder.Services.AddRazorPages();
+        builder.Services.AddScoped<DataTableNetService>();
+        builder.Services.AddAutoMapper(typeof(ProjectMappingProfile));
         builder.Services.AddScoped<PatientAppService>();
 
         var app = builder.Build();
@@ -74,7 +64,6 @@ public class Program
         if (app.Environment.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
-            app.UseMigrationsEndPoint();
         }
         else
         {
