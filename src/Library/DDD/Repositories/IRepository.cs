@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 
 namespace DDD.Repositories
 {
-    //TODO: Добавить токены отмены
-
     public interface IRepository<TEntity> where TEntity : class, IEntity
     {
         /// <summary>
