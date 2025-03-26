@@ -1,6 +1,6 @@
 ﻿using DDD.Entities;
 
-namespace CRM.SocialDepartment.Domain.Entities.Patients
+namespace CRM.SocialDepartment.Domain.Entities.Patietns
 {
     public class Patient : AggregateRoot<Guid>, IArchive, ISoftDelete
     {
@@ -32,7 +32,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         public string Country { get; private set; }
 
         /// <summary>
-        /// Место регистрации
+        /// Местро регистрации
         /// </summary>
         public string? Registration { get; private set; }
 
@@ -42,7 +42,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         public bool NotRegistered => Registration is null;
 
         /// <summary>
-        /// Ранняя регистрация
+        /// Раняя регистрация
         /// </summary>
         public City? EarlyRegistration { get; private set; }
 

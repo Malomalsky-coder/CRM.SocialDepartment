@@ -1,5 +1,5 @@
 using CRM.SocialDepartment.Application.Patients;
-using CRM.SocialDepartment.Domain.Entities.Patients;
+using CRM.SocialDepartment.Domain.Entities.Patietns;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
 using CRM.SocialDepartment.WebApp.Settings;

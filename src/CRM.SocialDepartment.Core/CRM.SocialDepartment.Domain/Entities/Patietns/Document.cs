@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace CRM.SocialDepartment.Domain.Entities.Patients
+namespace CRM.SocialDepartment.Domain.Entities.Patietns
 {
     public enum Document : byte
     {
