@@ -6,6 +6,7 @@ using CRM.SocialDepartment.Site.MappingProfile;
 using CRM.SocialDepartment.Site.Services;
 using CRM.SocialDepartment.WebApp.Settings;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using MongoDB.Driver;
 
 namespace CRM.SocialDepartment.Site;
@@ -29,12 +30,13 @@ public class Program
 
         builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
         {
-            options.SignIn.RequireConfirmedAccount = true; // подтверждение email
+            options.SignIn.RequireConfirmedAccount = false; // подтверждение email
         })
         .AddMongoDbStores<ApplicationUser, ApplicationRole, Guid>(
             mongoDbConfiguration.ConnectionString,
             mongoDbConfiguration.Database)
-        .AddDefaultTokenProviders();
+        .AddDefaultTokenProviders()
+        .AddDefaultUI();
 
         //BsonConfiguration.RegisterMappings(); // Настройка маппинга для MongoDB
 
