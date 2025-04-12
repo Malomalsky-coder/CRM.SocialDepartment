@@ -1,0 +1,72 @@
+﻿@{
+    ViewData["Title"] = "Список задач";
+}
+
+@section Styles
+{
+    <link href="~/lib/datatables.net-bs5/css/jquery.datatables.css" rel="stylesheet" />
+    <link href="~/lib/datatables.net-bs5/css/datatables.bootstrap5.min.css" rel="stylesheet" />
+    <link href="~/lib/datatables.net-bs5/css/searchpanes.bootstrap5.min.css" rel="stylesheet" />
+    <link href="~/lib/datatables.net-bs5/css/fixedheader.bootstrap5.min.css" rel="stylesheet" />
+    <link href="~/lib/datatables.net-bs5/css/scroller.bootstrap5.min.css" rel="stylesheet" />
+}
+
+@section Scripts
+{
+    <script src="~/lib/datatables.net-bs5/js/jquery.datatables.min.js"></script>
+    <script src="~/lib/datatables.net-bs5/js/datatables.bootstrap5.min.js"></script>
+    <script src="~/lib/datatables.net-bs5/js/searchpanes.bootstrap5.min.js"></script>
+    <script src="~/lib/datatables.net-bs5/js/fixedheader.bootstrap5.min.js"></script>
+    <script src="~/lib/datatables.net-bs5/js/scroller.bootstrap5.min.js"></script>
+    <script src="~/js/patient.js" asp-append-version="true"></script>
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}
+
+<div id="form-modal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin: 10px;">
+    <div class="col-sm-12" style="padding:20px">
+        <!-- Меню -->
+        <a id="add-assignment" class="btn btn-primary"><i class="fa fa-plus"></i> Задача</a>
+        <a id="reload" class="btn btn-outline-info"><i class="fa fa-refresh"></i> список</a>
+        <a onclick="" class="btn btn-outline-danger"><i class="fa fa-bitbucket"></i> (2)</a>
+        <!-- onclick="printModalShow()" -->
+    </div>
+    <div class="card-body table-responsive">
+        <div style="width: 100%; overflow-x: auto;">
+            <table id="table" class="table table-custom table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>ID</th>
+                        <th>Дата приема заявки от отделения</th>
+                        <th>Номер отделения</th>
+                        <th>Описание</th>
+                        <th>Дата направления</th>
+                        <th>Куда направили документы</th>
+                        <th>Что сделано</th>
+                        <th>Дата передачи в отделение</th>
+                        <th>Исполнитель</th>
+                        <th>Примечание</th>
+                        <th>Дата создания задачи</th>
+                        <th>Пациент</th>
+                        @* <th>Помечен как в архиве (пациент выписан)</th> *@
+                        @* <th>Помечен как удаленный</th> *@
+                    </tr>
+                </thead>
+                <tbody id="viewAll"></tbody>
+            </table>
+        </div>
+    </div>
+</div>

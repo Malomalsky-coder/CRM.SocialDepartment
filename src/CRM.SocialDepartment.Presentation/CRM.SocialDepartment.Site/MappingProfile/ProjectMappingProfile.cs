@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using CRM.SocialDepartment.Application.DTOs;
+using CRM.SocialDepartment.Domain.Entities;
 using CRM.SocialDepartment.Domain.Entities.Patients;
 
 namespace CRM.SocialDepartment.Site.MappingProfile
@@ -14,6 +15,8 @@ namespace CRM.SocialDepartment.Site.MappingProfile
                 .ConstructUsing(src => new Capable(src.CourtDecision, src.TrialDate, src.Guardian, src.GuardianOrderAppointment));
 
             CreateMap<PensionDTO, Pension>();
+
+            CreateMap<Assignment, CreateOrEditPatientDTO>();
         }
     }
 }
