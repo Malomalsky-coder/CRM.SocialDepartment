@@ -5,7 +5,7 @@ namespace CRM.SocialDepartment.Domain.Entities;
 
 public class Assignment : AggregateRoot<Guid>, IArchive, ISoftDelete
 {
-    public Assignment(DateTime acceptDate, int departmentNumber, string description, DateTime forwardDate, string forwardDepartment, Dictionary<DateTime, string> statusLog, DateTime departmentForwardDate, string assignee, string? note, DateTime creationDate, Patient patient)
+    public Assignment(DateTime acceptDate, int departmentNumber, string description, DateTime forwardDate, string forwardDepartment, Dictionary<string, string> statusLog, DateTime departmentForwardDate, string assignee, string? note, DateTime creationDate, Patient patient)
     {
         AcceptDate = acceptDate;
         DepartmentNumber = departmentNumber;
@@ -48,7 +48,7 @@ public class Assignment : AggregateRoot<Guid>, IArchive, ISoftDelete
     /// <summary>
     /// Что сделано
     /// </summary>
-    public Dictionary<DateTime, string> StatusLog { get; private set; }
+    public Dictionary<string, string> StatusLog { get; private set; }
 
     /// <summary>
     /// Дата передачи в отделение
@@ -69,7 +69,7 @@ public class Assignment : AggregateRoot<Guid>, IArchive, ISoftDelete
     /// Дата создания задачи
     /// </summary>
     public DateTime CreationDate { get; private set; }
-
+    
     /// <summary>
     /// Пациент
     /// </summary>
@@ -84,4 +84,46 @@ public class Assignment : AggregateRoot<Guid>, IArchive, ISoftDelete
     /// Помечен как удаленный
     /// </summary>
     public bool SoftDeleted { get; set; }
+
+    public void UpdateDescription(string description)
+    {
+        Description = description;
+    }
+
+    public void UpdateAcceptDate(DateTime acceptDate)
+    {
+        AcceptDate = acceptDate;
+    }
+
+    public void UpdateForwardDate(DateTime forwardDate)
+    {
+        ForwardDate = forwardDate;
+    }
+
+    public void UpdateForwardDepartment(string department)
+    {
+        ForwardDepartment = department;
+    }
+
+    public void UpdateDepartmentNumber(int departmentNumber)
+    {
+        DepartmentNumber = departmentNumber;
+    }
+
+    public void UpdateDepartmentForwardDate(DateTime forwardDate)
+    {
+        DepartmentForwardDate = forwardDate;
+    }
+
+    public void UpdateAssignee(string assignee)
+    {
+        Assignee = assignee;
+    }
+
+    public void UpdateNote(string note)
+    {
+        if (string.IsNullOrEmpty(note)) throw new ArgumentNullException(nameof(note));
+        Note = note;
+    }
+    
 }

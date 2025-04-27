@@ -1,4 +1,6 @@
+using CRM.SocialDepartment.Application.Assignments;
 using CRM.SocialDepartment.Application.Patients;
+using CRM.SocialDepartment.Domain.Entities;
 using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
@@ -48,6 +50,12 @@ public class Program
             return new MongoBasicRepository<Patient, Guid>(database, "Patients");
         });
 
+        builder.Services.AddScoped(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return new MongoBasicRepository<Assignment, Guid>(database, "Assignments");
+        });
+
         // Регистрация сервисов /////////////////////////////////////////////////////////////////////////////////////
 
         builder.Services.AddControllers().AddJsonOptions(options =>
@@ -60,6 +68,7 @@ public class Program
         builder.Services.AddScoped<DataTableNetService>();
         builder.Services.AddAutoMapper(typeof(ProjectMappingProfile));
         builder.Services.AddScoped<PatientAppService>();
+        builder.Services.AddScoped<AssignmentService>();
 
         var app = builder.Build();
 

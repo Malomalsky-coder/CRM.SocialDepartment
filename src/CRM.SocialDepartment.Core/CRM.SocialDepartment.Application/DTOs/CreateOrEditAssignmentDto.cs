@@ -8,9 +8,9 @@ public class CreateOrEditAssignmentDto
     public int DepartmentNumber { get; set; }
     public string Description { get; set; }
     public DateTime ForwardDate { get; set; }
-    public string ForwardDeaprtment { get; set; }
+    public string ForwardDepartment { get; set; }
     public DateTime DepartmentForwardDate { get; set; }
     public string Assignee { get; set; }
     public string? Note { get; set; }
-    public Patient Patient { get; set; }
+    public Guid PatientId { get; set; }
 }
