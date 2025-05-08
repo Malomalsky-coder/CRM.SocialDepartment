@@ -19,23 +19,39 @@
     <script src="~/lib/datatables.net-bs5/js/fixedheader.bootstrap5.min.js"></script>
     <script src="~/lib/datatables.net-bs5/js/scroller.bootstrap5.min.js"></script>
     <script src="~/js/user.js" asp-append-version="true"></script>
+    <script>
+            $(document).ready(function () {
+        // Открытие модального окна
+        $("#add-patient").click(function () {
+            $.get("@Url.Action("GetCreateForm", "User")", function (data) {
+                $("#modalcontent").html(data);
+                $("#createModal").modal("show");
+            });
+        });
+
+        // Обработка сохранения
+        $(document).on("click", "#saveButton", function () {
+            var form = $("#createForm");
+            $.ajax({
+                url: form.attr("action"),
+                type: "POST",
+                data: form.serialize(),
+                success: function (response) {
+                    if (response.success) {
+                        $("#createModal").modal("hide");
+                        location.reload(); // Обновляем страницу
+                    } else {
+                                alert(response.message);
+                    }
+                }
+            });
+        });
+    });
+    </script>
     @await Html.PartialAsync("_ValidationScriptsPartial")
 }
 
 <!-- Модальные окна -->
-<!-- Модальное окно для CRUD операций c таблицей -->
-<div id="form-modal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-            </div>
-        </div>
-    </div>
-</div>
 <!-- Модальное окно для печати документов -->
 <div id="form-print-modal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
@@ -76,6 +92,8 @@
                 <thead>
                     <tr>
                         <th>Пользователь</th>
+                        <th>Имя</th>
+                        <th>Фамилия</th>
                         <th>E-mail</th>
                         <th>Дата создания</th>
                     </tr>
@@ -85,6 +103,15 @@
                 }
                 <tbody id="viewAll"></tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для CRUD операций c таблицей -->
+<div id="createModal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
+        <div class="modal-content" id="modalcontent">
+            
         </div>
     </div>
 </div>

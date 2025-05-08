@@ -38,6 +38,8 @@ $(document).ready(function () {
         },
         "columns": [
             { data: "UserName", name: "UserName" },
+            { data: "FirstName", name: "FirstName" },
+            { data: "LastName", name: "LastName" },
             { data: "Email", name: "Email" },
             { data: "CreatedOn", name: "CreatedOn" },
         ]
