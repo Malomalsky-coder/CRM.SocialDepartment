@@ -2,6 +2,9 @@
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
+    /// <summary>
+    /// Пенсия
+    /// </summary>
     public class Pension : ValueObject
     {
         /// <summary>
@@ -32,7 +35,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// РСД
         /// </summary>
-        public string? Rsd { get; set; }
+        public string? Rsd { get; private set; }
 
 
         #pragma warning disable CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.

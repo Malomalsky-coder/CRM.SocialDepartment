@@ -9,13 +9,15 @@
 
   <ItemGroup>
     <Compile Remove="Entities\Patient\**" />
+    <Compile Remove="Новая папка\**" />
     <EmbeddedResource Remove="Entities\Patient\**" />
+    <EmbeddedResource Remove="Новая папка\**" />
     <None Remove="Entities\Patient\**" />
+    <None Remove="Новая папка\**" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Repositories\" />
-    <Folder Include="Specifications\" />
   </ItemGroup>
 
   <ItemGroup>

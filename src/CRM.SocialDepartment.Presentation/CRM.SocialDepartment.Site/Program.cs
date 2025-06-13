@@ -4,11 +4,11 @@ using CRM.SocialDepartment.Domain.Entities;
 using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
+using CRM.SocialDepartment.Site.Filters;
 using CRM.SocialDepartment.Site.MappingProfile;
 using CRM.SocialDepartment.Site.Services;
 using CRM.SocialDepartment.WebApp.Settings;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using MongoDB.Driver;
 
 namespace CRM.SocialDepartment.Site;
@@ -58,11 +58,15 @@ public class Program
 
         // Регистрация сервисов /////////////////////////////////////////////////////////////////////////////////////
 
-        builder.Services.AddControllers().AddJsonOptions(options =>
+        builder.Services.AddControllers(options =>
         {
-            options.JsonSerializerOptions.PropertyNameCaseInsensitive = true; // True говорит, что регистр названий свойств не учитывается.
-            options.JsonSerializerOptions.PropertyNamingPolicy = null; // Отключает camelCase
-            options.JsonSerializerOptions.WriteIndented = true; // Включает форматирование JSON
+            options.Filters.Add<ResultFilter>();
+        })
+        .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;   // True говорит, что регистр названий свойств не учитывается.
+            options.JsonSerializerOptions.PropertyNamingPolicy = null;          // Отключает camelCase
+            options.JsonSerializerOptions.WriteIndented = true;                 // Включает форматирование JSON
         });
         builder.Services.AddRazorPages();
         builder.Services.AddScoped<DataTableNetService>();

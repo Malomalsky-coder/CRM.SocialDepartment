@@ -1,0 +1,250 @@
+﻿@using CRM.SocialDepartment.Domain.Entities.Patients
+@using CRM.SocialDepartment.Site.Extensions
+
+@model CRM.SocialDepartment.Site.ViewModels.Patient.EditPatientViewModel
+
+<form id="create-patient" method="post" asp-controller="Patient" asp-action="GetCreatePatientModal" asp-route-patientId="@Model.PatientId" asp-antiforgery="true">
+    <div class="card mb-3">
+        <div class="card-header">История болезни</div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label asp-for="MedicalHistory.HospitalizationType" class="form-label param-title"></label>
+                <select asp-for="MedicalHistory.HospitalizationType" asp-items="@HospitalizationTypeExtensions.ToSelectList()" class="form-select"></select>
+                <span asp-validation-for="MedicalHistory.HospitalizationType" class="text-danger"></span>
+            </div>
+
+            <div id="ResolutionIsEnable" class="mb-3">
+                <label asp-for="MedicalHistory.Resolution" class="form-label param-title"></label>
+                <input asp-for="MedicalHistory.Resolution" class="form-control" />
+                <span asp-validation-for="MedicalHistory.Resolution" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="MedicalHistory.NumberDocument" class="form-label param-title"></label>
+                <input asp-for="MedicalHistory.NumberDocument" class="form-control" autocomplete="off" autofocus>
+                <span asp-validation-for="MedicalHistory.NumberDocument" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="MedicalHistory.DateOfReceipt" class="form-label param-title"></label>
+                <input asp-for="MedicalHistory.DateOfReceipt" class="form-control" />
+                <span asp-validation-for="MedicalHistory.DateOfReceipt" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="MedicalHistory.NumberDepartment" class="form-label param-title"></label>
+                <input asp-for="MedicalHistory.NumberDepartment" min="1" max="30" class="form-control">
+                <span asp-validation-for="MedicalHistory.NumberDepartment" class="text-danger"></span>
+            </div>
+        </div>
+    </div>s
+
+    <div class="card mb-3">
+        <div class="card-header">Персональные данные</div>
+        <div class="card-body">
+
+            <div class="mb-3">
+                <label asp-for="FullName" class="form-label"></label>
+                <input asp-for="FullName" class="form-control" autocomplete="off">
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                @foreach (var citizenship in Model.CitizenshipInfo.Citizenships)
+                {
+                    if (citizenship == CitizenshipType.RussianFederation.DisplayName)
+                    {
+                        <input type="radio" asp-for="CitizenshipInfo.Citizenship" value="@((byte)CitizenshipType.FromDisplayName(citizenship))" checked />
+                        <label asp-for="CitizenshipInfo.Citizenship">@citizenship</label>
+                        continue;
+                    }
+
+                    <input type="radio" asp-for="CitizenshipInfo.Citizenship" value="@citizenship" />
+                    <label asp-for="CitizenshipInfo.Citizenship">@citizenship</label>
+                }
+            </div>
+
+            <div id="NoRegistrationIsEnable" class="mb-3">
+                <div class="form-check form-switch">
+                    <label asp-for="CitizenshipInfo.NotRegistered" class="form-label"></label>
+                    <input asp-for="CitizenshipInfo.NotRegistered" class="form-check-input" />
+                </div>
+            </div>
+
+            <div id="CountryIsEnable" class="mb-3" style="display:none;">
+                <label asp-for="CitizenshipInfo.Country" class="form-label"></label>
+                <input asp-for="CitizenshipInfo.Country" class="form-control" />
+                <span asp-validation-for="CitizenshipInfo.Country" class="text-danger"></span>
+            </div>
+
+            <div id="RegistrationIsEnable" class="mb-3">
+                <label asp-for="CitizenshipInfo.Registration" class="form-label"></label>
+                <input asp-for="CitizenshipInfo.Registration" class="form-control" autocomplete="off" />
+                <span asp-validation-for="CitizenshipInfo.Registration" class="text-danger"></span>
+            </div>
+
+            <div id="EarlyRegistrationIsEnable" class="mb-3" style="display:none;">
+                <label asp-for="CitizenshipInfo.EarlyRegistration" class="form-label"></label>
+                <select asp-for="CitizenshipInfo.EarlyRegistration" asp-items="@CityExtensions.ToSelectList()" class="form-select"></select>
+                <span asp-validation-for="CitizenshipInfo.EarlyRegistration" class="text-danger"></span>
+            </div>
+
+            <div id="LbgIsEnable" style="display:none;">
+                <div class="mb-3">
+                    <label asp-for="CitizenshipInfo.PlaceOfBirth" class="form-label"></label>
+                    <input asp-for="CitizenshipInfo.PlaceOfBirth" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="CitizenshipInfo.PlaceOfBirth" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="CitizenshipInfo.DocumentAttached" class="form-label"></label>
+                    <input asp-for="CitizenshipInfo.DocumentAttached" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="CitizenshipInfo.DocumentAttached" class="text-danger"></span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="DocumentIsEnable" class="mb-3" style="">
+        <fieldset class="card">
+            <legend class="card-header">Документы</legend>
+            <div class="card-body">
+                @foreach (var document in Model.Documents)
+                {
+                    <div class="mb-3">
+                        <label class="form-label">@document.Value.DisplayName</label>
+                        <input type="@document.Value.InputType"
+                               name="Documents[@((int)document.Key)].Number"
+                               value="@document.Value.Number"
+                               class="form-control"
+                               placeholder="@document.Value.Placeholder"
+                               pattern="@document.Value.Pattern"
+                               data-error-message="@document.Value.ErrorMessage"
+                               autocomplete="off" />
+                        <div class="invalid-feedback"></div>
+
+                        @* <div class="row mt-2"> *@
+                        @*     <div class="col"> *@
+                        @*         <label class="form-label">Дата выдачи</label> *@
+                        @*         <input type="date" *@
+                        @*                name="Documents[@((int)document.Key)].IssueDate" *@
+                        @*                value="@(document.Value.IssueDate?.ToString("yyyy-MM-dd"))" *@
+                        @*                class="form-control" /> *@
+                        @*     </div> *@
+                        @*     <div class="col"> *@
+                        @*         <label class="form-label">Кем выдан</label> *@
+                        @*         <input type="text" *@
+                        @*                name="Documents[@((int)document.Key)].Issuer" *@
+                        @*                value="@document.Value.Issuer" *@
+                        @*                class="form-control" /> *@
+                        @*     </div> *@
+                        @* </div> *@
+
+                    </div>
+                }
+            </div>
+        </fieldset>
+    </div>
+
+    <div class="mb-3">
+        <div class="form-check form-switch">
+            <label asp-for="IsCapable" class="form-label"></label>
+            <input asp-for="IsCapable" class="form-check-input" />
+        </div>
+    </div>
+
+    <div id="CapableIsEnable" class="mb-3" style="display:none;">
+        <fieldset class="card">
+            <legend class="card-header">Недееспособный</legend>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label asp-for="Capable.CourtDecision" class="form-label"></label>
+                    <input asp-for="Capable.CourtDecision" type="text" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="Capable.CourtDecision" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Capable.TrialDate" class="form-label"></label>
+                    <input asp-for="Capable.TrialDate" type="date" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="Capable.TrialDate" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Capable.Guardian" class="form-label"></label>
+                    <input asp-for="Capable.Guardian" type="text" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="Capable.Guardian" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Capable.GuardianOrderAppointment" class="form-label"></label>
+                    <input asp-for="Capable.GuardianOrderAppointment" type="text" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="Capable.GuardianOrderAppointment" class="text-danger"></span>
+                </div>
+            </div>
+        </fieldset>
+    </div>
+
+    <div class="mb-3">
+        <div class="form-check form-switch">
+            <label asp-for="ReceivesPension" class="form-label"></label>
+            <input asp-for="ReceivesPension" class="form-check-input" />
+        </div>
+    </div>
+
+    <div id="PensionFieldsetIsEnable" class="mb-3" style="display:none;">
+        <fieldset class="card">
+            <legend class="card-header">Пенсия</legend>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label asp-for="Pension.DisabilityGroup" class="form-label"></label>
+                    <select asp-for="Pension.DisabilityGroup" asp-items="@DisabilityGroupExtensions.ToSelectList()" class="form-select"></select>
+                </div>
+                <div id="PensionStartDateTimeIsEnable" style="display:none;">
+                    <div class="mb-3">
+                        <label asp-for="Pension.PensionStartDateTime" class="form-label"></label>
+                        <input asp-for="Pension.PensionStartDateTime" class="form-control" />
+                        <span asp-validation-for="Pension.PensionStartDateTime" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Pension.PensionAddress" class="form-label"></label>
+                    <select asp-for="Pension.PensionAddress" asp-items="@PensionAddressExtensions.ToSelectList()" class="form-select"></select>
+                    <span asp-validation-for="Pension.PensionAddress" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Pension.SfrBranch" class="form-label"></label>
+                    <input asp-for="Pension.SfrBranch" min="1" class="form-control" />
+                    <span asp-validation-for="Pension.SfrBranch" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Pension.SfrDepartment" class="form-label"></label>
+                    <input asp-for="Pension.SfrDepartment" class="form-control" />
+                    <span asp-validation-for="Pension.SfrDepartment" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Pension.Rsd" class="form-label"></label>
+                    <input asp-for="Pension.Rsd" class="form-control" />
+                    <span asp-validation-for="Pension.Rsd" class="text-danger"></span>
+                </div>
+            </div>
+        </fieldset>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">Примечание</div>
+        <div class="card-body">
+            <textarea asp-for="Note" class="form-control" autocomplete="off"></textarea>
+            <span asp-validation-for="Note" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="reset" class="btn btn-secondary close-button" data-bs-dismiss="modal">Отменить</button>
+        <button type="submit" class="btn btn-primary save-button">Сохранить</button>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/js/documents.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+}

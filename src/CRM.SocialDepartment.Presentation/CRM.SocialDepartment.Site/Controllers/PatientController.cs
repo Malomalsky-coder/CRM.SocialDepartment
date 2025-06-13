@@ -1,26 +1,189 @@
-﻿using CRM.SocialDepartment.Application.DTOs;
+﻿using AutoMapper;
+using CRM.SocialDepartment.Application.DTOs;
 using CRM.SocialDepartment.Application.Patients;
 using CRM.SocialDepartment.Domain.Entities.Patients;
+using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
+using CRM.SocialDepartment.Domain.Specifications;
+using CRM.SocialDepartment.Site.Helpers;
 using CRM.SocialDepartment.Site.Services;
+using CRM.SocialDepartment.Site.ViewModels.Patient;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 
 namespace CRM.SocialDepartment.Site.Controllers
 {
-    public class PatientController(PatientAppService patientAppService) : Controller
+    public class PatientController(
+        ILogger<PatientController> logger,
+        IMapper mapper,
+        PatientAppService patientAppService,
+        DisabilityGroupWithoutPeriodSpecification withoutPeriodSpec
+    ) : Controller
     {
+        private readonly ILogger<PatientController> _logger = logger;
+        private readonly IMapper _mapper = mapper;
         private readonly PatientAppService _patientAppService = patientAppService;
+        private readonly DisabilityGroupWithoutPeriodSpecification _withoutPeriodSpec = new();
 
         // VIEW ////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Вывод всех пациентов, которые находятся в больнице (на текущий момент).
+        /// </summary>
+        /// <returns></returns>
         public IActionResult Active()
         {
             return View(nameof(Index));
         }
 
+        /// <summary>
+        /// Получить форму: Добавить пациента.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("modal/create")]
+        public IActionResult GetCreatePatientModal()
+        {
+            //todo: Доступ: Сотрудник, Администратор
+
+            ViewData.Model = new CreatePatientViewModel()
+            {
+                FullName = string.Empty,
+                Birthday = DateTime.Now.AddYears(-18),
+                CitizenshipInfo = new ViewModels.Patient.CitizenshipInfo()
+                {
+                    Citizenships = ["", "", ""],
+                    Citizenship = CitizenshipType.RussianFederation,
+                    Country = "Россия",
+                    NotRegistered = false,
+                    DocumentAttached = string.Empty
+                    
+                },
+                Documents = new Dictionary<DocumentType, DocumentViewModel>
+                {
+                    {
+                        DocumentType.Passport,
+                        DocumentViewModelHelper.CreateViewModel(DocumentType.Passport)
+                    },
+                    {
+                        DocumentType.MedicalPolicy,
+                        DocumentViewModelHelper.CreateViewModel(DocumentType.MedicalPolicy)
+                    },
+                    {
+                        DocumentType.Snils,
+                        DocumentViewModelHelper.CreateViewModel(DocumentType.Snils)
+                    }
+                },
+                MedicalHistory = new ViewModels.Patient.HistoryOfIllness()
+                {
+                    Resolution = string.Empty,
+                    NumberDocument = string.Empty,
+                    HospitalizationType = HospitalizationType.Force,
+                    NumberDepartment = 1,
+                    DateOfReceipt = DateTime.Now,
+                },
+                IsCapable = true,
+                ReceivesPension = false
+            };
+
+            return new PartialViewResult
+            {
+                ViewName = $"~/Pages/Patients/_CreatePatientModal.cshtml",
+                ViewData = ViewData
+            };
+        }
+
+        /// <summary>
+        /// Получить форму: Редактировать пациента.
+        /// </summary>
+        /// <param name="patientId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("modal/edit")]
+        public async Task<IActionResult> GetEditPatientModalAsync(Guid patientId, CancellationToken cancellationToken = default)
+        {
+            //todo: Проверить права: Сотрудник, Администратор
+
+            var patient = await _patientAppService.GetPatientByIdAsync(patientId, cancellationToken);
+
+            if (patient is null)
+            {
+                return NotFound();
+            }
+
+            var viewModel = _mapper.Map<EditPatientViewModel>(patient);
+
+            switch (viewModel.CitizenshipInfo.Citizenship)
+            {
+                case 0:
+                    viewModel.CountryIsEnable        = "display:none;";
+                    break;
+
+                case 1:
+                    viewModel.NoRegistrationIsEnable = "display:none;";
+                    break;
+
+                case 2:
+                    viewModel.RegistrationIsEnable   = "display:none;";
+                    viewModel.NoRegistrationIsEnable = "display:none;";
+                    viewModel.CountryIsEnable        = "display:none;";
+                    viewModel.DocumentIsEnable       = "display:none;";
+                    break;
+            }
+
+            if (viewModel.IsCapable)
+            {
+                viewModel.CapableIsEnable            = "display:none;";
+            }
+
+            if (!viewModel.ReceivesPension)
+            {
+                viewModel.PensionFieldsetIsEnable    = "display:none;";
+            }
+
+            DisabilityGroup? disabilityGroup = viewModel.Pension?.DisabilityGroup;
+
+            if (disabilityGroup is not null && !_withoutPeriodSpec.IsSatisfiedBy(disabilityGroup))
+            {
+                viewModel.PensionStartDateTimeIsEnable = "display:none;";
+            }
+
+            ViewData.Model = viewModel;
+
+            return new PartialViewResult
+            {
+                ViewName = $"~/Pages/Patients/_EditPatientModal.cshtml",
+                ViewData = ViewData
+            };
+        }
+
+        /// <summary>
+        /// Сохранить данные полученные с формы: Добавить/Редактировать пациента
+        /// </summary>
+        /// <param name="input"></param>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateOrEditPatientAsync(Guid patientId, CreatePatientViewModel input)
+        {
+            //todo: Доступ: Сотрудник, Администратор
+
+            if (ModelState.IsValid)
+            {
+                //var patient = _mapper.Map<Patient>(input);
+            }
+
+            return View();
+        }
+
+        /// <summary>
+        /// Вывод всех пациентов, которые выписались из больнице.
+        /// </summary>
+        /// <returns></returns>
         public IActionResult Archive()
         {
             return View();
         }
+
+
 
         // API /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -193,7 +356,7 @@ namespace CRM.SocialDepartment.Site.Controllers
         //4. Добавить пациента
         [HttpPost]
         [Route("api/patients")]
-        public async Task<JsonResult> AddPatientsAsync([FromBody] CreateOrEditPatientDTO input, CancellationToken cancellationToken)
+        public async Task<JsonResult> AddPatientsAsync([FromBody] CreatePatientDTO input, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
@@ -208,7 +371,7 @@ namespace CRM.SocialDepartment.Site.Controllers
         //5. Редактировать пользователя
         [HttpPatch]
         [Route("api/patients/{id:guid}")]
-        public async Task<JsonResult> EditPatientsAsync([FromRoute] Guid id, [FromBody] CreateOrEditPatientDTO input, CancellationToken cancellationToken)
+        public async Task<JsonResult> EditPatientsAsync([FromRoute] Guid id, [FromBody] EditPatientDTO input, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
@@ -223,21 +386,21 @@ namespace CRM.SocialDepartment.Site.Controllers
         }
 
         //6. Удалить пользователя
-        [HttpDelete]
-        [Route("api/patients/{id:guid}")]
-        public async Task<JsonResult> DeletePatientsAsync([FromRoute] Guid id, [FromBody] CreateOrEditPatientDTO input, CancellationToken cancellationToken)
-        {
-            if (!ModelState.IsValid)
-            {
-                HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-                return new JsonResult(ModelState);
-            }
+        //[HttpDelete]
+        //[Route("api/patients/{id:guid}")]
+        //public async Task<JsonResult> DeletePatientsAsync([FromRoute] Guid id, [FromBody] CreateOrEditPatientDTO input, CancellationToken cancellationToken)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+        //        return new JsonResult(ModelState);
+        //    }
 
-            //TODO: Доделать реализацию логики
-            await _patientAppService.DeletePatientAsync(id, cancellationToken);
+        //    //TODO: Доделать реализацию логики
+        //    await _patientAppService.DeletePatientAsync(id, cancellationToken);
 
-            HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
-            return new JsonResult(new { });
-        }
+        //    HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
+        //    return new JsonResult(new { });
+        //}
     }
 }

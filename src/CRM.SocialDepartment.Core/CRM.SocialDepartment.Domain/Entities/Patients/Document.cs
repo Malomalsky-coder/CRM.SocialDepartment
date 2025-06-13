@@ -1,31 +1,22 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using DDD.Values;
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
-    public enum Document : byte
+    public abstract class Document : ValueObject
     {
-        /// <summary>
-        /// Значение не выбрано
-        /// </summary>
-        [Display(Name = "Выберите значение")]
-        None,
+        public string Number { get; protected set; }
 
-        /// <summary>
-        /// Паспорт
-        /// </summary>
-        [Display(Name = "Паспорт")]
-        Passport,
+        protected Document(string number)
+        {
+            Number = number;
+        }
 
-        /// <summary>
-        /// Медицинский полис
-        /// </summary>
-        [Display(Name = "Медицинский полис")]
-        MedicalPolicy,
+        public abstract string DisplayName { get; }
+        public abstract bool IsValid();
 
-        /// <summary>
-        /// СНИЛС
-        /// </summary>
-        [Display(Name = "СНИЛС")]
-        Snils
+        protected override IEnumerable<object> GetAtomicValues()
+        {
+            yield return Number;
+        }
     }
 }

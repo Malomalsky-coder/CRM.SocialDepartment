@@ -1,5 +1,5 @@
-﻿using DDD.Entities;
-using MongoDB.Bson.Serialization.Attributes;
+﻿using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
+using DDD.Entities;
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
@@ -28,7 +28,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Список документов
         /// </summary>
-        public Dictionary<Document, object> Documents { get; private set; }
+        public Dictionary<DocumentType, Document> Documents { get; private set; }
 
         /// <summary>
         /// Пациент является дееспособным?
@@ -88,7 +88,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             FullName = fullname;
             Birthday = birthday;
             CitizenshipInfo = citizenshipInfo;
-            Documents = new Dictionary<Document, object>();
+            Documents = new Dictionary<DocumentType, Document>();
             Capable = capable;
             Pension = pension;
             Note = note;
@@ -111,14 +111,14 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <param name="registration">Регистрация</param>
         /// <param name="earlyRegistration">Ранняя регистрация</param>
         /// <param name="placeOfBirth">Место рождения</param>
-        public void ChangeCitizenshipInfo(CitizenshipType citizenship, string? country, string? registration, City? earlyRegistration, string? placeOfBirth)
+        public void ChangeCitizenshipInfo(CitizenshipType citizenship, string? country, string? registration, City? earlyRegistration, string? placeOfBirth, string? documentAttached)
         {
             if (citizenship == CitizenshipType.RussianFederation)
             {
                 country = "Российская Федерация";
             }
 
-            CitizenshipInfo = new CitizenshipInfo(citizenship, country, registration, earlyRegistration, placeOfBirth);
+            CitizenshipInfo = new CitizenshipInfo(citizenship, country, registration, earlyRegistration, placeOfBirth, documentAttached);
         }
 
         /// <summary>
@@ -126,8 +126,10 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// </summary>
         /// <param name="type"></param>
         /// <param name="document"></param>
-        public void AddDocument(Document type, object document)
+        public void AddDocument(DocumentType type, Document document)
         {
+            ArgumentNullException.ThrowIfNull(document);
+
             Documents[type] = document;
         }
 
@@ -137,7 +139,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <param name="type"></param>
         /// <param name="newDocument"></param>
         /// <exception cref="KeyNotFoundException"></exception>
-        public void UpdateDocument(Document type, object newDocument)
+        public void UpdateDocument(DocumentType type, Document newDocument)
         {
             if (Documents.ContainsKey(type))
             {

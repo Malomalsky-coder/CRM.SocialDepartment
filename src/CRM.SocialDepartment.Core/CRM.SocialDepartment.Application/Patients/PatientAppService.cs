@@ -32,9 +32,17 @@ namespace CRM.SocialDepartment.Application.Patients
             return await _patientRepository.GetAllAsync(predicate, cancellationToken);
         }
 
-        public async Task<Guid> AddPatientAsync(CreateOrEditPatientDTO input, CancellationToken cancellationToken = default)
+        public async Task<Guid> AddPatientAsync(CreatePatientDTO input, CancellationToken cancellationToken = default)
         {
-            CitizenshipInfo citizenshipInfo = new CitizenshipInfo(input.CitizenshipInfo.Citizenship, input.CitizenshipInfo.Country, input.CitizenshipInfo.Registration, input.CitizenshipInfo.EarlyRegistration, input.CitizenshipInfo.PlaceOfBirth);
+            CitizenshipInfo citizenshipInfo =
+                new(
+                    input.CitizenshipInfo.Citizenship,
+                    input.CitizenshipInfo.Country,
+                    input.CitizenshipInfo.Registration,
+                    input.CitizenshipInfo.EarlyRegistration,
+                    input.CitizenshipInfo.PlaceOfBirth,
+                    input.CitizenshipInfo.DocumentAttached
+                );
 
             Capable? capable = input.Capable != null
                 ? new Capable(input.Capable.CourtDecision, input.Capable.TrialDate, input.Capable.Guardian, input.Capable.GuardianOrderAppointment)
@@ -61,7 +69,7 @@ namespace CRM.SocialDepartment.Application.Patients
             return patient.Id;
         }
 
-        public async Task EditPatientAsync(Guid id, CreateOrEditPatientDTO input, CancellationToken cancellationToken = default)
+        public async Task EditPatientAsync(Guid id, EditPatientDTO input, CancellationToken cancellationToken = default)
         {
             //TODO: Разрешить доступ по правилу ролей. Примечание: Мед. персонал может получать пациентов только из своего отделения.
 
@@ -70,19 +78,19 @@ namespace CRM.SocialDepartment.Application.Patients
             if (patient.FullName != input.FullName)
                 patient.ChangeFullName(input.FullName);
 
-            patient.ChangeCitizenshipInfo(input.CitizenshipInfo.Citizenship, input.CitizenshipInfo.Country, input.CitizenshipInfo.Registration, input.CitizenshipInfo.EarlyRegistration, input.CitizenshipInfo.PlaceOfBirth);
+            patient.ChangeCitizenshipInfo(input.CitizenshipInfo.Citizenship, input.CitizenshipInfo.Country, input.CitizenshipInfo.Registration, input.CitizenshipInfo.EarlyRegistration, input.CitizenshipInfo.PlaceOfBirth, input.CitizenshipInfo.DocumentAttached);
 
             //TODO: Доделать добавление/обновление документов
 
             Capable? capable = input.Capable != null
-                ? new Capable(patient.Capable!.CourtDecision, patient.Capable.TrialDate, input.Capable.Guardian, input.Capable.GuardianOrderAppointment)
+                ? new(patient.Capable!.CourtDecision, patient.Capable.TrialDate, input.Capable.Guardian, input.Capable.GuardianOrderAppointment)
                 : null;
 
             if (patient.Capable?.Equals(capable) != true)
                 patient.SetCapable(capable);
 
             Pension? pension = input.Pension != null
-                ? new Pension(input.Pension.DisabilityGroup, input.Pension.PensionStartDateTime, input.Pension.PensionAddress, input.Pension.SfrBranch, input.Pension.SfrDepartment, input.Pension.Rsd)
+                ? new(input.Pension.DisabilityGroup, input.Pension.PensionStartDateTime, input.Pension.PensionAddress, input.Pension.SfrBranch, input.Pension.SfrDepartment, input.Pension.Rsd)
                 : null;
 
             if (patient.Pension?.Equals(pension) != true)
