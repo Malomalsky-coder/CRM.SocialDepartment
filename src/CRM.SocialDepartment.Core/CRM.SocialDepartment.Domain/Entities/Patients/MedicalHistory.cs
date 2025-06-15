@@ -123,6 +123,9 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             if (DateOfReceipt > dischargeDate)
                 throw new DomainException("Дата выписки не может быть раньше, чем поступление в больницу");
 
+            if (DateOfDischarge.HasValue)
+                throw new DomainException("Дата выписки уже установлена");
+
             DateOfDischarge = dischargeDate;
         }
 

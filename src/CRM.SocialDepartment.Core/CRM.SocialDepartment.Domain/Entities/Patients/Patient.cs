@@ -288,22 +288,37 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             _medicalHistories.Add(medicalHistory);
         }
 
-        /// <summary>s
+        /// <summary>
+        /// Изменить номер отделения в активной истории болезни
+        /// </summary>
+        /// <param name="numberDepartment">Новый номер отделения</param>
+        /// <exception cref="DomainException">Если нет активной истории болезни</exception>
+        public void SetMedicalHistoryDepartment(sbyte numberDepartment)
+        {
+            if (ActiveHistory is null)
+                throw new DomainException("Нет активной истории болезни");
+
+            ((IMedicalHistoryInternal)ActiveHistory).SetNumberDepartment(numberDepartment);
+        }
+
+        /// <summary>
         /// Закрыть активную историю болезни
         /// </summary>
         /// <param name="dischargeDate">Дата выписки</param>
-        /// <exception cref="DomainException"></exception>
+        /// <exception cref="DomainException">Если нет активной истории болезни или дата выписки раньше даты поступления</exception>
         public void CloseActiveHistory(DateTime dischargeDate)
         {
-            var activeHistory = ActiveHistory;
+            if (ActiveHistory is null)
+                throw new DomainException("Нет активной истории болезни");
 
-            if (activeHistory == null)
-                throw new DomainException("Нет активной истории болезни для закрытия");
-
-            if (activeHistory.DateOfReceipt > dischargeDate)
+            if (ActiveHistory.DateOfReceipt > dischargeDate)
                 throw new DomainException("Дата выписки не может быть раньше, чем поступление в больницу");
 
-            ((IMedicalHistoryInternal)activeHistory).SetDateOfDischarge(dischargeDate);
+            ((IMedicalHistoryInternal)ActiveHistory).SetDateOfDischarge(dischargeDate);
+
+            // После установки даты выписки история болезни становится неактивной
+            if (ActiveHistory.IsActive)
+                throw new DomainException("История болезни все еще активна после установки даты выписки");
         }
 
         /// <summary>
@@ -437,32 +452,6 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         public void SetNote(string? note)
         {
             Note = note;
-        }
-
-        /// <summary>
-        /// Изменить номер отделения в активной истории болезни
-        /// </summary>
-        /// <param name="numberDepartment">Новый номер отделения</param>
-        /// <exception cref="DomainException">Если нет активной истории болезни</exception>
-        public void SetMedicalHistoryDepartment(sbyte numberDepartment)
-        {
-            if (ActiveHistory is null)
-                throw new DomainException("Нет активной истории болезни");
-
-            ((IMedicalHistoryInternal)ActiveHistory).SetNumberDepartment(numberDepartment);
-        }
-
-        /// <summary>
-        /// Изменить дату выписки в активной истории болезни
-        /// </summary>
-        /// <param name="dischargeDate">Новая дата выписки</param>
-        /// <exception cref="DomainException">Если нет активной истории болезни или дата выписки раньше даты поступления</exception>
-        public void SetMedicalHistoryDischargeDate(DateTime dischargeDate)
-        {
-            if (ActiveHistory is null)
-                throw new DomainException("Нет активной истории болезни");
-
-            ((IMedicalHistoryInternal)ActiveHistory).SetDateOfDischarge(dischargeDate);
         }
     }
 }
