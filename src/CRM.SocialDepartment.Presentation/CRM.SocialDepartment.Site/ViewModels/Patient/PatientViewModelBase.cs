@@ -68,7 +68,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
     /// <summary>
     /// История болезни
     /// </summary>
-    public class HistoryOfIllness
+    public class MedicalHistory
     {
         /// <summary>
         /// Номер отделения

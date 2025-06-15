@@ -34,6 +34,22 @@ namespace CRM.SocialDepartment.Application.Patients
 
         public async Task<Guid> AddPatientAsync(CreatePatientDTO input, CancellationToken cancellationToken = default)
         {
+            var patientId = Guid.NewGuid();
+            var medicalHistoryId = Guid.NewGuid();
+
+            HospitalizationType hospitalizationType = new(input.MedicalHistory.HospitalizationType.Value, input.MedicalHistory.HospitalizationType.DisplayName);
+
+            MedicalHistory medicalHistory =
+                new(
+                    medicalHistoryId,
+                    hospitalizationType,
+                    input.MedicalHistory.Resolution,
+                    input.MedicalHistory.NumberDocument,
+                    input.MedicalHistory.DateOfReceipt,
+                    input.MedicalHistory.DateOfDischarge,
+                    input.MedicalHistory.Note
+                );
+
             CitizenshipInfo citizenshipInfo =
                 new(
                     input.CitizenshipInfo.Citizenship,
@@ -53,9 +69,10 @@ namespace CRM.SocialDepartment.Application.Patients
                 : null;
 
             var patient = new Patient(
-                Guid.NewGuid(),
+                patientId,
                 input.FullName,
                 input.Birthday,
+                medicalHistory,
                 citizenshipInfo,
                 capable,
                 pension,
@@ -66,7 +83,7 @@ namespace CRM.SocialDepartment.Application.Patients
             await _patientRepository.InsertAsync(patient, cancellationToken);
             #pragma warning restore CS0618 // Тип или член устарел
 
-            return patient.Id;
+            return patientId;
         }
 
         public async Task EditPatientAsync(Guid id, EditPatientDTO input, CancellationToken cancellationToken = default)

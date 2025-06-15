@@ -3,7 +3,7 @@
 
 @model CRM.SocialDepartment.Site.ViewModels.Patient.CreatePatientViewModel
 
-<form id="create-patient" method="post" asp-controller="Patient" asp-action="GetCreatePatientModal" asp-antiforgery="true">
+<form id="create-patient" method="post" asp-controller="Patient" asp-action="CreatePatientAsync" asp-antiforgery="true">
     <div class="card mb-3">
         <div class="card-header">История болезни</div>
         <div class="card-body">
@@ -27,7 +27,7 @@
 
             <div class="mb-3">
                 <label asp-for="MedicalHistory.DateOfReceipt" class="form-label param-title"></label>
-                <input asp-for="MedicalHistory.DateOfReceipt" class="form-control" />
+                <input asp-for="MedicalHistory.DateOfReceipt" value="" class="form-control" />
                 <span asp-validation-for="MedicalHistory.DateOfReceipt" class="text-danger"></span>
             </div>
 
@@ -98,7 +98,7 @@
             <div id="LbgIsEnable" style="display:none;">
                 <div class="mb-3">
                     <label asp-for="CitizenshipInfo.PlaceOfBirth" class="form-label"></label>
-                    <input asp-for="CitizenshipInfo.PlaceOfBirth" class="form-control" autocomplete="off" />
+                    <input asp-for="CitizenshipInfo.PlaceOfBirth" value="" class="form-control" autocomplete="off" />
                     <span asp-validation-for="CitizenshipInfo.PlaceOfBirth" class="text-danger"></span>
                 </div>
 
@@ -171,7 +171,7 @@
                 </div>
                 <div class="mb-3">
                     <label asp-for="Capable.TrialDate" class="form-label"></label>
-                    <input asp-for="Capable.TrialDate" type="date" class="form-control" autocomplete="off" />
+                    <input asp-for="Capable.TrialDate" type="date" value="" class="form-control" autocomplete="off" />
                     <span asp-validation-for="Capable.TrialDate" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
@@ -206,7 +206,7 @@
                 <div id="PensionStartDateTimeIsEnable" style="display:none;">
                     <div class="mb-3">
                         <label asp-for="Pension.PensionStartDateTime" class="form-label"></label>
-                        <input asp-for="Pension.PensionStartDateTime" class="form-control" />
+                        <input asp-for="Pension.PensionStartDateTime" value="" class="form-control" />
                         <span asp-validation-for="Pension.PensionStartDateTime" class="text-danger"></span>
                     </div>
                 </div>

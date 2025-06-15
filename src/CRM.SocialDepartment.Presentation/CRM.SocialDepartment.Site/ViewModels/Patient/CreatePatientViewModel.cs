@@ -1,5 +1,4 @@
-﻿using CRM.SocialDepartment.Domain.Entities.Patients;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace CRM.SocialDepartment.Site.ViewModels.Patient

@@ -1,5 +1,7 @@
 ﻿using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
+using CRM.SocialDepartment.Domain.Exceptions;
 using DDD.Entities;
+using System.Reflection.Metadata;
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
@@ -56,11 +58,6 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         public string? Note { get; private set; }
 
         /// <summary>
-        /// Истории болезней
-        /// </summary>
-        //public List<Guid> HistoryOfIllnessIds { get; private set; }
-
-        /// <summary>
         /// Помечен как удаленный
         /// </summary>
         public bool SoftDeleted { get; set; }
@@ -70,14 +67,30 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// </summary>
         public bool IsArchive { get; set; }
 
-        #pragma warning disable CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
-        private Patient() { }
-        #pragma warning restore CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
+        private readonly List<MedicalHistory> _medicalHistories;
+
+        /// <summary>
+        /// Все истории болезни пациента
+        /// </summary>
+        public IReadOnlyList<MedicalHistory> MedicalHistories => _medicalHistories.AsReadOnly();
+
+        /// <summary>
+        /// Активная история болезни
+        /// </summary>
+        public MedicalHistory? ActiveHistory => _medicalHistories.FirstOrDefault(h => !h.DateOfDischarge.HasValue);
+
+        #pragma warning disable CS8618
+        private Patient() 
+        {
+            _medicalHistories = new List<MedicalHistory>();
+        }
+        #pragma warning restore CS8618
 
         public Patient(
             Guid id,
             string fullname,
             DateTime birthday,
+            MedicalHistory medicalHistory,
             CitizenshipInfo citizenshipInfo,
             Capable? capable,
             Pension? pension,
@@ -87,6 +100,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             Id = id;
             FullName = fullname;
             Birthday = birthday;
+            _medicalHistories = new List<MedicalHistory> { medicalHistory };
             CitizenshipInfo = citizenshipInfo;
             Documents = new Dictionary<DocumentType, Document>();
             Capable = capable;
@@ -98,8 +112,12 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// Изменить фио
         /// </summary>
         /// <param name="fullName"></param>
+        /// <exception cref="DomainException">Если имя равно null или пустой строке</exception>
         public void ChangeFullName(string fullName)
         {
+            if (string.IsNullOrEmpty(fullName) || string.IsNullOrWhiteSpace(fullName))
+                throw new DomainException("Имя не может быть null или пустой строкой");
+
             FullName = fullName;
         }
 
@@ -126,9 +144,11 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// </summary>
         /// <param name="type"></param>
         /// <param name="document"></param>
+        /// <exception cref="ArgumentNullException">Если document равен null</exception>
         public void AddDocument(DocumentType type, Document document)
         {
-            ArgumentNullException.ThrowIfNull(document);
+            if (document is null)
+                throw new ArgumentNullException(nameof(document), "Документ не может быть null");
 
             Documents[type] = document;
         }
@@ -139,8 +159,12 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <param name="type"></param>
         /// <param name="newDocument"></param>
         /// <exception cref="KeyNotFoundException"></exception>
+        /// <exception cref="ArgumentNullException">Если newDocument равен null</exception>
         public void UpdateDocument(DocumentType type, Document newDocument)
         {
+            if (newDocument is null)
+                throw new ArgumentNullException(nameof(newDocument), "Документ не может быть null");
+
             if (Documents.ContainsKey(type))
             {
                 Documents[type] = newDocument;
@@ -152,11 +176,46 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         }
 
         /// <summary>
+        /// Добавить новую историю болезни
+        /// </summary>
+        /// <param name="medicalHistory">Новая история болезни</param>
+        /// <exception cref="DomainException">Если уже есть активная история болезни</exception>
+        public void AddMedicalHistory(MedicalHistory medicalHistory)
+        {
+            if (medicalHistory == null)
+                throw new DomainException("История болезни не может быть null");
+
+            if (ActiveHistory != null)
+                throw new DomainException("Нельзя добавить новую историю болезни, пока не закрыта текущая");
+
+            _medicalHistories.Add(medicalHistory);
+        }
+
+        /// <summary>s
+        /// Закрыть активную историю болезни
+        /// </summary>
+        /// <param name="dischargeDate">Дата выписки</param>
+        /// <exception cref="DomainException"></exception>
+        public void CloseActiveHistory(DateTime dischargeDate)
+        {
+            var activeHistory = ActiveHistory;
+
+            if (activeHistory == null)
+                throw new DomainException("Нет активной истории болезни для закрытия");
+
+            if (activeHistory.DateOfReceipt > dischargeDate)
+                throw new DomainException("Дата выписки не может быть раньше, чем поступление в больницу");
+
+            activeHistory.SetDateOfDischarge(dischargeDate);
+        }
+
+        /// <summary>
         /// Изменить статус дееспособного
         /// </summary>
         /// <param name="capable"></param>
         public void SetCapable(Capable? capable)
         {
+            //todo: Сделать валидацию Capable
             Capable = capable;
         }
 
@@ -169,6 +228,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <param name="pension"></param>
         public void SetPension(Pension? pension)
         {
+            //todo: Сделать валидацию Pension 
             Pension = pension;
         }
 

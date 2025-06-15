@@ -3,7 +3,7 @@
 
 @model CRM.SocialDepartment.Site.ViewModels.Patient.EditPatientViewModel
 
-<form id="create-patient" method="post" asp-controller="Patient" asp-action="GetCreatePatientModal" asp-route-patientId="@Model.PatientId" asp-antiforgery="true">
+<form id="create-patient" method="post" asp-controller="Patient" asp-action="EditPatientAsync" asp-route-patientId="@Model.PatientId" asp-antiforgery="true">
     <div class="card mb-3">
         <div class="card-header">История болезни</div>
         <div class="card-body">
@@ -27,7 +27,7 @@
 
             <div class="mb-3">
                 <label asp-for="MedicalHistory.DateOfReceipt" class="form-label param-title"></label>
-                <input asp-for="MedicalHistory.DateOfReceipt" class="form-control" />
+                <input asp-for="MedicalHistory.DateOfReceipt" value="" class="form-control" />
                 <span asp-validation-for="MedicalHistory.DateOfReceipt" class="text-danger"></span>
             </div>
 
@@ -92,7 +92,7 @@
             <div id="LbgIsEnable" style="display:none;">
                 <div class="mb-3">
                     <label asp-for="CitizenshipInfo.PlaceOfBirth" class="form-label"></label>
-                    <input asp-for="CitizenshipInfo.PlaceOfBirth" class="form-control" autocomplete="off" />
+                    <input asp-for="CitizenshipInfo.PlaceOfBirth" value="" class="form-control" autocomplete="off" />
                     <span asp-validation-for="CitizenshipInfo.PlaceOfBirth" class="text-danger"></span>
                 </div>
 
@@ -160,17 +160,17 @@
             <div class="card-body">
                 <div class="mb-3">
                     <label asp-for="Capable.CourtDecision" class="form-label"></label>
-                    <input asp-for="Capable.CourtDecision" type="text" class="form-control" autocomplete="off" />
+                    <input asp-for="Capable.CourtDecision" class="form-control" autocomplete="off" />
                     <span asp-validation-for="Capable.CourtDecision" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label asp-for="Capable.TrialDate" class="form-label"></label>
-                    <input asp-for="Capable.TrialDate" type="date" class="form-control" autocomplete="off" />
+                    <input asp-for="Capable.TrialDate" type="date" value="" class="form-control" autocomplete="off" />
                     <span asp-validation-for="Capable.TrialDate" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label asp-for="Capable.Guardian" class="form-label"></label>
-                    <input asp-for="Capable.Guardian" type="text" class="form-control" autocomplete="off" />
+                    <input asp-for="Capable.Guardian" class="form-control" autocomplete="off" />
                     <span asp-validation-for="Capable.Guardian" class="text-danger"></span>
                 </div>
                 <div class="mb-3">

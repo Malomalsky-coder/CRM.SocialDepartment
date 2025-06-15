@@ -5,7 +5,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
     /// <summary>
     /// История болезни
     /// </summary>
-    public class HistoryOfIllness : AggregateRoot<Guid>
+    public class MedicalHistory : Entity<Guid>
     {
         /// <summary>
         /// Номер отделения
@@ -40,44 +40,39 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Активная история болезни
         /// </summary>
-        public bool IsActive => !DateOfDischarge.HasValue; //TODO: Нужно быть внимательным, не должно быть несколько активный историй болезней.
+        public bool IsActive => !DateOfDischarge.HasValue;
 
         /// <summary>
         /// Примечание
         /// </summary>
         public string? Note { get; private set; }
 
-        /// <summary>
-        /// Уникальный индетификатор пациента, служит связью между колекциями
-        /// </summary>
-        public Guid PatientId { get; private set; }
-
         #pragma warning disable CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
-        private HistoryOfIllness() { }
+        private MedicalHistory() { }
         #pragma warning restore CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
 
-        public HistoryOfIllness(
+        public MedicalHistory(
+            Guid id,
             HospitalizationType hospitalizationType,
             string resolution,
             string numberDocument,
             DateTime dateOfReceipt,
             DateTime? dateOfDischarge,
-            string? note,
-            Guid patientId)
+            string? note)
         {
+            Id = id;
             HospitalizationType = hospitalizationType;
             Resolution = resolution;
             NumberDocument = numberDocument;
             DateOfReceipt = dateOfReceipt;
             DateOfDischarge = dateOfDischarge;
             Note = note;
-            PatientId = patientId;
         }
 
         /// <summary>
         /// Изменить номер отделения, в котором находится пациент
         /// </summary>
-        /// <param name="number"></param>
+        /// <param name="number">Номер отделения</param>
         public void SetNumberDepartment(sbyte number)
         {
             NumberDepartment = number;
@@ -86,7 +81,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Изменить дату выписки
         /// </summary>
-        /// <param name="dateOfDischarge"></param>
+        /// <param name="dateOfDischarge">Дата выписки</param>
         public void SetDateOfDischarge(DateTime dateOfDischarge)
         {
             if (DateOfDischarge is null)
@@ -96,7 +91,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Изменить примечание
         /// </summary>
-        /// <param name="note"></param>
+        /// <param name="note">Заметка</param>
         public void SetNote(string note)
         {
             Note = note;

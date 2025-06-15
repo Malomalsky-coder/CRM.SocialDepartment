@@ -5,6 +5,7 @@ using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
 using CRM.SocialDepartment.Domain.Specifications;
 using CRM.SocialDepartment.Site.Helpers;
+using CRM.SocialDepartment.Site.Models;
 using CRM.SocialDepartment.Site.Services;
 using CRM.SocialDepartment.Site.ViewModels.Patient;
 using Microsoft.AspNetCore.Mvc;
@@ -15,8 +16,7 @@ namespace CRM.SocialDepartment.Site.Controllers
     public class PatientController(
         ILogger<PatientController> logger,
         IMapper mapper,
-        PatientAppService patientAppService,
-        DisabilityGroupWithoutPeriodSpecification withoutPeriodSpec
+        PatientAppService patientAppService
     ) : Controller
     {
         private readonly ILogger<PatientController> _logger = logger;
@@ -43,15 +43,13 @@ namespace CRM.SocialDepartment.Site.Controllers
         [Route("modal/create")]
         public IActionResult GetCreatePatientModal()
         {
-            //todo: Доступ: Сотрудник, Администратор
-
             ViewData.Model = new CreatePatientViewModel()
             {
-                FullName = string.Empty,
-                Birthday = DateTime.Now.AddYears(-18),
+                FullName = string.Empty, //todo: смысл?
+                Birthday = DateTime.Now.AddYears(-18), //todo: смысл?
                 CitizenshipInfo = new ViewModels.Patient.CitizenshipInfo()
                 {
-                    Citizenships = ["", "", ""],
+                    Citizenships = ["РФ", "Иностранец", "ЛБГ"],
                     Citizenship = CitizenshipType.RussianFederation,
                     Country = "Россия",
                     NotRegistered = false,
@@ -73,13 +71,13 @@ namespace CRM.SocialDepartment.Site.Controllers
                         DocumentViewModelHelper.CreateViewModel(DocumentType.Snils)
                     }
                 },
-                MedicalHistory = new ViewModels.Patient.HistoryOfIllness()
+                MedicalHistory = new ViewModels.Patient.MedicalHistory()
                 {
                     Resolution = string.Empty,
                     NumberDocument = string.Empty,
                     HospitalizationType = HospitalizationType.Force,
                     NumberDepartment = 1,
-                    DateOfReceipt = DateTime.Now,
+                    DateOfReceipt = DateTime.Now, //todo: смысл?
                 },
                 IsCapable = true,
                 ReceivesPension = false
@@ -87,7 +85,7 @@ namespace CRM.SocialDepartment.Site.Controllers
 
             return new PartialViewResult
             {
-                ViewName = $"~/Pages/Patients/_CreatePatientModal.cshtml",
+                ViewName = $"~/View/Patient/_CreatePatientModal.cshtml",
                 ViewData = ViewData
             };
         }
@@ -114,15 +112,15 @@ namespace CRM.SocialDepartment.Site.Controllers
 
             switch (viewModel.CitizenshipInfo.Citizenship)
             {
-                case 0:
+                case 0: //Российская Федерация
                     viewModel.CountryIsEnable        = "display:none;";
                     break;
 
-                case 1:
+                case 1: //Иностранец
                     viewModel.NoRegistrationIsEnable = "display:none;";
                     break;
 
-                case 2:
+                case 2: //ЛБГ
                     viewModel.RegistrationIsEnable   = "display:none;";
                     viewModel.NoRegistrationIsEnable = "display:none;";
                     viewModel.CountryIsEnable        = "display:none;";
@@ -151,27 +149,9 @@ namespace CRM.SocialDepartment.Site.Controllers
 
             return new PartialViewResult
             {
-                ViewName = $"~/Pages/Patients/_EditPatientModal.cshtml",
+                ViewName = $"~/View/Patient/_EditPatientModal.cshtml",
                 ViewData = ViewData
             };
-        }
-
-        /// <summary>
-        /// Сохранить данные полученные с формы: Добавить/Редактировать пациента
-        /// </summary>
-        /// <param name="input"></param>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateOrEditPatientAsync(Guid patientId, CreatePatientViewModel input)
-        {
-            //todo: Доступ: Сотрудник, Администратор
-
-            if (ModelState.IsValid)
-            {
-                //var patient = _mapper.Map<Patient>(input);
-            }
-
-            return View();
         }
 
         /// <summary>
@@ -182,8 +162,6 @@ namespace CRM.SocialDepartment.Site.Controllers
         {
             return View();
         }
-
-
 
         // API /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -356,33 +334,37 @@ namespace CRM.SocialDepartment.Site.Controllers
         //4. Добавить пациента
         [HttpPost]
         [Route("api/patients")]
-        public async Task<JsonResult> AddPatientsAsync([FromBody] CreatePatientDTO input, CancellationToken cancellationToken)
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> AddPatientsAsync(CreatePatientDTO input, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
-                HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-                return new JsonResult(ModelState);
+                return new JsonResult(ApiResponse<object>.Error("Неверные данные", "error"))
+                {
+                    StatusCode = StatusCodes.Status400BadRequest
+                };
             }
 
             var result = await _patientAppService.AddPatientAsync(input, cancellationToken);
-            return new JsonResult(result);
+            return new JsonResult(ApiResponse<Guid>.Ok(result));
         }
 
         //5. Редактировать пользователя
         [HttpPatch]
         [Route("api/patients/{id:guid}")]
+        [ValidateAntiForgeryToken]
         public async Task<JsonResult> EditPatientsAsync([FromRoute] Guid id, [FromBody] EditPatientDTO input, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
-                HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-                return new JsonResult(ModelState);
+                return new JsonResult(ApiResponse<object>.Error("Неверные данные", "error"))
+                {
+                    StatusCode = StatusCodes.Status400BadRequest
+                };
             }
 
             await _patientAppService.EditPatientAsync(id, input, cancellationToken);
-
-            HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
-            return new JsonResult(new {});
+            return new JsonResult(ApiResponse<object>.Ok(null));
         }
 
         //6. Удалить пользователя

@@ -20,12 +20,19 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Статья 435 УК РФ
         /// </summary>
-        public static readonly HospitalizationType YKRFArticle435 = new(2, "Статья 435 УК РФ");
+        public static readonly HospitalizationType CriminalCodeRFArticle435 = new (2, "Статья 435 УК РФ");
 
         public byte Value { get; }
         public string DisplayName { get; }
 
-        private HospitalizationType(byte value, string displayName)
+        #pragma warning disable CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
+        private HospitalizationType()
+        #pragma warning restore CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
+        {
+            
+        }
+
+        public HospitalizationType(byte value, string displayName)
         {
             Value = value;
             DisplayName = displayName;
@@ -37,7 +44,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             {
                 0 => Force,
                 1 => Voluntary,
-                2 => YKRFArticle435,
+                2 => CriminalCodeRFArticle435,
                 _ => throw new ArgumentException($"Недопустимое значение для HospitalizationType: {value}")
             };
         }
@@ -48,7 +55,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             {
                 "Принудительно" => Force,
                 "Добровольный" => Voluntary,
-                "Статья 435 УК РФ" => YKRFArticle435,
+                "Статья 435 УК РФ" => CriminalCodeRFArticle435,
                 _ => throw new ArgumentException($"Недопустимое отображаемое имя для HospitalizationType: {displayName}")
             };
         }
