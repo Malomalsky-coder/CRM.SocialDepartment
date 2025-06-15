@@ -1,7 +1,6 @@
 ﻿using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
 using CRM.SocialDepartment.Domain.Exceptions;
 using DDD.Entities;
-using System.Reflection.Metadata;
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
@@ -129,6 +128,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <param name="registration">Регистрация</param>
         /// <param name="earlyRegistration">Ранняя регистрация</param>
         /// <param name="placeOfBirth">Место рождения</param>
+        /// <param name="documentAttached">Имеющиеся документы</param>
         public void ChangeCitizenshipInfo(CitizenshipType citizenship, string? country, string? registration, City? earlyRegistration, string? placeOfBirth, string? documentAttached)
         {
             if (citizenship == CitizenshipType.RussianFederation)
@@ -140,39 +140,136 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         }
 
         /// <summary>
-        /// Добавить документ
+        /// Изменить гражданство
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="document"></param>
-        /// <exception cref="ArgumentNullException">Если document равен null</exception>
-        public void AddDocument(DocumentType type, Document document)
+        /// <param name="citizenship">Новое гражданство</param>
+        public void SetCitizenship(CitizenshipType citizenship)
+        {
+            if (citizenship == CitizenshipType.RussianFederation)
+            {
+                CitizenshipInfo.SetCitizenship(citizenship).SetCountry("Российская Федерация");
+            }
+            else
+            {
+                CitizenshipInfo.SetCitizenship(citizenship);
+            }
+        }
+
+        /// <summary>
+        /// Изменить страну
+        /// </summary>
+        /// <param name="country">Новая страна</param>
+        public void SetCountry(string? country)
+        {
+            CitizenshipInfo.SetCountry(country);
+        }
+
+        /// <summary>
+        /// Изменить место регистрации
+        /// </summary>
+        /// <param name="registration">Новое место регистрации</param>
+        public void SetRegistration(string? registration)
+        {
+            CitizenshipInfo.SetRegistration(registration);
+        }
+
+        /// <summary>
+        /// Изменить раннюю регистрацию
+        /// </summary>
+        /// <param name="earlyRegistration">Новая ранняя регистрация</param>
+        public void SetEarlyRegistration(City? earlyRegistration)
+        {
+            CitizenshipInfo.SetEarlyRegistration(earlyRegistration);
+        }
+
+        /// <summary>
+        /// Изменить место рождения
+        /// </summary>
+        /// <param name="placeOfBirth">Новое место рождения</param>
+        public void SetPlaceOfBirth(string? placeOfBirth)
+        {
+            CitizenshipInfo.SetPlaceOfBirth(placeOfBirth);
+        }
+
+        /// <summary>
+        /// Изменить имеющиеся документы
+        /// </summary>
+        /// <param name="documentAttached">Новые имеющиеся документы</param>
+        public void SetDocumentAttached(string? documentAttached)
+        {
+            CitizenshipInfo.SetDocumentAttached(documentAttached);
+        }
+
+        /// <summary>
+        /// Добавляет документ пациенту
+        /// </summary>
+        /// <param name="document">Документ для добавления</param>
+        /// <exception cref="DomainException">Если документ такого типа уже существует</exception>
+        public void AddDocument(Document document)
         {
             if (document is null)
                 throw new ArgumentNullException(nameof(document), "Документ не может быть null");
 
-            Documents[type] = document;
+            var documentType = GetDocumentType(document);
+            if (Documents.ContainsKey(documentType))
+                throw new DomainException($"Документ типа {document.DisplayName} уже существует");
+
+            Documents[documentType] = document;
         }
 
         /// <summary>
-        /// Изменить документ
+        /// Обновляет существующий документ пациента
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="newDocument"></param>
-        /// <exception cref="KeyNotFoundException"></exception>
-        /// <exception cref="ArgumentNullException">Если newDocument равен null</exception>
-        public void UpdateDocument(DocumentType type, Document newDocument)
+        /// <param name="document">Новая версия документа</param>
+        /// <exception cref="DomainException">Если документ такого типа не существует</exception>
+        public void UpdateDocument(Document document)
         {
-            if (newDocument is null)
-                throw new ArgumentNullException(nameof(newDocument), "Документ не может быть null");
+            if (document is null)
+                throw new ArgumentNullException(nameof(document), "Документ не может быть null");
 
-            if (Documents.ContainsKey(type))
+            var documentType = GetDocumentType(document);
+            if (!Documents.ContainsKey(documentType))
+                throw new DomainException($"Документ типа {document.DisplayName} не найден");
+
+            Documents[documentType] = document;
+        }
+
+        /// <summary>
+        /// Определяет тип документа на основе его типа
+        /// </summary>
+        private static DocumentType GetDocumentType(Document document)
+        {
+            return document switch
             {
-                Documents[type] = newDocument;
-            }
-            else
-            {
-                throw new KeyNotFoundException($"Документ типа {type} не найден.");
-            }
+                PassportDocument => DocumentType.Passport,
+                MedicalPolicyDocument => DocumentType.MedicalPolicy,
+                SnilsDocument => DocumentType.Snils,
+                _ => throw new DomainException($"Неизвестный тип документа: {document.GetType().Name}")
+            };
+        }
+
+        /// <summary>
+        /// Удаляет документ пациента
+        /// </summary>
+        /// <param name="documentType">Тип документа для удаления</param>
+        /// <exception cref="DomainException">Если документ такого типа не существует</exception>
+        public void RemoveDocument(DocumentType documentType)
+        {
+            if (!Documents.ContainsKey(documentType))
+                throw new DomainException($"Документ типа {documentType} не найден");
+
+            Documents.Remove(documentType);
+        }
+
+        /// <summary>
+        /// Проверяет наличие обязательных документов
+        /// </summary>
+        /// <returns>True если все обязательные документы присутствуют</returns>
+        public bool HasRequiredDocuments()
+        {
+            return Documents.ContainsKey(DocumentType.Passport) &&
+                   Documents.ContainsKey(DocumentType.MedicalPolicy) &&
+                   Documents.ContainsKey(DocumentType.Snils);
         }
 
         /// <summary>
@@ -206,21 +303,44 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             if (activeHistory.DateOfReceipt > dischargeDate)
                 throw new DomainException("Дата выписки не может быть раньше, чем поступление в больницу");
 
-            activeHistory.SetDateOfDischarge(dischargeDate);
+            ((IMedicalHistoryInternal)activeHistory).SetDateOfDischarge(dischargeDate);
         }
 
         /// <summary>
         /// Изменить статус дееспособного
         /// </summary>
-        /// <param name="capable"></param>
+        /// <param name="capable">Новая информация о дееспособности</param>
         public void SetCapable(Capable? capable)
         {
-            //todo: Сделать валидацию Capable
+            //TODO: Сделать валидацию Capable
             Capable = capable;
         }
 
-        //TODO: Изменить опекуна
-        //TODO: Изменить распоряжение о назначение опекуна
+        /// <summary>
+        /// Изменить опекуна
+        /// </summary>
+        /// <param name="guardian">Новый опекун</param>
+        /// <exception cref="DomainException">Если пациент дееспособен</exception>
+        public void SetGuardian(string guardian)
+        {
+            if (Capable is null)
+                throw new DomainException("Пациент дееспособен");
+
+            ((ICapableInternal)Capable).SetGuardian(guardian);
+        }
+
+        /// <summary>
+        /// Изменить распоряжение о назначении опекуна
+        /// </summary>
+        /// <param name="guardianOrderAppointment">Новое распоряжение о назначении опекуна</param>
+        /// <exception cref="DomainException">Если пациент дееспособен</exception>
+        public void SetGuardianOrderAppointment(string guardianOrderAppointment)
+        {
+            if (Capable is null)
+                throw new DomainException("Пациент дееспособен");
+
+            ((ICapableInternal)Capable).SetGuardianOrderAppointment(guardianOrderAppointment);
+        }
 
         /// <summary>
         /// Изменить статус пенсионера
@@ -228,16 +348,87 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <param name="pension"></param>
         public void SetPension(Pension? pension)
         {
-            //todo: Сделать валидацию Pension 
+            //TODO: Сделать валидацию Pension 
             Pension = pension;
         }
 
-        //TODO: Изменить группу инвалидности
-        //TODO: Изменить с какого числа установлен статус пенсионера
-        //TODO: Изменить способ получения пенсии
-        //TODO: Изменить статус СФР
-        //TODO: Изменить отделение СФР
-        //TODO: Изменить РСД
+        /// <summary>
+        /// Изменить группу инвалидности
+        /// </summary>
+        /// <param name="disabilityGroup">Новая группа инвалидности</param>
+        /// <exception cref="DomainException">Если пациент не получает пенсию</exception>
+        public void SetDisabilityGroup(DisabilityGroup disabilityGroup)
+        {
+            if (Pension is null)
+                throw new DomainException("Пациент не получает пенсию");
+
+            ((IPensionInternal)Pension).SetDisabilityGroup(disabilityGroup);
+        }
+
+        /// <summary>
+        /// Изменить дату установления статуса пенсионера
+        /// </summary>
+        /// <param name="pensionStartDateTime">Новая дата установления статуса</param>
+        /// <exception cref="DomainException">Если пациент не получает пенсию</exception>
+        public void SetPensionStartDateTime(DateTime pensionStartDateTime)
+        {
+            if (Pension is null)
+                throw new DomainException("Пациент не получает пенсию");
+
+            ((IPensionInternal)Pension).SetPensionStartDateTime(pensionStartDateTime);
+        }
+
+        /// <summary>
+        /// Изменить способ получения пенсии
+        /// </summary>
+        /// <param name="pensionAddress">Новый способ получения пенсии</param>
+        /// <exception cref="DomainException">Если пациент не получает пенсию</exception>
+        public void SetPensionAddress(PensionAddress pensionAddress)
+        {
+            if (Pension is null)
+                throw new DomainException("Пациент не получает пенсию");
+
+            ((IPensionInternal)Pension).SetPensionAddress(pensionAddress);
+        }
+
+        /// <summary>
+        /// Изменить филиал СФР
+        /// </summary>
+        /// <param name="sfrBranch">Новый филиал СФР</param>
+        /// <exception cref="DomainException">Если пациент не получает пенсию</exception>
+        public void SetSfrBranch(int sfrBranch)
+        {
+            if (Pension is null)
+                throw new DomainException("Пациент не получает пенсию");
+
+            ((IPensionInternal)Pension).SetSfrBranch(sfrBranch);
+        }
+
+        /// <summary>
+        /// Изменить отделение СФР
+        /// </summary>
+        /// <param name="sfrDepartment">Новое отделение СФР</param>
+        /// <exception cref="DomainException">Если пациент не получает пенсию</exception>
+        public void SetSfrDepartment(string sfrDepartment)
+        {
+            if (Pension is null)
+                throw new DomainException("Пациент не получает пенсию");
+
+            ((IPensionInternal)Pension).SetSfrDepartment(sfrDepartment);
+        }
+
+        /// <summary>
+        /// Изменить РСД
+        /// </summary>
+        /// <param name="rsd">Новый РСД</param>
+        /// <exception cref="DomainException">Если пациент не получает пенсию</exception>
+        public void SetRsd(string? rsd)
+        {
+            if (Pension is null)
+                throw new DomainException("Пациент не получает пенсию");
+
+            ((IPensionInternal)Pension).SetRsd(rsd);
+        }
 
         /// <summary>
         /// Изменить примечание
@@ -246,6 +437,32 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         public void SetNote(string? note)
         {
             Note = note;
+        }
+
+        /// <summary>
+        /// Изменить номер отделения в активной истории болезни
+        /// </summary>
+        /// <param name="numberDepartment">Новый номер отделения</param>
+        /// <exception cref="DomainException">Если нет активной истории болезни</exception>
+        public void SetMedicalHistoryDepartment(sbyte numberDepartment)
+        {
+            if (ActiveHistory is null)
+                throw new DomainException("Нет активной истории болезни");
+
+            ((IMedicalHistoryInternal)ActiveHistory).SetNumberDepartment(numberDepartment);
+        }
+
+        /// <summary>
+        /// Изменить дату выписки в активной истории болезни
+        /// </summary>
+        /// <param name="dischargeDate">Новая дата выписки</param>
+        /// <exception cref="DomainException">Если нет активной истории болезни или дата выписки раньше даты поступления</exception>
+        public void SetMedicalHistoryDischargeDate(DateTime dischargeDate)
+        {
+            if (ActiveHistory is null)
+                throw new DomainException("Нет активной истории болезни");
+
+            ((IMedicalHistoryInternal)ActiveHistory).SetDateOfDischarge(dischargeDate);
         }
     }
 }

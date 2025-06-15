@@ -11,7 +11,7 @@ namespace CRM.SocialDepartment.Site.Extensions
             [
                 new SelectListItem { Value = "0", Text = HospitalizationType.Force.DisplayName },
                 new SelectListItem { Value = "1", Text = HospitalizationType.Voluntary.DisplayName },
-                new SelectListItem { Value = "2", Text = HospitalizationType.YKRFArticle435.DisplayName }
+                new SelectListItem { Value = "2", Text = HospitalizationType.CriminalCodeRFArticle435.DisplayName }
             ];
         }
     }

@@ -20,7 +20,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// История болезни
         /// </summary>
         [DisplayName("История болезни")]
-        public required HistoryOfIllness MedicalHistory { get; init; }
+        public required MedicalHistory MedicalHistory { get; init; }
 
         /// <summary>
         /// Информация о гражданстве

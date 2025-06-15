@@ -63,6 +63,66 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             DocumentAttached = documentAttached;
         }
 
+        /// <summary>
+        /// Изменить гражданство
+        /// </summary>
+        /// <param name="citizenship">Новое гражданство</param>
+        public CitizenshipInfo SetCitizenship(CitizenshipType citizenship)
+        {
+            Citizenship = citizenship;
+            return this;
+        }
+
+        /// <summary>
+        /// Изменить страну
+        /// </summary>
+        /// <param name="country">Новая страна</param>
+        public CitizenshipInfo SetCountry(string? country)
+        {
+            Country = country;
+            return this;
+        }
+
+        /// <summary>
+        /// Изменить место регистрации
+        /// </summary>
+        /// <param name="registration">Новое место регистрации</param>
+        public CitizenshipInfo SetRegistration(string? registration)
+        {
+            Registration = registration;
+            return this;
+        }
+
+        /// <summary>
+        /// Изменить раннюю регистрацию
+        /// </summary>
+        /// <param name="earlyRegistration">Новая ранняя регистрация</param>
+        public CitizenshipInfo SetEarlyRegistration(City? earlyRegistration)
+        {
+            EarlyRegistration = earlyRegistration;
+            return this;
+        }
+
+        /// <summary>
+        /// Изменить место рождения
+        /// </summary>
+        /// <param name="placeOfBirth">Новое место рождения</param>
+        public CitizenshipInfo SetPlaceOfBirth(string? placeOfBirth)
+        {
+            PlaceOfBirth = placeOfBirth;
+            return this;
+        }
+
+        /// <summary>
+        /// Изменить имеющиеся документы
+        /// </summary>
+        /// <param name="documentAttached">Новые имеющиеся документы</param>
+        public CitizenshipInfo SetDocumentAttached(string? documentAttached)
+        {
+            DocumentAttached = documentAttached;
+            return this;
+        }
+
         protected override IEnumerable<object> GetAtomicValues()
         {
             yield return Citizenship;

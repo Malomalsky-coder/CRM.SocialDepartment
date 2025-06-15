@@ -1,11 +1,47 @@
-﻿using DDD.Entities;
+﻿using CRM.SocialDepartment.Domain.Exceptions;
+using DDD.Entities;
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
     /// <summary>
+    /// Публичный интерфейс для истории болезни
+    /// </summary>
+    public interface IMedicalHistory
+    {
+        /// <summary>
+        /// Номер отделения
+        /// </summary>
+        sbyte NumberDepartment { get; }
+
+        /// <summary>
+        /// Тип госпитализации
+        /// </summary>
+        HospitalizationType HospitalizationType { get; }
+
+        /// <summary>
+        /// Дата поступления
+        /// </summary>
+        DateTime DateOfReceipt { get; }
+
+        /// <summary>
+        /// Дата выписки
+        /// </summary>
+        DateTime? DateOfDischarge { get; }
+    }
+
+    /// <summary>
+    /// Внутренний интерфейс для истории болезни
+    /// </summary>
+    internal interface IMedicalHistoryInternal : IMedicalHistory
+    {
+        void SetNumberDepartment(sbyte numberDepartment);
+        void SetDateOfDischarge(DateTime dischargeDate);
+    }
+
+    /// <summary>
     /// История болезни
     /// </summary>
-    public class MedicalHistory : Entity<Guid>
+    public class MedicalHistory : Entity<Guid>, IMedicalHistoryInternal
     {
         /// <summary>
         /// Номер отделения
@@ -53,46 +89,48 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
 
         public MedicalHistory(
             Guid id,
+            sbyte numberDepartment,
             HospitalizationType hospitalizationType,
             string resolution,
             string numberDocument,
             DateTime dateOfReceipt,
-            DateTime? dateOfDischarge,
-            string? note)
+            string? node)
         {
             Id = id;
+            NumberDepartment = numberDepartment;
             HospitalizationType = hospitalizationType;
             Resolution = resolution;
             NumberDocument = numberDocument;
             DateOfReceipt = dateOfReceipt;
-            DateOfDischarge = dateOfDischarge;
-            Note = note;
+            Note = node;
         }
 
         /// <summary>
         /// Изменить номер отделения, в котором находится пациент
         /// </summary>
-        /// <param name="number">Номер отделения</param>
-        public void SetNumberDepartment(sbyte number)
+        /// <param name="numberDepartment">Новый номер отделения</param>
+        void IMedicalHistoryInternal.SetNumberDepartment(sbyte numberDepartment)
         {
-            NumberDepartment = number;
+            NumberDepartment = numberDepartment;
         }
 
         /// <summary>
         /// Изменить дату выписки
         /// </summary>
-        /// <param name="dateOfDischarge">Дата выписки</param>
-        public void SetDateOfDischarge(DateTime dateOfDischarge)
+        /// <param name="dischargeDate">Новая дата выписки</param>
+        void IMedicalHistoryInternal.SetDateOfDischarge(DateTime dischargeDate)
         {
-            if (DateOfDischarge is null)
-                DateOfDischarge = dateOfDischarge;
+            if (DateOfReceipt > dischargeDate)
+                throw new DomainException("Дата выписки не может быть раньше, чем поступление в больницу");
+
+            DateOfDischarge = dischargeDate;
         }
 
         /// <summary>
         /// Изменить примечание
         /// </summary>
         /// <param name="note">Заметка</param>
-        public void SetNote(string note)
+        public void SetNote(string? note)
         {
             Note = note;
         }

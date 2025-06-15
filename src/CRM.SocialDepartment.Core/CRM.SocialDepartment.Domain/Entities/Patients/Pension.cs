@@ -3,9 +3,58 @@
 namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
     /// <summary>
+    /// Публичный интерфейс для пенсии
+    /// </summary>
+    public interface IPension
+    {
+        /// <summary>
+        /// Группа инвалидности
+        /// </summary>
+        DisabilityGroup DisabilityGroup { get; }
+
+        /// <summary>
+        /// Дата установления статуса пенсионера
+        /// </summary>
+        DateTime PensionStartDateTime { get; }
+
+        /// <summary>
+        /// Способ получения пенсии
+        /// </summary>
+        PensionAddress PensionAddress { get; }
+
+        /// <summary>
+        /// Филиал СФР
+        /// </summary>
+        int SfrBranch { get; }
+
+        /// <summary>
+        /// Отделение СФР
+        /// </summary>
+        string SfrDepartment { get; }
+
+        /// <summary>
+        /// РСД
+        /// </summary>
+        string? Rsd { get; }
+    }
+
+    /// <summary>
+    /// Внутренний интерфейс для пенсии
+    /// </summary>
+    internal interface IPensionInternal : IPension
+    {
+        void SetDisabilityGroup(DisabilityGroup disabilityGroup);
+        void SetPensionStartDateTime(DateTime pensionStartDateTime);
+        void SetPensionAddress(PensionAddress pensionAddress);
+        void SetSfrBranch(int sfrBranch);
+        void SetSfrDepartment(string sfrDepartment);
+        void SetRsd(string? rsd);
+    }
+
+    /// <summary>
     /// Пенсия
     /// </summary>
-    public class Pension : ValueObject
+    public class Pension : ValueObject, IPensionInternal
     {
         /// <summary>
         /// Группа инвалидности
@@ -13,9 +62,9 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         public DisabilityGroup DisabilityGroup { get; private set; }
 
         /// <summary>
-        /// С какого числа установлен статус пенсионера
+        /// Дата установления статуса пенсионера
         /// </summary>
-        public DateTime? PensionStartDateTime { get; private set; }
+        public DateTime PensionStartDateTime { get; private set; }
 
         /// <summary>
         /// Способ получения пенсии
@@ -36,7 +85,6 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// РСД
         /// </summary>
         public string? Rsd { get; private set; }
-
 
         #pragma warning disable CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
         private Pension() { }
@@ -61,17 +109,17 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Изменить группу инвалидности
         /// </summary>
-        /// <param name="disabilityGroup"></param>
-        public void SetDisabilityGroup(DisabilityGroup disabilityGroup)
+        /// <param name="disabilityGroup">Новая группа инвалидности</param>
+        void IPensionInternal.SetDisabilityGroup(DisabilityGroup disabilityGroup)
         {
             DisabilityGroup = disabilityGroup;
         }
 
         /// <summary>
-        /// Изменить с какого числа установлен статус пенсионера
+        /// Изменить дату установления статуса пенсионера
         /// </summary>
-        /// <param name="pensionStartDateTime"></param>
-        public void SetPensionStartDateTime(DateTime pensionStartDateTime)
+        /// <param name="pensionStartDateTime">Новая дата установления статуса</param>
+        void IPensionInternal.SetPensionStartDateTime(DateTime pensionStartDateTime)
         {
             PensionStartDateTime = pensionStartDateTime;
         }
@@ -79,17 +127,17 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Изменить способ получения пенсии
         /// </summary>
-        /// <param name="pensionAddress"></param>
-        public void SetPensionAddress(PensionAddress pensionAddress)
+        /// <param name="pensionAddress">Новый способ получения пенсии</param>
+        void IPensionInternal.SetPensionAddress(PensionAddress pensionAddress)
         {
             PensionAddress = pensionAddress;
         }
 
         /// <summary>
-        /// Изменить статус СФР
+        /// Изменить филиал СФР
         /// </summary>
-        /// <param name="sfrBranch"></param>
-        public void SetSfrBranch(int sfrBranch)
+        /// <param name="sfrBranch">Новый филиал СФР</param>
+        void IPensionInternal.SetSfrBranch(int sfrBranch)
         {
             SfrBranch = sfrBranch;
         }
@@ -97,8 +145,8 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Изменить отделение СФР
         /// </summary>
-        /// <param name="sfrDepartment"></param>
-        public void SetSfrDepartment(string sfrDepartment)
+        /// <param name="sfrDepartment">Новое отделение СФР</param>
+        void IPensionInternal.SetSfrDepartment(string sfrDepartment)
         {
             SfrDepartment = sfrDepartment;
         }
@@ -106,8 +154,8 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Изменить РСД
         /// </summary>
-        /// <param name="rsd"></param>
-        public void SetRsd(string? rsd)
+        /// <param name="rsd">Новый РСД</param>
+        void IPensionInternal.SetRsd(string? rsd)
         {
             Rsd = rsd;
         }
@@ -115,7 +163,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         protected override IEnumerable<object> GetAtomicValues()
         {
             yield return DisabilityGroup;
-            yield return PensionStartDateTime ?? default;
+            yield return PensionStartDateTime;
             yield return PensionAddress;
             yield return SfrBranch;
             yield return SfrDepartment;

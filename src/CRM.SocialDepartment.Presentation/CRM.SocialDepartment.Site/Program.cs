@@ -6,6 +6,7 @@ using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
 using CRM.SocialDepartment.Site.Filters;
 using CRM.SocialDepartment.Site.MappingProfile;
+using CRM.SocialDepartment.Site.Middleware;
 using CRM.SocialDepartment.Site.Services;
 using CRM.SocialDepartment.WebApp.Settings;
 using Microsoft.AspNetCore.Identity;

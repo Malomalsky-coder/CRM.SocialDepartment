@@ -42,11 +42,11 @@ namespace CRM.SocialDepartment.Application.Patients
             MedicalHistory medicalHistory =
                 new(
                     medicalHistoryId,
+                    input.MedicalHistory.NumberDepartment,
                     hospitalizationType,
                     input.MedicalHistory.Resolution,
                     input.MedicalHistory.NumberDocument,
                     input.MedicalHistory.DateOfReceipt,
-                    input.MedicalHistory.DateOfDischarge,
                     input.MedicalHistory.Note
                 );
 

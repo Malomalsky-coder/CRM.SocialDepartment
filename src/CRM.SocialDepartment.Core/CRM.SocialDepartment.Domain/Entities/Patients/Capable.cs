@@ -1,12 +1,46 @@
 ﻿using DDD.Values;
-using MongoDB.Bson.Serialization.Attributes;
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
     /// <summary>
+    /// Публичный интерфейс для дееспособности
+    /// </summary>
+    public interface ICapable
+    {
+        /// <summary>
+        /// Решение суда
+        /// </summary>
+        string CourtDecision { get; }
+
+        /// <summary>
+        /// Дата суда
+        /// </summary>
+        DateTime TrialDate { get; }
+
+        /// <summary>
+        /// Опекун
+        /// </summary>
+        string Guardian { get; }
+
+        /// <summary>
+        /// Распоряжение о назначении опекуна
+        /// </summary>
+        string GuardianOrderAppointment { get; }
+    }
+
+    /// <summary>
+    /// Внутренний интерфейс для дееспособности
+    /// </summary>
+    internal interface ICapableInternal : ICapable
+    {
+        void SetGuardian(string guardian);
+        void SetGuardianOrderAppointment(string guardianOrderAppointment);
+    }
+
+    /// <summary>
     /// Дееспособный
     /// </summary>
-    public class Capable : ValueObject
+    public class Capable : ValueObject, ICapableInternal
     {
         /// <summary>
         /// Решение суда
@@ -14,7 +48,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         public string CourtDecision { get; private set; }
 
         /// <summary>
-        /// Дата проведения суда
+        /// Дата суда
         /// </summary>
         public DateTime TrialDate { get; private set; }
 
@@ -24,7 +58,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         public string Guardian { get; private set; }
 
         /// <summary>
-        /// Распоряжение о назначение опекуна
+        /// Распоряжение о назначении опекуна
         /// </summary>
         public string GuardianOrderAppointment { get; private set; }
 
@@ -32,7 +66,11 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         private Capable() { }
         #pragma warning restore CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
 
-        public Capable(string courtDecision, DateTime trialDate, string guardian, string guardianOrderAppointment)
+        public Capable(
+            string courtDecision,
+            DateTime trialDate,
+            string guardian,
+            string guardianOrderAppointment)
         {
             CourtDecision = courtDecision;
             TrialDate = trialDate;
@@ -43,17 +81,17 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Изменить опекуна
         /// </summary>
-        /// <param name="guardian"></param>
-        public void SetGuardian(string guardian)
+        /// <param name="guardian">Новый опекун</param>
+        void ICapableInternal.SetGuardian(string guardian)
         {
             Guardian = guardian;
         }
 
         /// <summary>
-        /// Изменить распоряжение о назначение опекуна
+        /// Изменить распоряжение о назначении опекуна
         /// </summary>
-        /// <param name="guardianOrderAppointment"></param>
-        public void SetGuardianOrderAppointment(string guardianOrderAppointment)
+        /// <param name="guardianOrderAppointment">Новое распоряжение о назначении опекуна</param>
+        void ICapableInternal.SetGuardianOrderAppointment(string guardianOrderAppointment)
         {
             GuardianOrderAppointment = guardianOrderAppointment;
         }
