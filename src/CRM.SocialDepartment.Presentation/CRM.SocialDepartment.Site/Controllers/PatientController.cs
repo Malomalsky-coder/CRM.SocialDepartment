@@ -32,6 +32,7 @@ namespace CRM.SocialDepartment.Site.Controllers
         /// <returns></returns>
         public IActionResult Active()
         {
+            //todo: Вывод пациентов для медицинского персонала ограничен! Необходимо выводить только тех пациентов, которые находятся в его отделение.
             return View(nameof(Index));
         }
 
@@ -155,13 +156,16 @@ namespace CRM.SocialDepartment.Site.Controllers
         }
 
         /// <summary>
-        /// Вывод всех пациентов, которые выписались из больнице.
+        /// Вывод всех пациентов, которые выписались из больницы.
         /// </summary>
         /// <returns></returns>
         public IActionResult Archive()
         {
+            //todo: Вывод пациентов для медицинского персонала ограничен! Запретить выводить пациентов из архива!
             return View();
         }
+
+        //todo: Персональная страница пациента
 
         // API /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -335,17 +339,18 @@ namespace CRM.SocialDepartment.Site.Controllers
         [HttpPost]
         [Route("api/patients")]
         [ValidateAntiForgeryToken]
-        public async Task<JsonResult> AddPatientsAsync(CreatePatientDTO input, CancellationToken cancellationToken)
+        public async Task<JsonResult> AddPatientsAsync(CreatePatientViewModel input, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
-                return new JsonResult(ApiResponse<object>.Error("Неверные данные", "error"))
+                return new JsonResult(ApiResponse<object>.Error("Неверные данные"))
                 {
                     StatusCode = StatusCodes.Status400BadRequest
                 };
             }
 
-            var result = await _patientAppService.AddPatientAsync(input, cancellationToken);
+            var dto = _mapper.Map<CreatePatientDTO>(input);
+            var result = await _patientAppService.AddPatientAsync(dto, cancellationToken);
             return new JsonResult(ApiResponse<Guid>.Ok(result));
         }
 
@@ -353,17 +358,18 @@ namespace CRM.SocialDepartment.Site.Controllers
         [HttpPatch]
         [Route("api/patients/{id:guid}")]
         [ValidateAntiForgeryToken]
-        public async Task<JsonResult> EditPatientsAsync([FromRoute] Guid id, [FromBody] EditPatientDTO input, CancellationToken cancellationToken)
+        public async Task<JsonResult> EditPatientsAsync([FromRoute] Guid id, EditPatientViewModel input, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
-                return new JsonResult(ApiResponse<object>.Error("Неверные данные", "error"))
+                return new JsonResult(ApiResponse<object>.Error("Неверные данные"))
                 {
                     StatusCode = StatusCodes.Status400BadRequest
                 };
             }
 
-            await _patientAppService.EditPatientAsync(id, input, cancellationToken);
+            var dto = _mapper.Map<EditPatientDTO>(input);
+            await _patientAppService.EditPatientAsync(id, dto, cancellationToken);
             return new JsonResult(ApiResponse<object>.Ok(null));
         }
 
