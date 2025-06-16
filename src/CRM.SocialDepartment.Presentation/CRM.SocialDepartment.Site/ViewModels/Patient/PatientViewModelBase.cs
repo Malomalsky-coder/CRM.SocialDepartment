@@ -1,4 +1,5 @@
-﻿using CRM.SocialDepartment.Domain.Entities.Patients;
+﻿#nullable disable
+using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System.ComponentModel;
@@ -14,31 +15,31 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Полное имя пациента
         /// </summary>
         [DisplayName("ФИО")]
-        public required string FullName { get; init; }
+        public string FullName { get; init; }
 
         /// <summary>
         /// История болезни
         /// </summary>
         [DisplayName("История болезни")]
-        public required MedicalHistory MedicalHistory { get; init; }
+        public MedicalHistory MedicalHistory { get; init; }
 
         /// <summary>
         /// Информация о гражданстве
         /// </summary>
         [DisplayName("Информация о гражданстве")]
-        public required CitizenshipInfo CitizenshipInfo { get; init; }
+        public CitizenshipInfo CitizenshipInfo { get; init; }
 
         /// <summary>
         /// Список документов
         /// </summary>
         [DisplayName("Список документов")]
-        public required Dictionary<DocumentType, DocumentViewModel> Documents { get; init; }
+        public Dictionary<DocumentType, DocumentViewModel> Documents { get; init; }
 
         /// <summary>
         /// Пациент является дееспособным?
         /// </summary>
         [DisplayName("Дееспособность")]
-        public required bool IsCapable { get; init; }
+        public bool IsCapable { get; init; }
 
         /// <summary>
         /// Дееспособный
@@ -50,7 +51,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Получает ли пациент пенсию
         /// </summary>
         [DisplayName("Получение пенсии")]
-        public required bool ReceivesPension { get; init; }
+        public bool ReceivesPension { get; init; }
 
         /// <summary>
         /// Пенсия
@@ -74,31 +75,31 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Номер отделения
         /// </summary>
         [DisplayName("Номер отделения")]
-        public required sbyte NumberDepartment { get; init; }
+        public sbyte NumberDepartment { get; init; }
 
         /// <summary>
         /// Тип госпитализации
         /// </summary>
         [DisplayName("Тип госпитализации")]
-        public required HospitalizationType HospitalizationType { get; init; }
+        public HospitalizationType HospitalizationType { get; init; }
 
         /// <summary>
         /// Постановление
         /// </summary>
         [DisplayName("Постановление")]
-        public required string Resolution { get; init; }
+        public string Resolution { get; init; }
 
         /// <summary>
         /// Номер истории болезни
         /// </summary>
         [DisplayName("Номер истории болезни")]
-        public required string NumberDocument { get; init; }
+        public string NumberDocument { get; init; }
 
         /// <summary>
         /// Дата поступления
         /// </summary>
         [DisplayName("Дата поступления")]
-        public required DateTime DateOfReceipt { get; init; }
+        public DateTime DateOfReceipt { get; init; }
 
         /// <summary>
         /// Примечание
@@ -114,13 +115,13 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
     {
         [BindNever]
         [DisplayName("Список гражданств")]
-        public required string[] Citizenships { get; init; }
+        public string[] Citizenships { get; init; }
 
         /// <summary>
         /// Гражданство
         /// </summary>
         [DisplayName("Гражданство")]
-        public required CitizenshipType Citizenship { get; init; }
+        public CitizenshipType Citizenship { get; init; }
 
         /// <summary>
         /// Страна
@@ -138,7 +139,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Нет регистрации, бомж
         /// </summary>
         [DisplayName("Нет регистрации")]
-        public required bool NotRegistered { get; init; }
+        public bool NotRegistered { get; init; }
 
         /// <summary>
         /// Ранняя регистрация
@@ -156,7 +157,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Имеющиеся документы
         /// </summary>
         [DisplayName("Имеющиеся документы")]
-        public required string DocumentAttached { get; init; }
+        public string DocumentAttached { get; init; }
     }
 
     /// <summary>
@@ -168,7 +169,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Решение суда
         /// </summary>
         [DisplayName("Решение суда")]
-        public required string CourtDecision { get; init; }
+        public string CourtDecision { get; init; }
 
         /// <summary>
         /// Дата проведения суда
@@ -180,13 +181,13 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Опекун
         /// </summary>
         [DisplayName("Опекун")]
-        public required string Guardian { get; init; }
+        public string Guardian { get; init; }
 
         /// <summary>
         /// Распоряжение о назначение опекуна
         /// </summary>
         [DisplayName("Распоряжение о назначении опекуна")]
-        public required string GuardianOrderAppointment { get; init; }
+        public string GuardianOrderAppointment { get; init; }
     }
 
     /// <summary>
@@ -198,7 +199,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Группа инвалидности
         /// </summary>
         [DisplayName("Группа инвалидности")]
-        public required DisabilityGroup DisabilityGroup { get; init; }
+        public DisabilityGroup DisabilityGroup { get; init; }
 
         /// <summary>
         /// С какого числа установлен статус пенсионера
@@ -210,19 +211,19 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Способ получения пенсии
         /// </summary>
         [DisplayName("Способ получения пенсии")]
-        public required PensionAddress PensionAddress { get; init; }
+        public PensionAddress PensionAddress { get; init; }
 
         /// <summary>
         /// Филиал СФР
         /// </summary>
         [DisplayName("Филиал СФР")]
-        public required int SfrBranch { get; init; }
+        public int SfrBranch { get; init; }
 
         /// <summary>
         /// Отделение СФР
         /// </summary>
         [DisplayName("Отделение СФР")]
-        public required string SfrDepartment { get; init; }
+        public string SfrDepartment { get; init; }
 
         /// <summary>
         /// РСД

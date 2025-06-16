@@ -1,8 +1,7 @@
-﻿using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using CRM.SocialDepartment.Domain.Entities.Patients;
+﻿#nullable disable
 using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
 using CRM.SocialDepartment.Site.ViewModels.Validation;
+using System.ComponentModel.DataAnnotations;
 
 namespace CRM.SocialDepartment.Site.ViewModels.Patient
 {
@@ -17,7 +16,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         [Required(ErrorMessage = "ФИО обязательно для заполнения")]
         [StringLength(100, MinimumLength = 3, ErrorMessage = "ФИО должно содержать от 3 до 100 символов")]
         [Display(Name = "ФИО")]
-        public required string FullName { get; init; }
+        public string FullName { get; init; }
 
         /// <summary>
         /// Дата рождения
@@ -31,14 +30,14 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// </summary>
         [Required(ErrorMessage = "История болезни обязательна для заполнения")]
         [Display(Name = "История болезни")]
-        public required MedicalHistory MedicalHistory { get; init; }
+        public MedicalHistory MedicalHistory { get; init; }
 
         /// <summary>
         /// Информация о гражданстве
         /// </summary>
         [Required(ErrorMessage = "Информация о гражданстве обязательна для заполнения")]
         [Display(Name = "Информация о гражданстве")]
-        public required CitizenshipInfo CitizenshipInfo { get; init; }
+        public CitizenshipInfo CitizenshipInfo { get; init; }
 
         /// <summary>
         /// Список документов
@@ -50,7 +49,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Пациент является дееспособным?
         /// </summary>
         [Display(Name = "Дееспособность")]
-        public required bool IsCapable { get; init; }
+        public bool IsCapable { get; init; }
 
         /// <summary>
         /// Дееспособный
@@ -62,7 +61,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Получает ли пациент пенсию
         /// </summary>
         [Display(Name = "Получение пенсии")]
-        public required bool ReceivesPension { get; init; }
+        public bool ReceivesPension { get; init; }
 
         /// <summary>
         /// Пенсия
@@ -84,28 +83,14 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             // Валидация даты рождения
+            if (Birthday == DateTime.Now)
+            {
+                yield return new ValidationResult("Дата рождения не может быть текущим днем", new[] { nameof(Birthday) });
+            }
+
             if (Birthday > DateTime.Now)
             {
                 yield return new ValidationResult("Дата рождения не может быть в будущем", new[] { nameof(Birthday) });
-            }
-
-            // Валидация обязательных документов
-            if (Documents != null)
-            {
-                if (!Documents.ContainsKey(DocumentType.Passport))
-                {
-                    yield return new ValidationResult("Паспорт обязателен для заполнения", new[] { nameof(Documents) });
-                }
-
-                if (!Documents.ContainsKey(DocumentType.MedicalPolicy))
-                {
-                    yield return new ValidationResult("Полис ОМС обязателен для заполнения", new[] { nameof(Documents) });
-                }
-
-                if (!Documents.ContainsKey(DocumentType.Snils))
-                {
-                    yield return new ValidationResult("СНИЛС обязателен для заполнения", new[] { nameof(Documents) });
-                }
             }
 
             // Валидация дееспособности

@@ -75,9 +75,6 @@ public class Program
         builder.Services.AddScoped<PatientAppService>();
         builder.Services.AddScoped<AssignmentService>();
 
-        // Add global exception handler
-        builder.Services.AddTransient<GlobalExceptionHandler>();
-
         var app = builder.Build();
 
         if (app.Environment.IsDevelopment())
@@ -101,7 +98,7 @@ public class Program
             .WithStaticAssets();
         app.MapRazorPages()
            .WithStaticAssets();
-        app.UseMiddleware<GlobalExceptionHandler>();
+        app.UseGlobalExceptionHandler();
         app.Run();
     }
 }

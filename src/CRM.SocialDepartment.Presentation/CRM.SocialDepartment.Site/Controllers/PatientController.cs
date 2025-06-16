@@ -41,44 +41,29 @@ namespace CRM.SocialDepartment.Site.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [Route("modal/create")]
+        [Route("[controller]/modal/create")]
         public IActionResult GetCreatePatientModal()
         {
             ViewData.Model = new CreatePatientViewModel()
             {
-                FullName = string.Empty, //todo: смысл?
-                Birthday = DateTime.Now.AddYears(-18), //todo: смысл?
                 CitizenshipInfo = new ViewModels.Patient.CitizenshipInfo()
                 {
                     Citizenships = ["РФ", "Иностранец", "ЛБГ"],
                     Citizenship = CitizenshipType.RussianFederation,
                     Country = "Россия",
                     NotRegistered = false,
-                    DocumentAttached = string.Empty
                     
-                },
-                Documents = new Dictionary<DocumentType, DocumentViewModel>
-                {
-                    {
-                        DocumentType.Passport,
-                        DocumentViewModelHelper.CreateViewModel(DocumentType.Passport)
-                    },
-                    {
-                        DocumentType.MedicalPolicy,
-                        DocumentViewModelHelper.CreateViewModel(DocumentType.MedicalPolicy)
-                    },
-                    {
-                        DocumentType.Snils,
-                        DocumentViewModelHelper.CreateViewModel(DocumentType.Snils)
-                    }
                 },
                 MedicalHistory = new ViewModels.Patient.MedicalHistory()
                 {
-                    Resolution = string.Empty,
-                    NumberDocument = string.Empty,
                     HospitalizationType = HospitalizationType.Force,
-                    NumberDepartment = 1,
-                    DateOfReceipt = DateTime.Now, //todo: смысл?
+                    NumberDepartment = 1
+                },
+                Documents = new Dictionary<DocumentType, DocumentViewModel>
+                {
+                    { DocumentType.Passport, DocumentHelper.CreateViewModel(DocumentType.Passport) },
+                    { DocumentType.MedicalPolicy, DocumentHelper.CreateViewModel(DocumentType.MedicalPolicy) },
+                    { DocumentType.Snils, DocumentHelper.CreateViewModel(DocumentType.Snils) }
                 },
                 IsCapable = true,
                 ReceivesPension = false
@@ -86,7 +71,7 @@ namespace CRM.SocialDepartment.Site.Controllers
 
             return new PartialViewResult
             {
-                ViewName = $"~/View/Patient/_CreatePatientModal.cshtml",
+                ViewName = $"~/Views/Patient/_CreatePatientModal.cshtml",
                 ViewData = ViewData
             };
         }
@@ -97,7 +82,7 @@ namespace CRM.SocialDepartment.Site.Controllers
         /// <param name="patientId"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("modal/edit")]
+        [Route("[controller]/modal/edit")]
         public async Task<IActionResult> GetEditPatientModalAsync(Guid patientId, CancellationToken cancellationToken = default)
         {
             //todo: Проверить права: Сотрудник, Администратор
@@ -150,7 +135,7 @@ namespace CRM.SocialDepartment.Site.Controllers
 
             return new PartialViewResult
             {
-                ViewName = $"~/View/Patient/_EditPatientModal.cshtml",
+                ViewName = $"~/Views/Patient/_EditPatientModal.cshtml",
                 ViewData = ViewData
             };
         }
@@ -343,7 +328,12 @@ namespace CRM.SocialDepartment.Site.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return new JsonResult(ApiResponse<object>.Error("Неверные данные"))
+                return new JsonResult(ApiResponse<object>.Error("Неверные данные", new
+                {
+                    Errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                }))
                 {
                     StatusCode = StatusCodes.Status400BadRequest
                 };
@@ -362,7 +352,12 @@ namespace CRM.SocialDepartment.Site.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return new JsonResult(ApiResponse<object>.Error("Неверные данные"))
+                return new JsonResult(ApiResponse<object>.Error("Неверные данные", new
+                {
+                    Errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                }))
                 {
                     StatusCode = StatusCodes.Status400BadRequest
                 };

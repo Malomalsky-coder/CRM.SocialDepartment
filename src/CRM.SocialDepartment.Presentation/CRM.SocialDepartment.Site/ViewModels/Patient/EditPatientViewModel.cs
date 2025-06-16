@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using CRM.SocialDepartment.Domain.Entities.Patients;
+﻿#nullable disable
 using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
 using CRM.SocialDepartment.Site.ViewModels.Validation;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace CRM.SocialDepartment.Site.ViewModels.Patient
 {
@@ -24,21 +24,21 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         [Required(ErrorMessage = "ФИО обязательно для заполнения")]
         [StringLength(100, MinimumLength = 3, ErrorMessage = "ФИО должно содержать от 3 до 100 символов")]
         [Display(Name = "ФИО")]
-        public required string FullName { get; init; }
+        public string FullName { get; init; }
 
         /// <summary>
         /// История болезни
         /// </summary>
         [Required(ErrorMessage = "История болезни обязательна для заполнения")]
         [Display(Name = "История болезни")]
-        public required MedicalHistory MedicalHistory { get; init; }
+        public MedicalHistory MedicalHistory { get; init; }
 
         /// <summary>
         /// Информация о гражданстве
         /// </summary>
         [Required(ErrorMessage = "Информация о гражданстве обязательна для заполнения")]
         [Display(Name = "Информация о гражданстве")]
-        public required CitizenshipInfo CitizenshipInfo { get; init; }
+        public CitizenshipInfo CitizenshipInfo { get; init; }
 
         /// <summary>
         /// Список документов
@@ -50,7 +50,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Пациент является дееспособным?
         /// </summary>
         [Display(Name = "Дееспособность")]
-        public required bool IsCapable { get; init; }
+        public bool IsCapable { get; init; }
 
         /// <summary>
         /// Дееспособный
@@ -62,7 +62,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Получает ли пациент пенсию
         /// </summary>
         [Display(Name = "Получение пенсии")]
-        public required bool ReceivesPension { get; init; }
+        public bool ReceivesPension { get; init; }
 
         /// <summary>
         /// Пенсия
@@ -88,31 +88,31 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         // Вспомогательные флаги для восстановления состояния формы редактирования ///////////////////////////////////////////////////
 
         [BindNever]
-        public required string NoRegistrationIsEnable { get; set; }
+        public string NoRegistrationIsEnable { get; set; }
 
         [BindNever]
-        public required string CountryIsEnable { get; set; }
+        public string CountryIsEnable { get; set; }
 
         [BindNever]
-        public required string RegistrationIsEnable { get; set; }
+        public string RegistrationIsEnable { get; set; }
 
         [BindNever]
-        public required string EarlyRegistrationIsEnable { get; set; }
+        public string EarlyRegistrationIsEnable { get; set; }
 
         [BindNever]
-        public required string LbgIsEnable { get; set; }
+        public string LbgIsEnable { get; set; }
 
         [BindNever]
-        public required string DocumentIsEnable { get; set; }
+        public string DocumentIsEnable { get; set; }
 
         [BindNever]
-        public required string CapableIsEnable { get; set; }
+        public string CapableIsEnable { get; set; }
 
         [BindNever]
-        public required string PensionFieldsetIsEnable { get; set; }
+        public string PensionFieldsetIsEnable { get; set; }
 
         [BindNever]
-        public required string PensionStartDateTimeIsEnable { get; set; }
+        public string PensionStartDateTimeIsEnable { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

@@ -21,6 +21,18 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// </summary>
         public bool IsChildren => (DateTime.Now - Birthday).TotalDays < 365 * 18; // 18 лет в днях
 
+        private readonly List<MedicalHistory> _medicalHistories;
+
+        /// <summary>
+        /// Все истории болезни пациента
+        /// </summary>
+        public IReadOnlyList<MedicalHistory> MedicalHistories => _medicalHistories.AsReadOnly();
+
+        /// <summary>
+        /// Активная история болезни
+        /// </summary>
+        public MedicalHistory? ActiveHistory => _medicalHistories.FirstOrDefault(h => !h.DateOfDischarge.HasValue);
+
         /// <summary>
         /// Информация о гражданстве
         /// </summary>
@@ -65,18 +77,6 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// Помечен как в архиве (пациент выписан)
         /// </summary>
         public bool IsArchive { get; set; }
-
-        private readonly List<MedicalHistory> _medicalHistories;
-
-        /// <summary>
-        /// Все истории болезни пациента
-        /// </summary>
-        public IReadOnlyList<MedicalHistory> MedicalHistories => _medicalHistories.AsReadOnly();
-
-        /// <summary>
-        /// Активная история болезни
-        /// </summary>
-        public MedicalHistory? ActiveHistory => _medicalHistories.FirstOrDefault(h => !h.DateOfDischarge.HasValue);
 
         #pragma warning disable CS8618
         private Patient() 
@@ -315,10 +315,6 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
                 throw new DomainException("Дата выписки не может быть раньше, чем поступление в больницу");
 
             ((IMedicalHistoryInternal)ActiveHistory).SetDateOfDischarge(dischargeDate);
-
-            // После установки даты выписки история болезни становится неактивной
-            if (ActiveHistory.IsActive)
-                throw new DomainException("История болезни все еще активна после установки даты выписки");
         }
 
         /// <summary>

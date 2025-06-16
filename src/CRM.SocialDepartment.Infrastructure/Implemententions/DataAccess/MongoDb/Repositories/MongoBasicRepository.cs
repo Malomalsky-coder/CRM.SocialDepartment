@@ -15,10 +15,9 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
             _collection = database.GetCollection<TEntity>(collectionName);
         }
 
-        [Obsolete("Использую устаревший метод MongoDB.Driver")]
         public async Task InsertAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
-            await _collection.InsertOneAsync(entity, cancellationToken);
+            await _collection.InsertOneAsync(entity, new InsertOneOptions(), cancellationToken);
         }
 
         public async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)

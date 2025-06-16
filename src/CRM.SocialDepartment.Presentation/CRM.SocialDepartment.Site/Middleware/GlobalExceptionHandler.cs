@@ -1,5 +1,6 @@
 using CRM.SocialDepartment.Domain.Exceptions;
 using CRM.SocialDepartment.Site.Models;
+using Microsoft.AspNetCore.Builder;
 using System.Net;
 using System.Text.Json;
 
@@ -50,6 +51,15 @@ namespace CRM.SocialDepartment.Site.Middleware
             var json = JsonSerializer.Serialize(apiResponse);
 
             await response.WriteAsync(json);
+        }
+    }
+
+    // Extension method used to add the middleware to the HTTP request pipeline.
+    public static class GlobalExceptionHandlerExtensions
+    {
+        public static IApplicationBuilder UseGlobalExceptionHandler(this IApplicationBuilder builder)
+        {
+            return builder.UseMiddleware<GlobalExceptionHandler>();
         }
     }
 } 

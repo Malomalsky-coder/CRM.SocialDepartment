@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using CRM.SocialDepartment.Application.DTOs;
 using CRM.SocialDepartment.Domain.Entities.Patients;
+using CRM.SocialDepartment.Domain.Entities.Patients.Factories;
 using CRM.SocialDepartment.Domain.Exceptions;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
 using MongoDB.Driver;
@@ -34,14 +35,11 @@ namespace CRM.SocialDepartment.Application.Patients
 
         public async Task<Guid> AddPatientAsync(CreatePatientDTO input, CancellationToken cancellationToken = default)
         {
-            var patientId = Guid.NewGuid();
-            var medicalHistoryId = Guid.NewGuid();
-
             HospitalizationType hospitalizationType = new(input.MedicalHistory.HospitalizationType.Value, input.MedicalHistory.HospitalizationType.DisplayName);
 
             MedicalHistory medicalHistory =
                 new(
-                    medicalHistoryId,
+                    Guid.NewGuid(),
                     input.MedicalHistory.NumberDepartment,
                     hospitalizationType,
                     input.MedicalHistory.Resolution,
@@ -69,7 +67,7 @@ namespace CRM.SocialDepartment.Application.Patients
                 : null;
 
             var patient = new Patient(
-                patientId,
+                Guid.NewGuid(),
                 input.FullName,
                 input.Birthday,
                 medicalHistory,
@@ -79,11 +77,15 @@ namespace CRM.SocialDepartment.Application.Patients
                 input.Note
             );
 
-            #pragma warning disable CS0618 // Тип или член устарел
-            await _patientRepository.InsertAsync(patient, cancellationToken);
-            #pragma warning restore CS0618 // Тип или член устарел
+            foreach (var documentDto in input.Documents)
+            {
+                var document = DocumentFactory.Create(documentDto.Key, documentDto.Value.Number);
+                patient.AddDocument(document);
+            }
 
-            return patientId;
+            await _patientRepository.InsertAsync(patient, cancellationToken);
+
+            return patient.Id;
         }
 
         public async Task EditPatientAsync(Guid id, EditPatientDTO input, CancellationToken cancellationToken = default)

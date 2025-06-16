@@ -41,13 +41,14 @@ namespace CRM.SocialDepartment.Site.Models
         /// <summary>
         /// Создает ответ с ошибкой
         /// </summary>
-        public static ApiResponse<T> Error(string message, string messageType = "error")
+        public static ApiResponse<T> Error(string message, T? data, string messageType = "error")
         {
             return new ApiResponse<T>
             {
                 Success = false,
                 ErrorMessage = message,
-                MessageType = messageType
+                MessageType = messageType,
+                Data = data
             };
         }
     }
