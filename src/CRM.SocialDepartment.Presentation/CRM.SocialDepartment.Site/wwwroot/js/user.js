@@ -45,6 +45,10 @@ $(document).ready(function () {
         ]
     });
 
+    $('#add-user').on('click', function () {
+        GetFormModal(window.location.origin + '/user/modal/create', 'Добавить пользователя');
+    });
+
     //Обновить данные в таблице
     $('#reload').on('click', function () {
         dataTable.ajax.reload();

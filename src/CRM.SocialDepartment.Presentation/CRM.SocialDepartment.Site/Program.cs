@@ -1,9 +1,11 @@
 using CRM.SocialDepartment.Application.Assignments;
 using CRM.SocialDepartment.Application.Patients;
+using CRM.SocialDepartment.Application.Users;
 using CRM.SocialDepartment.Domain.Entities;
 using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
+using CRM.SocialDepartment.Infrastructure.Identity;
 using CRM.SocialDepartment.Site.Filters;
 using CRM.SocialDepartment.Site.MappingProfile;
 using CRM.SocialDepartment.Site.Middleware;
@@ -69,11 +71,14 @@ public class Program
             options.JsonSerializerOptions.PropertyNamingPolicy = null;          // Отключает camelCase
             options.JsonSerializerOptions.WriteIndented = true;                 // Включает форматирование JSON
         });
+
         builder.Services.AddRazorPages();
         builder.Services.AddScoped<DataTableNetService>();
         builder.Services.AddAutoMapper(typeof(ProjectMappingProfile));
         builder.Services.AddScoped<PatientAppService>();
         builder.Services.AddScoped<AssignmentService>();
+        builder.Services.AddScoped<UserRepository>();
+        builder.Services.AddScoped<UserAppService>();
 
         var app = builder.Build();
 

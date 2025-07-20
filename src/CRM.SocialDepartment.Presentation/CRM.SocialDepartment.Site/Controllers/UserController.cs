@@ -1,7 +1,14 @@
-﻿using CRM.SocialDepartment.Application.DTOs;
+﻿using AutoMapper;
+using CRM.SocialDepartment.Application.DTOs;
 using CRM.SocialDepartment.Application.Patients;
+using CRM.SocialDepartment.Application.Users;
+using CRM.SocialDepartment.Domain.Entities.Patients;
+using CRM.SocialDepartment.Domain.Common;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
+using CRM.SocialDepartment.Site.Helpers;
+using CRM.SocialDepartment.Site.Models;
 using CRM.SocialDepartment.Site.Services;
+using CRM.SocialDepartment.Site.ViewModels.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
@@ -12,11 +19,13 @@ namespace CRM.SocialDepartment.Site.Controllers
 {
     public class UserController : Controller
     {
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly UserAppService _userAppService;
+        private readonly IMapper _mapper;
 
-        public UserController(UserManager<ApplicationUser> userManager)
+        public UserController(UserAppService userAppService, IMapper mapper)
         {
-            _userManager = userManager;
+            _userAppService = userAppService;
+            _mapper = mapper;
         }
 
         public IActionResult Active()
@@ -26,19 +35,7 @@ namespace CRM.SocialDepartment.Site.Controllers
 
         public JsonResult GetAllUsers()
         {
-            var users = _userManager.Users.ToList();
-
-            var result = users.Select(i =>
-            {
-                return new
-                {
-                    i.UserName,
-                    i.Email,
-                    i.FirstName,
-                    i.LastName,
-                    i.CreatedOn
-            };
-            });
+            var users = _userAppService.GetAllUsers();
 
             var userCount = users.Count();
 
@@ -46,46 +43,42 @@ namespace CRM.SocialDepartment.Site.Controllers
             {
                 recordsTotal = userCount,
                 recordsFiltered = userCount,
-                data = result
+                data = users
             });
         }
 
+        [HttpGet]
+        [Route("[controller]/modal/create")]
         public IActionResult GetCreateForm()
         {
-            return PartialView("_CreateModal", new RegisterModel());
+            ViewData.Model = new CreateUserViewModel();
+            return new PartialViewResult
+            {
+                ViewName = $"~/Views/User/_CreateUserModal.cshtml",
+                ViewData = ViewData
+            };
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(RegisterModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateUserAsync(CreateUserViewModel model)
         {
-            string errors = "";
-
             if (ModelState.IsValid)
             {
-                var user = new ApplicationUser();
-                user.FirstName = model.FirstName;
-                user.LastName = model.LastName;
-                user.UserName = new MailAddress(model.Email).User;
-                user.Email = model.Password;
-                var result = await _userManager.CreateAsync(user, model.Password);
+                var dto = _mapper.Map<CreateUserDTO>(model);
+                var result = await _userAppService.CreateUserAsync(dto);
 
-                if (result.Succeeded)
-                {
-                    return Json(new { success = true, message = "Пользователь добавлен" });
-                }
-                else
-                {
-                    foreach (var error in result.Errors)
-                    {
-                        ModelState.AddModelError(string.Empty, error.Description);
-                        errors += ", " + error.Description;
-                    }
-                }
+                return result.IsSuccess
+                    ? Ok("Пользователь добавлен")
+                    : BadRequest($"{result.Errors}");
             }
-
-            return Json(new { success = false, message = "Ошибка валидации :" + errors, errors = ModelState.Values.SelectMany(v => v.Errors)});
+            else
+            {
+                var errorList = ModelState.Values.SelectMany(v => v.Errors)
+                                                .Select(e => e.ErrorMessage)
+                                                .ToList();
+                return BadRequest(new { Message = "Ошибка валидации ", Errors = errorList });
+            }
         }
-
-        
     }
 }

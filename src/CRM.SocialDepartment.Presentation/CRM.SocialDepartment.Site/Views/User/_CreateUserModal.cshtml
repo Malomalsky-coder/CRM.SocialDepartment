@@ -1,0 +1,53 @@
+﻿@model CRM.SocialDepartment.Site.ViewModels.User.CreateUserViewModel
+
+<form id="create-patient" method="post" asp-controller="User" asp-action="CreateUser" asp-antiforgery="true">
+    <div class="card mb-3">
+        <div class="card-header">Новый пользователь</div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label asp-for="UserName" class="form-label"></label>
+                <input asp-for="UserName" class="form-control" autocomplete="off">
+                <span asp-validation-for="UserName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="FirstName" class="form-label"></label>
+                <input asp-for="FirstName" class="form-control" autocomplete="off">
+                <span asp-validation-for="FirstName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="LastName" class="form-label"></label>
+                <input asp-for="LastName" class="form-control" autocomplete="off">
+                <span asp-validation-for="LastName" class="text-danger"></span>            
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" autocomplete="off">
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control" autocomplete="off">
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ConfirmPassword" class="form-label"></label>
+                <input asp-for="ConfirmPassword" class="form-control" autocomplete="off">
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="reset" class="btn btn-secondary close-button" data-bs-dismiss="modal">Отменить</button>
+        <button type="submit" class="btn btn-primary save-button">Сохранить</button>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/js/documents.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+}

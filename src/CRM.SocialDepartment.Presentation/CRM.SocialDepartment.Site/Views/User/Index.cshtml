@@ -1,4 +1,5 @@
 ﻿@{
+    Layout = "_LayoutWithoutContainer";
     ViewData["Title"] = "Список пользователей";
 }
 
@@ -19,39 +20,22 @@
     <script src="~/lib/datatables.net-bs5/js/fixedheader.bootstrap5.min.js"></script>
     <script src="~/lib/datatables.net-bs5/js/scroller.bootstrap5.min.js"></script>
     <script src="~/js/user.js" asp-append-version="true"></script>
-    <script>
-            $(document).ready(function () {
-        // Открытие модального окна
-        $("#add-patient").click(function () {
-            $.get("@Url.Action("GetCreateForm", "User")", function (data) {
-                $("#modalcontent").html(data);
-                $("#createModal").modal("show");
-            });
-        });
-
-        // Обработка сохранения
-        $(document).on("click", "#saveButton", function () {
-            var form = $("#createForm");
-            $.ajax({
-                url: form.attr("action"),
-                type: "POST",
-                data: form.serialize(),
-                success: function (response) {
-                    if (response.success) {
-                        $("#createModal").modal("hide");
-                        location.reload(); // Обновляем страницу
-                    } else {
-                                alert(response.message);
-                    }
-                }
-            });
-        });
-    });
-    </script>
     @await Html.PartialAsync("_ValidationScriptsPartial")
 }
 
 <!-- Модальные окна -->
+<div id="form-modal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Модальное окно для печати документов -->
 <div id="form-print-modal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
@@ -81,7 +65,7 @@
 <div class="card" style="margin: 10px;">
     <div class="col-sm-12" style="padding:20px">
         <!-- Меню -->
-        <a id="add-patient" class="btn btn-primary"><i class="fa fa-plus"></i> пользователь</a>
+        <a id="add-user" class="btn btn-primary"><i class="fa fa-plus"></i> пользователь</a>
         <a id="reload" class="btn btn-outline-info"><i class="fa fa-refresh"></i> список</a>
         <a onclick="" class="btn btn-outline-danger"><i class="fa fa-bitbucket"></i> (2)</a>
         <!-- onclick="printModalShow()" -->
@@ -107,11 +91,3 @@
     </div>
 </div>
 
-<!-- Модальное окно для CRUD операций c таблицей -->
-<div id="createModal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
-        <div class="modal-content" id="modalcontent">
-            
-        </div>
-    </div>
-</div>

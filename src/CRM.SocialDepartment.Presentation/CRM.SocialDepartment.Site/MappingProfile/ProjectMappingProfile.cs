@@ -3,7 +3,9 @@ using CRM.SocialDepartment.Application.DTOs;
 using CRM.SocialDepartment.Domain.Entities;
 using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Domain.Entities.Patients.Factories;
+using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Site.ViewModels.Patient;
+using CRM.SocialDepartment.Site.ViewModels.User;
 
 namespace CRM.SocialDepartment.Site.MappingProfile
 {
@@ -80,6 +82,8 @@ namespace CRM.SocialDepartment.Site.MappingProfile
 
             CreateMap<CreatePatientViewModel, CreatePatientDTO>();
             CreateMap<EditPatientViewModel, EditPatientDTO>();
+            CreateMap<CreateUserViewModel, CreateUserDTO>();
+            CreateMap<ApplicationUser, UserDTO>();
 
             // HospitalizationType //////////////////////////////////////////////////////////////////////////////////////////////////////
             CreateMap<byte, HospitalizationType>().ConvertUsing(value => HospitalizationType.FromValue(value));
