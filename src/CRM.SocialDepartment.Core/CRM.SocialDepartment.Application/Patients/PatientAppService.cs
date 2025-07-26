@@ -1,36 +1,34 @@
 ﻿using AutoMapper;
+using CRM.SocialDepartment.Application.Common;
 using CRM.SocialDepartment.Application.DTOs;
+using CRM.SocialDepartment.Domain.Common;
 using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Domain.Entities.Patients.Factories;
 using CRM.SocialDepartment.Domain.Exceptions;
-using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
-using MongoDB.Driver;
+using CRM.SocialDepartment.Domain.Repositories;
+using DDD.Events;
 using System.Linq.Expressions;
 
 namespace CRM.SocialDepartment.Application.Patients
 {
-    public class PatientAppService(IMapper mapper, MongoBasicRepository<Patient, Guid> patientRepository)
+    public class PatientAppService(IMapper mapper, IUnitOfWork unitOfWork, IDomainEventDispatcher? domainEventDispatcher = null)
     {
-        private readonly MongoBasicRepository<Patient, Guid> _patientRepository = patientRepository;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IMapper _mapper = mapper;
-
-        public IMongoCollection<Patient> GetPatientCollection()
-        {
-            return _patientRepository.GetCollection();
-        }
+        private readonly IDomainEventDispatcher? _domainEventDispatcher = domainEventDispatcher;
 
         public async Task<Patient?> GetPatientByIdAsync(Guid id, CancellationToken cancellationToken = default) //TODO: ??? return PatientDTO
         {
             //TODO: Разрешить доступ по правилу ролей. Примечание: Мед. персонал может получать пациентов только из своего отделения.
 
-            return await _patientRepository.GetAsync((item) => item.Id == id, cancellationToken);
+            return await _unitOfWork.Patients.GetAsync((item) => item.Id == id, cancellationToken);
         }
 
         public async Task<IEnumerable<Patient>> GetAllPatients(Expression<Func<Patient, bool>>? predicate, CancellationToken cancellationToken = default)
         {
             //TODO: Разрешить доступ по правилу ролей. Примечание: Мед. персонал может получать пациентов только из своего отделения.
 
-            return await _patientRepository.GetAllAsync(predicate, cancellationToken);
+            return await _unitOfWork.Patients.GetAllAsync(predicate, cancellationToken);
         }
 
         public async Task<Guid> AddPatientAsync(CreatePatientDTO input, CancellationToken cancellationToken = default)
@@ -83,7 +81,10 @@ namespace CRM.SocialDepartment.Application.Patients
                 patient.AddDocument(document);
             }
 
-            await _patientRepository.InsertAsync(patient, cancellationToken);
+            await _unitOfWork.Patients.InsertAsync(patient, cancellationToken);
+
+            // Публикуем доменные события
+            await DomainEventPublisher.PublishAndClearEventsAsync(patient, _domainEventDispatcher, cancellationToken);
 
             return patient.Id;
         }
@@ -118,13 +119,38 @@ namespace CRM.SocialDepartment.Application.Patients
             if (patient.Note != input.Note)
                 patient.SetNote(input.Note);
 
-            await _patientRepository.UpdateAsync(patient, cancellationToken);
+            await _unitOfWork.Patients.UpdateAsync(patient, cancellationToken);
+
+            // Публикуем доменные события
+            await DomainEventPublisher.PublishAndClearEventsAsync(patient, _domainEventDispatcher, cancellationToken);
         }
 
         public async Task DeletePatientAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var patient = await GetPatientByIdAsync(id, cancellationToken) ?? throw new EntityNotFoundException();
-            await _patientRepository.DeleteAsync(patient, cancellationToken);
+            // Вызываем доменный метод для мягкого удаления
+            patient.SoftDelete();
+            
+            await _unitOfWork.Patients.UpdateAsync(patient, cancellationToken);
+
+            // Публикуем доменные события
+            await DomainEventPublisher.PublishAndClearEventsAsync(patient, _domainEventDispatcher, cancellationToken);
+        }
+
+        /// <summary>
+        /// Получить активных пациентов для DataTables с поддержкой фильтрации и пагинации
+        /// </summary>
+        public async Task<DataTableResult<Patient>> GetActivePatientsForDataTableAsync(DataTableParameters parameters, CancellationToken cancellationToken = default)
+        {
+            return await _unitOfWork.Patients.GetActivePatientsForDataTableAsync(parameters, cancellationToken);
+        }
+
+        /// <summary>
+        /// Получить архивных пациентов для DataTables с поддержкой фильтрации и пагинации
+        /// </summary>
+        public async Task<DataTableResult<Patient>> GetArchivedPatientsForDataTableAsync(DataTableParameters parameters, CancellationToken cancellationToken = default)
+        {
+            return await _unitOfWork.Patients.GetArchivedPatientsForDataTableAsync(parameters, cancellationToken);
         }
     }
 }

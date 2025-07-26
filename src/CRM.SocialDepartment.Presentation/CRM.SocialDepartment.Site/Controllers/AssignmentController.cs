@@ -1,9 +1,9 @@
 ﻿using CRM.SocialDepartment.Application.Assignments;
 using CRM.SocialDepartment.Application.DTOs;
+using CRM.SocialDepartment.Domain.Common;
 using CRM.SocialDepartment.Domain.Entities;
 using CRM.SocialDepartment.Site.Services;
 using Microsoft.AspNetCore.Mvc;
-using MongoDB.Driver;
 
 namespace CRM.SocialDepartment.Site.Controllers;
 
@@ -54,30 +54,19 @@ public class AssignmentController(AssignmentService assignmentService) : Control
     {
         var input = dataTableNetService.Parse(Request);
 
-        var filter = Builders<Assignment>.Filter.Or(
-            Builders<Assignment>.Filter.Where(i => i.SoftDeleted),
-            Builders<Assignment>.Filter.Where(i => !i.IsArchive));
-
-        if (!string.IsNullOrEmpty(input.SearchTerm))
+        // Преобразуем в доменные параметры
+        var parameters = new DataTableParameters
         {
-            var searchTerm = input.SearchTerm.ToLower();
-            filter = Builders<Assignment>.Filter.Or(
-                Builders<Assignment>.Filter.Where(i =>
-                    i.Description.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase)));
-        }
+            Skip = input.Skip,
+            PageSize = input.PageSize,
+            SearchTerm = input.SearchTerm
+        };
 
-        var totalRecords = await _assignmentService.GetAssignmentCollection()
-            .CountDocumentsAsync(Builders<Assignment>.Filter.Empty, cancellationToken: cancellationToken);
+        // Используем доменный метод репозитория
+        var result = await _assignmentService.GetActiveAssignmentsForDataTableAsync(parameters, cancellationToken);
 
-        var filteredRecords = await _assignmentService.GetAssignmentCollection()
-            .CountDocumentsAsync(filter, cancellationToken: cancellationToken);
-
-        var assignments = await _assignmentService.GetAssignmentCollection().Find(filter)
-            .Skip(input.Skip)
-            .Limit(input.PageSize)
-            .ToListAsync(cancellationToken);
-
-        var result = assignments.Select(x => new RepresentAssignmentDto
+        // Преобразовать данные для представления
+        var dataResult = result.Data.Select(x => new RepresentAssignmentDto
             {
                 Id = x.Id,
                 Description = x.Description,
@@ -88,9 +77,9 @@ public class AssignmentController(AssignmentService assignmentService) : Control
         return new JsonResult(new
         {
             draw = input.Draw,
-            recordsTotal = totalRecords,
-            recordsFiltered = filteredRecords,
-            data = result
+            recordsTotal = result.TotalRecords,
+            recordsFiltered = result.FilteredRecords,
+            data = dataResult
         });
     }
 
@@ -101,31 +90,19 @@ public class AssignmentController(AssignmentService assignmentService) : Control
     {
         var input = dataTableNetService.Parse(Request);
 
-        var filter = Builders<Assignment>.Filter.Or(
-            Builders<Assignment>.Filter.Where(i => !i.SoftDeleted),
-            Builders<Assignment>.Filter.Where(i => i.IsArchive));
-
-        if (!string.IsNullOrEmpty(input.SearchTerm))
+        // Преобразуем в доменные параметры
+        var parameters = new DataTableParameters
         {
-            var searchTerm = input.SearchTerm.ToLower();
-            filter = Builders<Assignment>.Filter.Or(
-                Builders<Assignment>.Filter.Where(i =>
-                    i.Description.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase)));
-        }
+            Skip = input.Skip,
+            PageSize = input.PageSize,
+            SearchTerm = input.SearchTerm
+        };
 
-        var totalRecords = await _assignmentService.GetAssignmentCollection()
-            .CountDocumentsAsync(Builders<Assignment>.Filter.Empty, cancellationToken: cancellationToken);
+        // Используем доменный метод репозитория
+        var result = await _assignmentService.GetArchivedAssignmentsForDataTableAsync(parameters, cancellationToken);
 
-        var filteredRecords = await _assignmentService.GetAssignmentCollection()
-            .CountDocumentsAsync(filter, cancellationToken: cancellationToken);
-
-        var patients = await _assignmentService.GetAssignmentCollection()
-            .Find(filter)
-            .Skip(input.Skip)
-            .Limit(input.PageSize)
-            .ToListAsync(cancellationToken);
-
-        var result = patients.Select(i =>
+        // Преобразовать данные для представления
+        var dataResult = result.Data.Select(i =>
             new RepresentAssignmentDto()
             {
                 Id = i.Id,
@@ -137,9 +114,9 @@ public class AssignmentController(AssignmentService assignmentService) : Control
         return new(new
         {
             draw = input.Draw,
-            recordsTotal = totalRecords,
-            recordsFiltered = filteredRecords,
-            data = result
+            recordsTotal = result.TotalRecords,
+            recordsFiltered = result.FilteredRecords,
+            data = dataResult
         });
     }
 

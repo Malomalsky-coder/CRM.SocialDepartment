@@ -1,4 +1,5 @@
 ﻿using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
+using CRM.SocialDepartment.Domain.Events;
 using CRM.SocialDepartment.Domain.Exceptions;
 using DDD.Entities;
 
@@ -105,6 +106,9 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             Capable = capable;
             Pension = pension;
             Note = note;
+
+            // Генерируем событие создания пациента
+            AddDomainEvent(new PatientCreatedEvent(this));
         }
 
         /// <summary>
@@ -118,6 +122,9 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
                 throw new DomainException("Имя не может быть null или пустой строкой");
 
             FullName = fullName;
+            
+            // Генерируем событие обновления пациента
+            AddDomainEvent(new PatientUpdatedEvent(this));
         }
 
         /// <summary>
@@ -215,6 +222,9 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
                 throw new DomainException($"Документ типа {document.DisplayName} уже существует");
 
             Documents[documentType] = document;
+            
+            // Генерируем событие добавления документа
+            AddDomainEvent(new PatientDocumentAddedEvent(Id, documentType.ToString(), document.Number));
         }
 
         /// <summary>
@@ -448,6 +458,52 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         public void SetNote(string? note)
         {
             Note = note;
+            
+            // Генерируем событие обновления пациента
+            AddDomainEvent(new PatientUpdatedEvent(this));
+        }
+
+        /// <summary>
+        /// Архивировать пациента (выписка)
+        /// </summary>
+        /// <param name="reason">Причина архивирования</param>
+        public void Archive(string? reason = null)
+        {
+            if (IsArchive)
+                throw new DomainException("Пациент уже находится в архиве");
+
+            IsArchive = true;
+            
+            // Генерируем событие архивирования пациента
+            AddDomainEvent(new PatientArchivedEvent(this, reason));
+        }
+
+        /// <summary>
+        /// Восстановить пациента из архива
+        /// </summary>
+        public void Unarchive()
+        {
+            if (!IsArchive)
+                throw new DomainException("Пациент не находится в архиве");
+
+            IsArchive = false;
+            
+            // Генерируем событие восстановления пациента
+            AddDomainEvent(new PatientUnarchivedEvent(this));
+        }
+
+        /// <summary>
+        /// Пометить пациента как удаленного (мягкое удаление)
+        /// </summary>
+        public void SoftDelete()
+        {
+            if (SoftDeleted)
+                throw new DomainException("Пациент уже помечен как удаленный");
+
+            SoftDeleted = true;
+            
+            // Генерируем событие удаления пациента
+            AddDomainEvent(new PatientDeletedEvent(Id, FullName));
         }
     }
 }

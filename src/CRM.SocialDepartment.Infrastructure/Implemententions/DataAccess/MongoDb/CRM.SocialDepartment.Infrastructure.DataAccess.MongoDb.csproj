@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Interfaces\CRM.SocialDepartment.Infrastructure.Interfaces\CRM.SocialDepartment.Infrastructure.Interfaces.csproj" />
+    <ProjectReference Include="..\..\..\..\CRM.SocialDepartment.Core\CRM.SocialDepartment.Domain\CRM.SocialDepartment.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\Library\DDD\DDD.csproj" />
   </ItemGroup>
   
   <ItemGroup>

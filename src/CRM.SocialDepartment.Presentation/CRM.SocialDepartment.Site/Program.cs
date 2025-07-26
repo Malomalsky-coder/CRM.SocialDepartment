@@ -1,8 +1,11 @@
 using CRM.SocialDepartment.Application.Assignments;
+using CRM.SocialDepartment.Application.Handlers.EventHandlers;
 using CRM.SocialDepartment.Application.Patients;
 using CRM.SocialDepartment.Application.Users;
 using CRM.SocialDepartment.Domain.Entities;
 using CRM.SocialDepartment.Domain.Entities.Patients;
+using CRM.SocialDepartment.Domain.Events;
+using CRM.SocialDepartment.Domain.Repositories;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
 using CRM.SocialDepartment.Infrastructure.Identity;
@@ -11,6 +14,7 @@ using CRM.SocialDepartment.Site.MappingProfile;
 using CRM.SocialDepartment.Site.Middleware;
 using CRM.SocialDepartment.Site.Services;
 using CRM.SocialDepartment.WebApp.Settings;
+using DDD.Events;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Driver;
 
@@ -45,18 +49,33 @@ public class Program
 
         //BsonConfiguration.RegisterMappings(); // Настройка маппинга для MongoDB
 
-        // Регистрация репозиториев /////////////////////////////////////////////////////////////////////////////////
+        // Регистрация MediatR и доменных событий ///////////////////////////////////////////////////////////////////
+        
+        builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(PatientCreatedEventHandler).Assembly));
+        
+        // Регистрация диспетчера доменных событий
+        builder.Services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
-        builder.Services.AddScoped(provider =>
+        // Регистрация Unit of Work //////////////////////////////////////////////////////////////////////////////////
+
+        builder.Services.AddScoped<IUnitOfWork>(provider =>
         {
             var database = provider.GetRequiredService<IMongoDatabase>();
-            return new MongoBasicRepository<Patient, Guid>(database, "Patients");
+            var domainEventDispatcher = provider.GetService<IDomainEventDispatcher>();
+            return new MongoUnitOfWork(database, domainEventDispatcher);
         });
 
-        builder.Services.AddScoped(provider =>
+        // Регистрация отдельных репозиториев для обратной совместимости (опционально)
+        builder.Services.AddScoped<IPatientRepository>(provider =>
         {
             var database = provider.GetRequiredService<IMongoDatabase>();
-            return new MongoBasicRepository<Assignment, Guid>(database, "Assignments");
+            return new MongoPatientRepository(database);
+        });
+
+        builder.Services.AddScoped<IAssignmentRepository>(provider =>
+        {
+            var database = provider.GetRequiredService<IMongoDatabase>();
+            return new MongoAssignmentRepository(database);
         });
 
         // Регистрация сервисов /////////////////////////////////////////////////////////////////////////////////////

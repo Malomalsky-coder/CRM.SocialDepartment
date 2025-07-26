@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using CRM.SocialDepartment.Application.DTOs;
 using CRM.SocialDepartment.Application.Patients;
+using CRM.SocialDepartment.Domain.Common;
 using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
 using CRM.SocialDepartment.Domain.Specifications;
@@ -9,7 +10,6 @@ using CRM.SocialDepartment.Site.Models;
 using CRM.SocialDepartment.Site.Services;
 using CRM.SocialDepartment.Site.ViewModels.Patient;
 using Microsoft.AspNetCore.Mvc;
-using MongoDB.Driver;
 
 namespace CRM.SocialDepartment.Site.Controllers
 {
@@ -194,36 +194,19 @@ namespace CRM.SocialDepartment.Site.Controllers
 
             var input = dataTableNetService.Parse(Request);
 
-            var filter = Builders<Patient>.Filter.Or(
-                Builders<Patient>.Filter.Where(i => !i.SoftDeleted), // Фильтр для мягкого удаления
-                Builders<Patient>.Filter.Where(i => !i.IsArchive));  // Фильтр для архива
-
-            // Поиск по ключевому слову
-            if (!string.IsNullOrEmpty(input.SearchTerm))
+            // Преобразуем в доменные параметры
+            var parameters = new DataTableParameters
             {
-                var searchTemp = input.SearchTerm.ToLower();
+                Skip = input.Skip,
+                PageSize = input.PageSize,
+                SearchTerm = input.SearchTerm
+            };
 
-                filter = Builders<Patient>.Filter.Or(
-                    Builders<Patient>.Filter.Where(i => i.FullName.Contains(searchTemp, StringComparison.CurrentCultureIgnoreCase))//,
-                    //Builders<Patient>.Filter.Where(i => i.Registration != null && i.Registration.ToLower().Contains(searchTemp)),
-                    //Builders<Patient>.Filter.Where(i => i.NumberDepartment.ToString().Contains(searchTemp))
-                );
-            }
-
-            // Получить общее количество записей до поиска
-            var totalRecords = await _patientAppService.GetPatientCollection().CountDocumentsAsync(Builders<Patient>.Filter.Empty, cancellationToken: cancellationToken);
-
-            // Получить общее количество записей после поиска
-            var filteredRecords = await _patientAppService.GetPatientCollection().CountDocumentsAsync(filter, cancellationToken: cancellationToken);
-
-            // Пагинация
-            var patients = await _patientAppService.GetPatientCollection().Find(filter)
-                .Skip(input.Skip)
-                .Limit(input.PageSize)
-                .ToListAsync(cancellationToken);
+            // Используем доменный метод репозитория
+            var result = await _patientAppService.GetActivePatientsForDataTableAsync(parameters, cancellationToken);
 
             // Преобразовать данные для представления
-            var result = patients.Select(i =>
+            var dataResult = result.Data.Select(i =>
             {
                 //var historyOfIllness = i.HistoryOfIllnesses.FirstOrDefault(h => h.IsActive);
 
@@ -254,9 +237,9 @@ namespace CRM.SocialDepartment.Site.Controllers
             return new JsonResult(new
             {
                 draw = input.Draw,
-                recordsTotal = totalRecords,
-                recordsFiltered = filteredRecords,
-                data = result
+                recordsTotal = result.TotalRecords,
+                recordsFiltered = result.FilteredRecords,
+                data = dataResult
             });
         }
 
@@ -269,34 +252,19 @@ namespace CRM.SocialDepartment.Site.Controllers
 
             var input = dataTableNetService.Parse(Request);
 
-            var filter = Builders<Patient>.Filter.Or(
-                Builders<Patient>.Filter.Where(i => !i.SoftDeleted), // Фильтр для мягкого удаления
-                Builders<Patient>.Filter.Where(i => i.IsArchive));   // Фильтр для архива
-
-            // Поиск по ключевому слову
-            if (!string.IsNullOrEmpty(input.SearchTerm))
+            // Преобразуем в доменные параметры
+            var parameters = new DataTableParameters
             {
-                var searchTemp = input.SearchTerm.ToLower();
+                Skip = input.Skip,
+                PageSize = input.PageSize,
+                SearchTerm = input.SearchTerm
+            };
 
-                filter = Builders<Patient>.Filter.Or(
-                    Builders<Patient>.Filter.Where(i => i.FullName.Contains(searchTemp, StringComparison.CurrentCultureIgnoreCase))
-                );
-            }
-
-            // Получить общее количество записей до поиска
-            var totalRecords = await _patientAppService.GetPatientCollection().CountDocumentsAsync(Builders<Patient>.Filter.Empty);
-
-            // Получить общее количество записей после поиска
-            var filteredRecords = await _patientAppService.GetPatientCollection().CountDocumentsAsync(filter);
-
-            // Пагинация
-            var patients = await _patientAppService.GetPatientCollection().Find(filter)
-                .Skip(input.Skip)
-                .Limit(input.PageSize)
-                .ToListAsync();
+            // Используем доменный метод репозитория
+            var result = await _patientAppService.GetArchivedPatientsForDataTableAsync(parameters, cancellationToken);
 
             // Преобразовать данные для представления
-            var result = patients.Select(i =>
+            var dataResult = result.Data.Select(i =>
             {
                 return new //TODO: Сделать DTO
                 {
@@ -314,9 +282,9 @@ namespace CRM.SocialDepartment.Site.Controllers
             return new JsonResult(new
             {
                 draw = input.Draw,
-                recordsTotal = totalRecords,
-                recordsFiltered = filteredRecords,
-                data = result
+                recordsTotal = result.TotalRecords,
+                recordsFiltered = result.FilteredRecords,
+                data = dataResult
             });
         }
 

@@ -1,4 +1,6 @@
 ﻿using CRM.SocialDepartment.Domain.Entities.Patients;
+using CRM.SocialDepartment.Domain.Events;
+using CRM.SocialDepartment.Domain.Exceptions;
 using DDD.Entities;
 
 namespace CRM.SocialDepartment.Domain.Entities;
@@ -18,6 +20,9 @@ public class Assignment : AggregateRoot<Guid>, IArchive, ISoftDelete
         Note = note;
         CreationDate = creationDate;
         Patient = patient;
+
+        // Генерируем событие создания назначения
+        AddDomainEvent(new AssignmentCreatedEvent(this));
     }
 
     /// <summary>
@@ -88,42 +93,103 @@ public class Assignment : AggregateRoot<Guid>, IArchive, ISoftDelete
     public void UpdateDescription(string description)
     {
         Description = description;
+        AddDomainEvent(new AssignmentUpdatedEvent(this));
     }
 
     public void UpdateAcceptDate(DateTime acceptDate)
     {
         AcceptDate = acceptDate;
+        AddDomainEvent(new AssignmentUpdatedEvent(this));
     }
 
     public void UpdateForwardDate(DateTime forwardDate)
     {
         ForwardDate = forwardDate;
+        AddDomainEvent(new AssignmentUpdatedEvent(this));
     }
 
     public void UpdateForwardDepartment(string department)
     {
         ForwardDepartment = department;
+        AddDomainEvent(new AssignmentUpdatedEvent(this));
     }
 
     public void UpdateDepartmentNumber(int departmentNumber)
     {
+        var oldDepartmentNumber = DepartmentNumber;
         DepartmentNumber = departmentNumber;
+        
+        // Генерируем специализированное событие смены отделения
+        AddDomainEvent(new AssignmentDepartmentChangedEvent(this, oldDepartmentNumber, departmentNumber));
+        AddDomainEvent(new AssignmentUpdatedEvent(this));
     }
 
     public void UpdateDepartmentForwardDate(DateTime forwardDate)
     {
         DepartmentForwardDate = forwardDate;
+        AddDomainEvent(new AssignmentUpdatedEvent(this));
     }
 
     public void UpdateAssignee(string assignee)
     {
         Assignee = assignee;
+        
+        // Генерируем специализированное событие назначения исполнителя
+        AddDomainEvent(new AssignmentAssignedEvent(this, assignee));
+        AddDomainEvent(new AssignmentUpdatedEvent(this));
     }
 
     public void UpdateNote(string note)
     {
         if (string.IsNullOrEmpty(note)) throw new ArgumentNullException(nameof(note));
         Note = note;
+        AddDomainEvent(new AssignmentUpdatedEvent(this));
+    }
+
+    /// <summary>
+    /// Архивировать назначение
+    /// </summary>
+    /// <param name="reason">Причина архивирования</param>
+    public void Archive(string? reason = null)
+    {
+        if (IsArchive)
+            throw new DomainException("Назначение уже находится в архиве");
+
+        IsArchive = true;
+        
+        // Генерируем событие архивирования назначения
+        AddDomainEvent(new AssignmentArchivedEvent(this, reason));
+    }
+
+    /// <summary>
+    /// Пометить назначение как удаленное (мягкое удаление)
+    /// </summary>
+    public void SoftDelete()
+    {
+        if (SoftDeleted)
+            throw new DomainException("Назначение уже помечено как удаленное");
+
+        SoftDeleted = true;
+        
+        // Генерируем событие удаления назначения
+        AddDomainEvent(new AssignmentDeletedEvent(Id, Description, Patient.Id));
+    }
+
+    /// <summary>
+    /// Добавить статус в журнал
+    /// </summary>
+    /// <param name="status">Новый статус</param>
+    public void AddStatus(string status)
+    {
+        if (string.IsNullOrEmpty(status)) 
+            throw new ArgumentNullException(nameof(status));
+
+        var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        StatusLog[timestamp] = status;
+        
+        // Генерируем событие добавления статуса
+        AddDomainEvent(new AssignmentStatusAddedEvent(this, status));
+        AddDomainEvent(new AssignmentUpdatedEvent(this));
     }
     
 }
