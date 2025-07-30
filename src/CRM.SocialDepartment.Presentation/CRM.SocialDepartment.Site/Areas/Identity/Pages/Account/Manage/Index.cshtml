@@ -1,40 +1,192 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Profile";
+    ViewData["Title"] = "Профиль";
     ViewData["ActivePage"] = ManageNavPages.Index;
 }
 
-<h3>@ViewData["Title"]</h3>
+<div class="profile-header mb-4">
+    <div class="d-flex align-items-center">
+        <div class="me-3">
+            <div class="profile-avatar">
+                <i class="fa fa-user-circle text-primary" style="font-size: 3rem;"></i>
+            </div>
+        </div>
+        <div>
+            <h3 class="mb-1">@ViewData["Title"]</h3>
+            <p class="text-muted mb-0">Управляйте основной информацией о вашем профиле</p>
+        </div>
+    </div>
+</div>
+
 <partial name="_StatusMessage" for="StatusMessage" />
+
 <div class="row">
-    <div class="col-md-6">
-        <form id="profile-form" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="Username" class="form-control" placeholder="Please choose your username." disabled />
-                <label asp-for="Username" class="form-label"></label>
+    <div class="col-lg-8">
+        <form id="profile-form" method="post" class="profile-form">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+            
+            <div class="form-section">
+                <h5 class="section-title">
+                    <i class="fa fa-info-circle me-2"></i>Основная информация
+                </h5>
+                
+                <div class="form-floating mb-3">
+                    <input asp-for="Username" class="form-control" placeholder="Имя пользователя" disabled />
+                    <label asp-for="Username" class="form-label">Имя пользователя</label>
+                    <div class="form-text">
+                        <i class="fa fa-lock me-1"></i>Имя пользователя нельзя изменить
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.FirstName" class="form-control" placeholder="Имя" />
+                            <label asp-for="Input.FirstName" class="form-label">Имя</label>
+                            <span asp-validation-for="Input.FirstName" class="invalid-feedback"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            <input asp-for="Input.LastName" class="form-control" placeholder="Фамилия" />
+                            <label asp-for="Input.LastName" class="form-label">Фамилия</label>
+                            <span asp-validation-for="Input.LastName" class="invalid-feedback"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-floating mb-3">
+                    <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Номер телефона" />
+                    <label asp-for="Input.PhoneNumber" class="form-label">Номер телефона</label>
+                    <span asp-validation-for="Input.PhoneNumber" class="invalid-feedback"></span>
+                    <div class="form-text">
+                        <i class="fa fa-phone me-1"></i>Используется для двухфакторной аутентификации
+                    </div>
+                </div>
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.FirstName" class="form-control" />
-                <label asp-for="Input.FirstName" class="form-label"></label>
-                <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+            
+            <div class="form-actions">
+                <button id="update-profile-button" type="submit" class="btn btn-primary btn-lg">
+                    <i class="fa fa-save me-2"></i>Сохранить изменения
+                </button>
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.LastName" class="form-control" />
-                <label asp-for="Input.LastName" class="form-label"></label>
-                <span asp-validation-for="Input.LastName" class="text-danger"></span>
-            </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number."/>
-                <label asp-for="Input.PhoneNumber" class="form-label"></label>
-                <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
-            </div>
-            <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
         </form>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="profile-info-card">
+            <h5 class="card-title">
+                <i class="fa fa-info-circle me-2"></i>Информация о профиле
+            </h5>
+            
+            <div class="info-item">
+                <strong>Последнее обновление:</strong>
+                <span class="text-muted">@DateTime.Now.ToString("dd.MM.yyyy")</span>
+            </div>
+            
+            <div class="info-item">
+                <strong>Статус аккаунта:</strong>
+                <span class="badge bg-success">
+                    <i class="fa fa-check me-1"></i>Активен
+                </span>
+            </div>
+            
+            <div class="info-item">
+                <strong>Уровень безопасности:</strong>
+                <span class="badge bg-warning">
+                    <i class="fa fa-shield me-1"></i>Стандартный
+                </span>
+            </div>
+            
+            <hr>
+            
+            <div class="quick-actions">
+                <h6>Быстрые действия:</h6>
+                <div class="d-grid gap-2">
+                    <a asp-page="./ChangePassword" class="btn btn-outline-primary btn-sm">
+                        <i class="fa fa-key me-1"></i>Изменить пароль
+                    </a>
+                    <a asp-page="./Email" class="btn btn-outline-primary btn-sm">
+                        <i class="fa fa-envelope me-1"></i>Изменить Email
+                    </a>
+                    <a asp-page="./TwoFactorAuthentication" class="btn btn-outline-success btn-sm">
+                        <i class="fa fa-shield me-1"></i>Настроить 2FA
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(37, 99, 235, 0.05));
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid rgba(37, 99, 235, 0.1);
+    }
+    
+    .profile-avatar {
+        position: relative;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        color: var(--bs-primary);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid rgba(37, 99, 235, 0.1);
+    }
+    
+    .form-actions {
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--bs-border-color);
+    }
+    
+    .profile-info-card {
+        background: rgba(249, 250, 251, 0.8);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+    
+    .profile-info-card .card-title {
+        color: var(--bs-primary);
+        margin-bottom: 1rem;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    .quick-actions {
+        margin-top: 1rem;
+    }
+    
+    .quick-actions h6 {
+        margin-bottom: 0.75rem;
+        color: var(--bs-secondary);
+    }
+    
+    .form-floating:focus-within {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+        transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        transition: all 0.3s ease;
+    }
+</style>

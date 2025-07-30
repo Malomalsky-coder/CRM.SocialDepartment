@@ -44,10 +44,83 @@ var malomalsky = malomalsky || {};
             }
         },
 
-        handleErrorStatusCode: function (status) {
+        showValidationErrors: function (errors) {
+            if (!Array.isArray(errors) || errors.length === 0) {
+                malomalsky.ajax.showError(malomalsky.ajax.defaultError400);
+                return;
+            }
+
+            // Используем ValidationHelper если он доступен
+            var errorHtml = '';
+            var recommendationsHtml = '';
+            
+            if (typeof ValidationHelper !== 'undefined') {
+                errorHtml = ValidationHelper.createErrorHtml(errors, 'Ошибки валидации');
+                recommendationsHtml = ValidationHelper.createRecommendationsHtml(errors);
+            } else {
+                // Fallback на простое отображение
+                errorHtml = '<div style="text-align: left;"><ul style="margin: 0; padding-left: 20px;">';
+                errors.forEach(function(error) {
+                    errorHtml += '<li>' + malomalsky.utils.htmlEscape(error) + '</li>';
+                });
+                errorHtml += '</ul></div>';
+            }
+
+            // Комбинируем ошибки и рекомендации
+            var fullHtml = errorHtml + recommendationsHtml;
+
+            // Показываем через SweetAlert2 с HTML поддержкой
+            malomalsky.message.validationError('Исправьте ошибки в форме', fullHtml);
+            
+            // Подсвечиваем поля с ошибками
+            malomalsky.ajax.highlightErrorFields(errors);
+        },
+
+        highlightErrorFields: function (errors) {
+            // Очищаем предыдущие подсветки
+            $('.form-control, .form-select').removeClass('is-invalid');
+            $('.invalid-feedback').remove();
+            
+            if (!Array.isArray(errors)) return;
+            
+            errors.forEach(function(error) {
+                // Определяем какие поля подсвечивать на основе ошибок
+                if (error.includes('ФИО') || error.includes('FullName')) {
+                    $('input[name="FullName"]').addClass('is-invalid');
+                }
+                if (error.includes('Паспорт') || error.includes('passport')) {
+                    $('input[name*="Documents"][name*="0"]').addClass('is-invalid');
+                }
+                if (error.includes('Полис ОМС') || error.includes('MedicalPolicy')) {
+                    $('input[name*="Documents"][name*="1"]').addClass('is-invalid');
+                }
+                if (error.includes('СНИЛС') || error.includes('Snils')) {
+                    $('input[name*="Documents"][name*="2"]').addClass('is-invalid');
+                }
+                if (error.includes('дата рождения') || error.includes('Birthday')) {
+                    $('input[name="Birthday"]').addClass('is-invalid');
+                }
+            });
+        },
+
+        handleErrorStatusCode: function (status, responseText) {
             switch (status) {
                 case 400:
-                    malomalsky.ajax.showError(malomalsky.ajax.defaultError400)
+                    // Пытаемся обработать детальные ошибки валидации
+                    if (responseText) {
+                        try {
+                            var response = JSON.parse(responseText);
+                            if (response && response.Data && response.Data.Errors && Array.isArray(response.Data.Errors)) {
+                                // Используем ValidationHelper для улучшенного отображения ошибок
+                                malomalsky.ajax.showValidationErrors(response.Data.Errors);
+                                return;
+                            }
+                        } catch (parseError) {
+                            console.log('Не удалось распарсить ответ с ошибками:', parseError);
+                        }
+                    }
+                    // Fallback на общее сообщение если не удалось распарсить
+                    malomalsky.ajax.showError(malomalsky.ajax.defaultError400);
                     break;
                 case 401:
                     malomalsky.ajax.showError(malomalsky.ajax.defaultError401)
@@ -116,7 +189,9 @@ var malomalsky = malomalsky || {};
                     url: url,
                     headers: option.headers || {},
                     data: option.data || null,
+                    dataType: option.dataType || 'html',
                     contentType: option.contentType || 'application/x-www-form-urlencoded',
+                    timeout: 30000, // 30 секунд (в миллисекундах)
                     processData: false,
                     beforeSend: function () {
                         if (typeof option.beforeSend === 'function') {
@@ -136,7 +211,7 @@ var malomalsky = malomalsky || {};
                             option.error(err);
                         }
                         else {
-                            malomalsky.ajax.handleErrorStatusCode(err.status);
+                            malomalsky.ajax.handleErrorStatusCode(err.status, err.responseText);
                             throw new Error;
                         }
                     }

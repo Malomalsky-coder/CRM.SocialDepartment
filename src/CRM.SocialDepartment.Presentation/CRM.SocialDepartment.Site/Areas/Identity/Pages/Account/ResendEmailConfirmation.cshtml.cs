@@ -46,8 +46,9 @@ namespace CRM.SocialDepartment.Site.Areas.Identity.Pages.Account
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
-            [EmailAddress]
+            [Required(ErrorMessage = "Адрес электронной почты обязателен для заполнения")]
+            [EmailAddress(ErrorMessage = "Введите корректный адрес электронной почты")]
+            [Display(Name = "Электронная почта")]
             public string Email { get; set; }
         }
 

@@ -1,54 +1,202 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"]t</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - Отдел социальной защиты</title>
+    <meta name="description" content="Система управления отделом социальной защиты населения" />
+    
+    <!-- CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/lib/font-awesome/css/font-awesome.css">
     <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" />
     @await RenderSectionAsync("Styles", required: false)
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    
+    <!-- jQuery загружаем в head -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
 </head>
 <body>
-
+    <!-- Navigation -->
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Отдел соц. защиты</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="fa fa-shield me-2 text-primary"></i>
+                    <span class="fw-bold">Отдел соц. защиты</span>
+                </a>
+                
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                        aria-controls="navbarNav" aria-expanded="false" aria-label="Переключить навигацию">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <partial name="_MenuPartial" />
-                    <partial name="_LoginPartial" />
+                
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <div class="navbar-nav me-auto">
+                        <partial name="_MenuPartial" />
+                    </div>
+                    <div class="navbar-nav ms-auto">
+                        <partial name="_LoginPartial" />
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            Сделано с <i class="fa fa-heart"></i>
+    <!-- Main Content -->
+    <main class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                @RenderBody()
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto">
+        <div class="container text-center">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-md-start">
+                    <small class="text-muted">
+                        © @DateTime.Now.Year Отдел социальной защиты
+                    </small>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-muted">
+                        Сделано с <i class="fa fa-heart text-danger"></i> для лучшего будущего
+                    </small>
+                </div>
+            </div>
         </div>
     </footer>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" 
+         style="background: rgba(255,255,255,0.8); z-index: 9999;">
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="text-center">
+                <div class="spinner mb-3"></div>
+                <div class="text-muted">Загрузка...</div>
+            </div>
+        </div>
+    </div>
 
-    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <!-- JavaScript -->
     <script src="~/js/jquery-extension.js" asp-append-version="true"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/malomalsky/core/malomalsky.js" asp-append-version="true"></script>
     <script src="~/lib/sweetalert2/sweetalert2.all.min.js"></script>
     <script src="~/lib/malomalsky/libs/sweetalert2/malomalsky-sweetalert2.js"></script>
+    <script src="~/js/validation-helper.js" asp-append-version="true"></script>
     <script src="~/js/common.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    <!-- Global Scripts -->
+    @* <script>
+        // Ждем загрузки jQuery
+        function waitForJQuery(callback) {
+            if (typeof $ !== 'undefined' && $.fn && $.fn.jquery) {
+                callback();
+            } else {
+                setTimeout(function() {
+                    waitForJQuery(callback);
+                }, 100);
+            }
+        }
+        
+        waitForJQuery(function() {
+            // Проверяем загрузку jQuery
+            if (typeof $ === 'undefined') {
+                console.error('❌ [Layout] jQuery не загружен!');
+            } else {
+                console.log('✅ [Layout] jQuery загружен, версия:', $.fn.jquery);
+            }
+            
+            // Глобальные функции для UX
+            window.AppUtils = {
+                // Показать загрузку
+                showLoading: function() {
+                    document.getElementById('loading-overlay').classList.remove('d-none');
+                },
+                
+                // Скрыть загрузку
+                hideLoading: function() {
+                    document.getElementById('loading-overlay').classList.add('d-none');
+                },
+                
+                // Плавная прокрутка к элементу
+                scrollTo: function(element) {
+                    if (typeof element === 'string') {
+                        element = document.querySelector(element);
+                    }
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                },
+                
+                // Уведомление об успехе
+                showSuccess: function(message) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Успешно!',
+                        text: message,
+                        timer: 3000,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                },
+                
+                // Уведомление об ошибке
+                showError: function(message) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Ошибка!',
+                        text: message,
+                        confirmButtonText: 'Понятно'
+                    });
+                }
+            };
+            
+            // Автоматически скрывать алерты через 5 секунд
+            document.addEventListener('DOMContentLoaded', function() {
+                const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+                alerts.forEach(alert => {
+                    setTimeout(() => {
+                        if (alert.parentNode) {
+                            alert.style.transition = 'opacity 0.5s ease';
+                            alert.style.opacity = '0';
+                            setTimeout(() => alert.remove(), 500);
+                        }
+                    }, 5000);
+                });
+                
+                // Улучшенные подсказки для всех элементов с title
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            });
+            
+            // Глобальная обработка AJAX ошибок
+            // $(document).ajaxStart(function() {
+            //     AppUtils.showLoading();
+            // }).ajaxStop(function() {
+            //     AppUtils.hideLoading();
+            // }).ajaxError(function(event, xhr) {
+            //     AppUtils.hideLoading();
+            //     let message = 'Произошла ошибка при выполнении запроса';
+            //     if (xhr.responseJSON && xhr.responseJSON.ErrorMessage) {
+            //         message = xhr.responseJSON.ErrorMessage;
+            //     }
+            //     AppUtils.showError(message);
+            // });
+        });
+    </script> *@
+    
     @await RenderSectionAsync("Scripts", required: false)
-
 </body>
 </html>

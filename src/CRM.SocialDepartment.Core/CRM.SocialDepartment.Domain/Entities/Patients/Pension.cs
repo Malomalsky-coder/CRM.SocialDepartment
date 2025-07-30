@@ -10,17 +10,17 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Группа инвалидности
         /// </summary>
-        DisabilityGroup DisabilityGroup { get; }
+        DisabilityGroupType DisabilityGroup { get; }
 
         /// <summary>
         /// Дата установления статуса пенсионера
         /// </summary>
-        DateTime PensionStartDateTime { get; }
+        DateTime? PensionStartDateTime { get; }
 
         /// <summary>
         /// Способ получения пенсии
         /// </summary>
-        PensionAddress PensionAddress { get; }
+        PensionAddressType PensionAddress { get; }
 
         /// <summary>
         /// Филиал СФР
@@ -43,9 +43,9 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
     /// </summary>
     internal interface IPensionInternal : IPension
     {
-        void SetDisabilityGroup(DisabilityGroup disabilityGroup);
+        void SetDisabilityGroup(DisabilityGroupType disabilityGroup);
         void SetPensionStartDateTime(DateTime pensionStartDateTime);
-        void SetPensionAddress(PensionAddress pensionAddress);
+        void SetPensionAddress(PensionAddressType pensionAddress);
         void SetSfrBranch(int sfrBranch);
         void SetSfrDepartment(string sfrDepartment);
         void SetRsd(string? rsd);
@@ -59,17 +59,17 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Группа инвалидности
         /// </summary>
-        public DisabilityGroup DisabilityGroup { get; private set; }
+        public DisabilityGroupType DisabilityGroup { get; private set; }
 
         /// <summary>
         /// Дата установления статуса пенсионера
         /// </summary>
-        public DateTime PensionStartDateTime { get; private set; }
+        public DateTime? PensionStartDateTime { get; private set; }
 
         /// <summary>
         /// Способ получения пенсии
         /// </summary>
-        public PensionAddress PensionAddress { get; private set; }
+        public PensionAddressType PensionAddress { get; private set; }
 
         /// <summary>
         /// Филиал СФР
@@ -91,9 +91,9 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         #pragma warning restore CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
 
         public Pension(
-            DisabilityGroup disabilityGroup,
-            DateTime pensionStartDateTime,
-            PensionAddress pensionAddress,
+            DisabilityGroupType disabilityGroup,
+            DateTime? pensionStartDateTime,
+            PensionAddressType pensionAddress,
             int sfrBranch,
             string sfrDepartment,
             string? rsd)
@@ -110,7 +110,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// Изменить группу инвалидности
         /// </summary>
         /// <param name="disabilityGroup">Новая группа инвалидности</param>
-        void IPensionInternal.SetDisabilityGroup(DisabilityGroup disabilityGroup)
+        void IPensionInternal.SetDisabilityGroup(DisabilityGroupType disabilityGroup)
         {
             DisabilityGroup = disabilityGroup;
         }
@@ -128,7 +128,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// Изменить способ получения пенсии
         /// </summary>
         /// <param name="pensionAddress">Новый способ получения пенсии</param>
-        void IPensionInternal.SetPensionAddress(PensionAddress pensionAddress)
+        void IPensionInternal.SetPensionAddress(PensionAddressType pensionAddress)
         {
             PensionAddress = pensionAddress;
         }
@@ -163,7 +163,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         protected override IEnumerable<object> GetAtomicValues()
         {
             yield return DisabilityGroup;
-            yield return PensionStartDateTime;
+            yield return PensionStartDateTime!.Value;
             yield return PensionAddress;
             yield return SfrBranch;
             yield return SfrDepartment;

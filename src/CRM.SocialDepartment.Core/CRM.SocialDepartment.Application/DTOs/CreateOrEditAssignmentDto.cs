@@ -1,16 +1,18 @@
-﻿using CRM.SocialDepartment.Domain.Entities.Patients;
-
-namespace CRM.SocialDepartment.Application.DTOs;
-
-public class CreateOrEditAssignmentDto
+﻿namespace CRM.SocialDepartment.Application.DTOs
 {
-    public DateTime AcceptDate { get; set; }
-    public int DepartmentNumber { get; set; }
-    public string Description { get; set; }
-    public DateTime ForwardDate { get; set; }
-    public string ForwardDepartment { get; set; }
-    public DateTime DepartmentForwardDate { get; set; }
-    public string Assignee { get; set; }
-    public string? Note { get; set; }
-    public Guid PatientId { get; set; }
+    public class CreateOrEditAssignmentDto
+    {
+        public Guid Id { get; init; }
+        public string Description { get; init; } = string.Empty;
+        public DateTime CreatedDate { get; init; }
+        public string ForwardDepartment { get; init; } = string.Empty;
+        public DateTime DueDate { get; init; }
+        public string Assignee { get; init; } = string.Empty;
+        public DateTime AcceptDate { get; init; }
+        public DateTime ForwardDate { get; init; }
+        public int DepartmentNumber { get; init; }
+        public DateTime DepartmentForwardDate { get; init; }
+        public string? Note { get; init; }
+        public Guid PatientId { get; init; }
+    }
 }

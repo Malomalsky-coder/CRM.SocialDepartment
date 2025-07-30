@@ -1,22 +1,32 @@
-﻿using CRM.SocialDepartment.Domain.Exceptions;
+﻿using DDD.Values;
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients.Documents
 {
-    public sealed class MedicalPolicyDocument : Document
+    public class MedicalPolicyDocument : DocumentType
     {
-        public override string DisplayName => "Полис ОМС";
+        public string? Number { get; }
 
-        public MedicalPolicyDocument(string number) : base(number)
+        public MedicalPolicyDocument(string? number) : base(1, "Медицинский полис")
         {
-            if (!IsValid())
-                throw new InvalidDocumentNumberException(GetType().Name, number);
-
             Number = number;
         }
 
-        public override bool IsValid()
+        protected MedicalPolicyDocument() : base(1, "Медицинский полис")
         {
-            return !string.IsNullOrEmpty(Number) && Number.Length == 16;
+            Number = null;
         }
+
+        public bool IsValid()
+        {
+            // Простая валидация формата полиса: 16 цифр
+            return !string.IsNullOrEmpty(Number) && System.Text.RegularExpressions.Regex.IsMatch(Number, @"^\d{16}$");
+        }
+
+        protected override IEnumerable<object> GetAtomicValues()
+        {
+            yield return Number ?? string.Empty;
+        }
+
+        public override string ToString() => $"Медицинский полис: {Number ?? "не указан"}";
     }
 }

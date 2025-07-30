@@ -36,6 +36,7 @@ namespace CRM.SocialDepartment.Site.Middleware
 
             var (statusCode, message, messageType) = exception switch
             {
+                InvalidDocumentNumberException invalidDocEx => (HttpStatusCode.BadRequest, FormatDocumentError(invalidDocEx.Message), "error"),
                 DomainException domainEx => (HttpStatusCode.BadRequest, domainEx.Message, "error"),
                 ArgumentNullException argNullEx => (HttpStatusCode.BadRequest, argNullEx.Message, "error"),
                 KeyNotFoundException keyNotFoundEx => (HttpStatusCode.NotFound, keyNotFoundEx.Message, "error"),
@@ -51,6 +52,28 @@ namespace CRM.SocialDepartment.Site.Middleware
             var json = JsonSerializer.Serialize(apiResponse);
 
             await response.WriteAsync(json);
+        }
+
+        /// <summary>
+        /// Форматирует техническое сообщение об ошибке документа в понятное пользователю
+        /// </summary>
+        private static string FormatDocumentError(string technicalMessage)
+        {
+            if (technicalMessage.Contains("PassportDocument"))
+            {
+                return "Неверный формат паспорта. Укажите серию и номер в формате: 1234 567890";
+            }
+            else if (technicalMessage.Contains("MedicalPolicyDocument"))
+            {
+                return "Неверный формат полиса ОМС. Номер должен содержать 16 цифр";
+            }
+            else if (technicalMessage.Contains("SnilsDocument"))
+            {
+                return "Неверный формат СНИЛС. Укажите номер в формате: 123-456-789 01";
+            }
+            
+            // Если тип документа не определен, возвращаем оригинальное сообщение
+            return technicalMessage;
         }
     }
 

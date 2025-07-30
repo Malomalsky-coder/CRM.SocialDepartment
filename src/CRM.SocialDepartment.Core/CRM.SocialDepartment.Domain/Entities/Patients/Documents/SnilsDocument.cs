@@ -1,26 +1,32 @@
-﻿using CRM.SocialDepartment.Domain.Exceptions;
-using System.Text.RegularExpressions;
+﻿using DDD.Values;
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients.Documents
 {
-    public class SnilsDocument : Document
+    public class SnilsDocument : DocumentType
     {
-        public override string DisplayName => "Снилс";
+        public string? Number { get; }
 
-
-        public SnilsDocument(string number) : base(number)
+        public SnilsDocument(string? number) : base(2, "СНИЛС")
         {
-            if (!IsValid())
-                throw new InvalidDocumentNumberException(GetType().Name, number);
-
             Number = number;
         }
 
-        public override bool IsValid()
+        protected SnilsDocument() : base(2, "СНИЛС")
         {
-            return !string.IsNullOrEmpty(Number) &&
-                    Number.Length == 14 &&
-                    Regex.IsMatch(Number, @"^\d{3}-\d{3}-\d{3}\s\d{2}$");
+            Number = null;
         }
+
+        public bool IsValid()
+        {
+            // Простая валидация формата СНИЛС: 3 цифры-3 цифры-3 цифры 2 цифры
+            return !string.IsNullOrEmpty(Number) && System.Text.RegularExpressions.Regex.IsMatch(Number, @"^\d{3}-\d{3}-\d{3}\s\d{2}$");
+        }
+
+        protected override IEnumerable<object> GetAtomicValues()
+        {
+            yield return Number ?? string.Empty;
+        }
+
+        public override string ToString() => $"СНИЛС: {Number ?? "не указан"}";
     }
 }

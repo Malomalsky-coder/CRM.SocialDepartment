@@ -87,4 +87,28 @@ var malomalsky = malomalsky || {};
         return showMessage('error', title, message);
     };
 
+    malomalsky.message.validationError = function (title, htmlContent) {
+        var opts = $.extend(
+            {},
+            malomalsky.libs.sweetAlert2.config['default'],
+            malomalsky.libs.sweetAlert2.config.error,
+            {
+                title: title,
+                html: htmlContent, // Используем html вместо text для поддержки HTML
+                width: '600px',
+                confirmButtonText: 'Понятно',
+                customClass: {
+                    popup: 'validation-error-popup',
+                    htmlContainer: 'validation-error-content'
+                }
+            }
+        );
+
+        return $.Deferred(function ($dfd) {
+            Swal.fire(opts).then(function () {
+                $dfd.resolve();
+            });
+        });
+    };
+
 })(jQuery)

@@ -9,9 +9,9 @@ namespace CRM.SocialDepartment.Site.Extensions
         {
             return
             [
-                new SelectListItem { Value = "0", Text = City.None.DisplayName },
-                new SelectListItem { Value = "1", Text = City.Moscow.DisplayName },
-                new SelectListItem { Value = "2", Text = City.FromAnotherTown.DisplayName }
+                new SelectListItem { Value = "0", Text = CityType.None.DisplayName },
+                new SelectListItem { Value = "1", Text = CityType.Moscow.DisplayName },
+                new SelectListItem { Value = "2", Text = CityType.FromAnotherTown.DisplayName }
             ];
         }
     }

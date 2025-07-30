@@ -1,14 +1,34 @@
-﻿<div class="dropdown">
-    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Пациенты</button>
-    <ul class="dropdown-menu" data-popper-placement="bottom-start">
-        <li><a class="dropdown-item" asp-controller="Patient" asp-action="Active">В больнице</a></li>
-        <li><a class="dropdown-item" asp-controller="Patient" asp-action="Archive">Архив</a></li>
-        <li><a class="dropdown-item" asp-controller="Assignment" asp-action="Active">Задания</a></li>
-    </ul>
+﻿<!-- Основное меню -->
+<div class="navbar-nav me-3">
+    <div class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="patientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa fa-users me-1"></i>Пациенты
+        </a>
+        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="patientsDropdown">
+            <li>
+                <a class="dropdown-item" asp-controller="Patient" asp-action="Active">
+                    <i class="fa fa-hospital-o text-success me-2"></i>В больнице
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" asp-controller="Patient" asp-action="Archive">
+                    <i class="fa fa-archive text-secondary me-2"></i>Архив
+                </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <a class="dropdown-item" asp-controller="Assignment" asp-action="Active">
+                    <i class="fa fa-tasks text-primary me-2"></i>Задания
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <a class="nav-link" asp-controller="Home" asp-action="Index">
+        <i class="fa fa-list-alt me-1"></i>Список задач
+    </a>
+    
+    <a class="nav-link" href="#" onclick="AppUtils.showSuccess('Функция в разработке')">
+        <i class="fa fa-bar-chart me-1"></i>Отчеты
+    </a>
 </div>
-
-<ul class="navbar-nav flex-grow-1">
-    <li class="nav-item">
-        <a class="nav-link btn btn-secondary btn-sm text-white mx-2" asp-controller="" asp-action="Index">Список задач</a>
-    </li>
-</ul>

@@ -1,77 +1,142 @@
 ﻿@page
 @model RegisterModel
+
 @{
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = "Регистрация";
+    Layout = "_LayoutWithoutContainer";
 }
 
-<h1>@ViewData["Title"]</h1>
+<div class="auth-card">
+    <div class="text-center mb-4">
+        <i class="fa fa-user-plus fa-3x text-primary mb-3"></i>
+        <h1 class="h3 mb-2">Создать аккаунт</h1>
+        <p class="text-muted">Зарегистрируйтесь в системе управления</p>
+    </div>
 
-<div class="row">
-    <div class="col-md-4">
-        <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h2>Create a new account.</h2>
-            <hr />
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <label asp-for="Input.FirstName"></label>
-                <input asp-for="Input.FirstName" class="form-control" />
-                <span asp-validation-for="Input.FirstName" class="text-danger"></span>
+    <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+        <div class="mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fa fa-user text-primary"></i>
+                </span>
+                <input asp-for="Input.LastName" class="form-control" autocomplete="family-name" aria-required="true" placeholder="Фамилия" />
             </div>
-            <div class="form-floating mb-3">
-                <label asp-for="Input.LastName"></label>
-                <input asp-for="Input.LastName" class="form-control" />
-                <span asp-validation-for="Input.LastName" class="text-danger"></span>
+            <span asp-validation-for="Input.LastName" class="invalid-feedback d-block"></span>
+        </div>
+
+        <div class="mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fa fa-user text-primary"></i>
+                </span>
+                <input asp-for="Input.FirstName" class="form-control" autocomplete="given-name" aria-required="true" placeholder="Имя" />
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label asp-for="Input.Email">Email</label>
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            <span asp-validation-for="Input.FirstName" class="invalid-feedback d-block"></span>
+        </div>
+        
+        <div class="mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fa fa-envelope text-primary"></i>
+                </span>
+                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="Электронная почта" />
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.Password">Password</label>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            <span asp-validation-for="Input.Email" class="invalid-feedback d-block"></span>
+        </div>
+        
+        <div class="mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fa fa-lock text-primary"></i>
+                </span>
+                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Пароль" />
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.ConfirmPassword">Confirm Password</label>
-                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+            <span asp-validation-for="Input.Password" class="invalid-feedback d-block"></span>
+            <small class="text-muted">Минимум 6 символов</small>
+        </div>
+        
+        <div class="mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fa fa-check text-primary"></i>
+                </span>
+                <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Подтверждение пароля" />
             </div>
-            <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </form>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            @{
-                if ((Model.ExternalLogins?.Count ?? 0) == 0)
-                {
-                    /*<div>
-                        <p>
-                            There are no external authentication services configured. See this <a href="https://go.microsoft.com/fwlink/?LinkID=532715">article
-                            about setting up this ASP.NET application to support logging in via external services</a>.
-                        </p>
-                    </div>*/
-                }
-                else
-                {
-                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                        <div>
-                            <p>
-                                @foreach (var provider in Model.ExternalLogins!)
-                                {
-                                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                                }
-                            </p>
-                        </div>
-                    </form>
-                }
-            }
-        </section>
-    </div>
+            <span asp-validation-for="Input.ConfirmPassword" class="invalid-feedback d-block"></span>
+        </div>
+        
+        <div class="d-grid mb-3">
+            <button id="registerSubmit" type="submit" class="btn btn-primary btn-lg">
+                <i class="fa fa-user-plus me-2"></i>Создать аккаунт
+            </button>
+        </div>
+        
+        <div class="text-center">
+            <span class="text-muted">Уже есть аккаунт?</span>
+            <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">
+                <i class="fa fa-sign-in me-1"></i>Войти
+            </a>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Добавляем плавную анимацию появления
+        document.addEventListener('DOMContentLoaded', function() {
+            const authCard = document.querySelector('.auth-card');
+            authCard.style.opacity = '0';
+            authCard.style.transform = 'translateY(30px)';
+            
+            setTimeout(() => {
+                authCard.style.transition = 'all 0.6s ease-out';
+                authCard.style.opacity = '1';
+                authCard.style.transform = 'translateY(0)';
+            }, 100);
+        });
+
+        // Фокус на поле имени при загрузке
+        document.querySelector('input[name="Input.FirstName"]').focus();
+        
+        // Валидация паролей в реальном времени
+        const passwordInput = document.querySelector('input[name="Input.Password"]');
+        const confirmPasswordInput = document.querySelector('input[name="Input.ConfirmPassword"]');
+        
+        function validatePasswords() {
+            if (confirmPasswordInput.value && passwordInput.value !== confirmPasswordInput.value) {
+                confirmPasswordInput.setCustomValidity('Пароли не совпадают');
+                confirmPasswordInput.classList.add('is-invalid');
+            } else {
+                confirmPasswordInput.setCustomValidity('');
+                confirmPasswordInput.classList.remove('is-invalid');
+                if (confirmPasswordInput.value && passwordInput.value === confirmPasswordInput.value) {
+                    confirmPasswordInput.classList.add('is-valid');
+                }
+            }
+        }
+        
+        passwordInput.addEventListener('input', validatePasswords);
+        confirmPasswordInput.addEventListener('input', validatePasswords);
+        
+        // Анимация кнопки при отправке
+        document.getElementById('registerSubmit').addEventListener('click', function() {
+            const btn = this;
+            const icon = btn.querySelector('i');
+            
+            // Показываем спиннер
+            icon.classList.remove('fa-user-plus');
+            icon.classList.add('fa-spinner', 'fa-spin');
+            btn.disabled = true;
+            
+            // Возвращаем обратно через 3 секунды (если форма не отправилась)
+            setTimeout(() => {
+                icon.classList.remove('fa-spinner', 'fa-spin');
+                icon.classList.add('fa-user-plus');
+                btn.disabled = false;
+            }, 3000);
+        });
+    </script>
 }

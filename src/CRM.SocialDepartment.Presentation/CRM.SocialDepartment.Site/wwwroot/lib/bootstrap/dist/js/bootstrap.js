@@ -238,7 +238,7 @@
   const DOMContentLoadedCallbacks = [];
   const onDOMContentLoaded = callback => {
     if (document.readyState === 'loading') {
-      // add listener on the first call when the document is in loading state
+      // add listener on the first call when the DocumentType is in loading state
       if (!DOMContentLoadedCallbacks.length) {
         document.addEventListener('DOMContentLoaded', () => {
           for (const callback of DOMContentLoadedCallbacks) {
@@ -2273,7 +2273,7 @@
       const {
         trapElement
       } = this._config;
-      if (event.target === document || event.target === trapElement || trapElement.contains(event.target)) {
+      if (event.target === DocumentType || event.target === trapElement || trapElement.contains(event.target)) {
         return;
       }
       const elements = SelectorEngine.focusableChildren(trapElement);
@@ -3004,7 +3004,7 @@
       return sanitizeFunction(unsafeHtml);
     }
     const domParser = new window.DOMParser();
-    const createdDocument = domParser.parseFromString(unsafeHtml, 'text/html');
+    const createdDocumentType = domParser.parseFromString(unsafeHtml, 'text/html');
     const elements = [].concat(...createdDocument.body.querySelectorAll('*'));
     for (const element of elements) {
       const elementName = element.nodeName.toLowerCase();

@@ -1,10 +1,122 @@
 ﻿@page
 @model LockoutModel
 @{
-    ViewData["Title"] = "Locked out";
+    ViewData["Title"] = "Аккаунт заблокирован";
+    Layout = "_LayoutWithoutContainer";
 }
 
-<header>
-    <h1 class="text-danger">@ViewData["Title"]</h1>
-    <p class="text-danger">This account has been locked out, please try again later.</p>
-</header>
+<div class="auth-card">
+    <div class="text-center mb-4">
+        <div class="mb-3">
+            <i class="fa fa-lock fa-3x text-warning"></i>
+        </div>
+        <h1 class="h3 mb-2">Аккаунт временно заблокирован</h1>
+        <p class="text-muted">Слишком много неудачных попыток входа</p>
+    </div>
+
+    <div class="alert alert-warning border-0 mb-4" style="background: rgba(245, 158, 11, 0.1);">
+        <div class="d-flex align-items-start">
+            <i class="fa fa-clock-o text-warning me-3 mt-1"></i>
+            <div>
+                <strong>Временная блокировка</strong>
+                <p class="mb-1">Ваш аккаунт заблокирован в целях безопасности из-за многократных неудачных попыток входа.</p>
+                <small class="text-muted">
+                    <i class="fa fa-shield me-1"></i>
+                    Это защищает ваш аккаунт от несанкционированного доступа.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 mb-4" style="background: rgba(248, 250, 252, 0.5);">
+        <div class="card-body">
+            <h6 class="card-title">
+                <i class="fa fa-lightbulb-o text-primary me-2"></i>
+                Что можно сделать?
+            </h6>
+            <ul class="list-unstyled mb-0">
+                <li class="mb-2">
+                    <i class="fa fa-clock-o text-muted me-2"></i>
+                    Подождите несколько минут и попробуйте снова
+                </li>
+                <li class="mb-2">
+                    <i class="fa fa-key text-muted me-2"></i>
+                    Используйте восстановление пароля, если забыли его
+                </li>
+                <li class="mb-0">
+                    <i class="fa fa-phone text-muted me-2"></i>
+                    Обратитесь к администратору системы
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="d-grid gap-2 mb-3">
+        <a asp-page="./ForgotPassword" class="btn btn-primary">
+            <i class="fa fa-key me-2"></i>Восстановить пароль
+        </a>
+        <a href="/" class="btn btn-outline-secondary">
+            <i class="fa fa-home me-2"></i>На главную
+        </a>
+    </div>
+    
+    <div class="text-center">
+        <small class="text-muted">
+            <i class="fa fa-clock-o me-1"></i>
+            Попробуйте снова через: <span id="countdown">5:00</span>
+        </small>
+    </div>
+</div>
+
+<script>
+    // Добавляем плавную анимацию появления
+    document.addEventListener('DOMContentLoaded', function() {
+        const authCard = document.querySelector('.auth-card');
+        authCard.style.opacity = '0';
+        authCard.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+            authCard.style.transition = 'all 0.6s ease-out';
+            authCard.style.opacity = '1';
+            authCard.style.transform = 'translateY(0)';
+        }, 100);
+        
+        // Анимация иконки замка
+        const lockIcon = document.querySelector('.fa-lock');
+        if (lockIcon) {
+            setInterval(() => {
+                lockIcon.style.transform = 'rotate(5deg)';
+                setTimeout(() => {
+                    lockIcon.style.transform = 'rotate(-5deg)';
+                    setTimeout(() => {
+                        lockIcon.style.transform = 'rotate(0deg)';
+                    }, 100);
+                }, 100);
+            }, 3000);
+        }
+    });
+
+    // Обратный отсчет (пример - показываем через сколько можно попробовать снова)
+    let timeLeft = 300; // 5 минут в секундах
+    const countdownElement = document.createElement('div');
+    countdownElement.className = 'text-center mt-3 text-muted';
+    countdownElement.innerHTML = '<small><i class="fa fa-clock-o me-1"></i>Попробуйте снова через: <span id="countdown">5:00</span></small>';
+    
+    const alertElement = document.querySelector('.alert-warning');
+    if (alertElement) {
+        alertElement.parentNode.insertBefore(countdownElement, alertElement.nextSibling);
+        
+        const countdownSpan = document.getElementById('countdown');
+        const timer = setInterval(() => {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            countdownSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                countdownElement.innerHTML = '<small class="text-success"><i class="fa fa-check me-1"></i>Теперь можно попробовать войти снова</small>';
+            }
+            timeLeft--;
+        }, 1000);
+    }
+</script>

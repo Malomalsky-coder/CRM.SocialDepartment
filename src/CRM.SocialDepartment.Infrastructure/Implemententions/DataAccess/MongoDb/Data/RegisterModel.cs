@@ -9,26 +9,28 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data
 {
     public class RegisterModel
     {
-        [Required]
-        [Display(Name = "First Name")]
+        [Required(ErrorMessage = "Имя обязательно для заполнения")]
+        [Display(Name = "Имя")]
         public string FirstName { get; set; }
-        [Required]
-        [Display(Name = "Last Name")]
+        
+        [Required(ErrorMessage = "Фамилия обязательна для заполнения")]
+        [Display(Name = "Фамилия")]
         public string LastName { get; set; }
-        [Required]
-        [EmailAddress]
-        [Display(Name = "Email")]
+
+        [Required(ErrorMessage = "Адрес электронной почты обязателен для заполнения")]
+        [EmailAddress(ErrorMessage = "Введите корректный адрес электронной почты")]
+        [Display(Name = "Электронная почта")]
         public string Email { get; set; }
 
-        [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [Required(ErrorMessage = "Пароль обязателен для заполнения")]
+        [StringLength(100, ErrorMessage = "Пароль должен содержать минимум {2} и максимум {1} символов.", MinimumLength = 6)]
         [DataType(DataType.Password)]
-        [Display(Name = "Password")]
+        [Display(Name = "Пароль")]
         public string Password { get; set; }
 
         [DataType(DataType.Password)]
-        [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        [Display(Name = "Подтверждение пароля")]
+        [Compare("Password", ErrorMessage = "Пароль и подтверждение пароля не совпадают.")]
         public string ConfirmPassword { get; set; }
     }
 }

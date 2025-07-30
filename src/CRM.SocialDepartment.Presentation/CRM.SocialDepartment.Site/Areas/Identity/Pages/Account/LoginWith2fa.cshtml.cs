@@ -60,17 +60,17 @@ namespace CRM.SocialDepartment.Site.Areas.Identity.Pages.Account
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
-            [StringLength(7, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+            [Required(ErrorMessage = "Код аутентификатора обязателен для заполнения")]
+            [StringLength(7, ErrorMessage = "Код должен содержать от {2} до {1} символов.", MinimumLength = 6)]
             [DataType(DataType.Text)]
-            [Display(Name = "Authenticator code")]
+            [Display(Name = "Код аутентификатора")]
             public string TwoFactorCode { get; set; }
 
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Display(Name = "Remember this machine")]
+            [Display(Name = "Запомнить это устройство")]
             public bool RememberMachine { get; set; }
         }
 

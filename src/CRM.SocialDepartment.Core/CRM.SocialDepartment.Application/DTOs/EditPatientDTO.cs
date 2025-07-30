@@ -1,5 +1,4 @@
-﻿using CRM.SocialDepartment.Domain.Entities.Patients;
-using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
+﻿using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
 
 namespace CRM.SocialDepartment.Application.DTOs
 {

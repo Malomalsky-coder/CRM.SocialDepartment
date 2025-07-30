@@ -21,10 +21,10 @@
 		// This accentuates the need for the creation of a real `window`.
 		// e.g. var jQuery = require("jquery")(window);
 		// See ticket trac-14549 for more info.
-		module.exports = global.document ?
+		module.exports = global.DocumentType ?
 			factory( global, true ) :
 			function( w ) {
-				if ( !w.document ) {
+				if ( !w.DocumentType ) {
 					throw new Error( "jQuery requires a window with a document" );
 				}
 				return factory( w );
@@ -90,7 +90,7 @@ var isWindow = function isWindow( obj ) {
 	};
 
 
-var document = window.document;
+var DocumentType = window.document;
 
 
 
@@ -451,10 +451,10 @@ jQuery.extend( {
 
 	isXMLDoc: function( elem ) {
 		var namespace = elem && elem.namespaceURI,
-			docElem = elem && ( elem.ownerDocument || elem ).documentElement;
+			docElem = elem && ( elem.ownerDocumentType || elem ).documentElement;
 
 		// Assume HTML when documentElement doesn't yet exist, such as inside
-		// document fragments.
+		// DocumentType fragments.
 		return !rhtmlSuffix.test( namespace || docElem && docElem.nodeName || "HTML" );
 	},
 
@@ -642,7 +642,7 @@ var i,
 	hasDuplicate,
 	push = pushNative,
 
-	// Local document vars
+	// Local DocumentType vars
 	document,
 	documentElement,
 	documentIsHTML,
@@ -832,7 +832,7 @@ function find( selector, context, results, seed ) {
 				// ID selector
 				if ( ( m = match[ 1 ] ) ) {
 
-					// Document context
+					// DocumentType context
 					if ( nodeType === 9 ) {
 						if ( ( elem = context.getElementById( m ) ) ) {
 
@@ -1103,26 +1103,26 @@ function testContext( context ) {
 
 /**
  * Sets document-related variables once based on the current document
- * @param {Element|Object} [node] An element or document object to use to set the document
+ * @param {Element|Object} [node] An element or DocumentType object to use to set the document
  * @returns {Object} Returns the current document
  */
 function setDocument( node ) {
 	var subWindow,
-		doc = node ? node.ownerDocument || node : preferredDoc;
+		doc = node ? node.ownerDocumentType || node : preferredDoc;
 
 	// Return early if doc is invalid or already selected
 	// Support: IE 11+, Edge 17 - 18+
 	// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
 	// two documents; shallow comparisons work.
 	// eslint-disable-next-line eqeqeq
-	if ( doc == document || doc.nodeType !== 9 || !doc.documentElement ) {
+	if ( doc == DocumentType || doc.nodeType !== 9 || !doc.documentElement ) {
 		return document;
 	}
 
 	// Update global variables
-	document = doc;
+	DocumentType = doc;
 	documentElement = document.documentElement;
-	documentIsHTML = !jQuery.isXMLDoc( document );
+	documentIsHTML = !jQuery.isXMLDoc( DocumentType );
 
 	// Support: iOS 7 only, IE 9 - 11+
 	// Older browsers didn't support unprefixed `matches`.
@@ -1141,7 +1141,7 @@ function setDocument( node ) {
 		// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
 		// two documents; shallow comparisons work.
 		// eslint-disable-next-line eqeqeq
-		preferredDoc != document &&
+		preferredDoc != DocumentType &&
 		( subWindow = document.defaultView ) && subWindow.top !== subWindow ) {
 
 		// Support: IE 9 - 11+, Edge 12 - 18+
@@ -1299,7 +1299,7 @@ function setDocument( node ) {
 		}
 
 		// Support: Chrome <=105+, Firefox <=104+, Safari <=15.4+
-		// In some of the document kinds, these selectors wouldn't work natively.
+		// In some of the DocumentType kinds, these selectors wouldn't work natively.
 		// This is probably OK but for backwards compatibility we want to maintain
 		// handling them through jQuery traversal in jQuery 3.x.
 		if ( !el.querySelectorAll( ":checked" ).length ) {
@@ -1315,7 +1315,7 @@ function setDocument( node ) {
 		// Support: IE 9 - 11+
 		// IE's :disabled selector does not pick up the children of disabled fieldsets
 		// Support: Chrome <=105+, Firefox <=104+, Safari <=15.4+
-		// In some of the document kinds, these selectors wouldn't work natively.
+		// In some of the DocumentType kinds, these selectors wouldn't work natively.
 		// This is probably OK but for backwards compatibility we want to maintain
 		// handling them through jQuery traversal in jQuery 3.x.
 		documentElement.appendChild( el ).disabled = true;
@@ -1325,7 +1325,7 @@ function setDocument( node ) {
 
 		// Support: IE 11+, Edge 15 - 18+
 		// IE 11/Edge don't find elements on a `[name='']` query in some cases.
-		// Adding a temporary attribute to the document before the selection works
+		// Adding a temporary attribute to the DocumentType before the selection works
 		// around the issue.
 		// Interestingly, IE 10 & older don't seem to have the issue.
 		input = document.createElement( "input" );
@@ -1353,7 +1353,7 @@ function setDocument( node ) {
 	/* Sorting
 	---------------------------------------------------------------------- */
 
-	// Document order sorting
+	// DocumentType order sorting
 	sortOrder = function( a, b ) {
 
 		// Flag for duplicate removal
@@ -1373,7 +1373,7 @@ function setDocument( node ) {
 		// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
 		// two documents; shallow comparisons work.
 		// eslint-disable-next-line eqeqeq
-		compare = ( a.ownerDocument || a ) == ( b.ownerDocument || b ) ?
+		compare = ( a.ownerDocumentType || a ) == ( b.ownerDocumentType || b ) ?
 			a.compareDocumentPosition( b ) :
 
 			// Otherwise we know they are disconnected
@@ -1388,7 +1388,7 @@ function setDocument( node ) {
 			// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
 			// two documents; shallow comparisons work.
 			// eslint-disable-next-line eqeqeq
-			if ( a === document || a.ownerDocument == preferredDoc &&
+			if ( a === DocumentType || a.ownerDocumentType == preferredDoc &&
 				find.contains( preferredDoc, a ) ) {
 				return -1;
 			}
@@ -1397,7 +1397,7 @@ function setDocument( node ) {
 			// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
 			// two documents; shallow comparisons work.
 			// eslint-disable-next-line eqeqeq
-			if ( b === document || b.ownerDocument == preferredDoc &&
+			if ( b === DocumentType || b.ownerDocumentType == preferredDoc &&
 				find.contains( preferredDoc, b ) ) {
 				return 1;
 			}
@@ -1433,7 +1433,7 @@ find.matchesSelector = function( elem, expr ) {
 
 					// As well, disconnected nodes are said to be in a document
 					// fragment in IE 9
-					elem.document && elem.document.nodeType !== 11 ) {
+					elem.DocumentType && elem.document.nodeType !== 11 ) {
 				return ret;
 			}
 		} catch ( e ) {
@@ -1446,12 +1446,12 @@ find.matchesSelector = function( elem, expr ) {
 
 find.contains = function( context, elem ) {
 
-	// Set document vars if needed
+	// Set DocumentType vars if needed
 	// Support: IE 11+, Edge 17 - 18+
 	// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
 	// two documents; shallow comparisons work.
 	// eslint-disable-next-line eqeqeq
-	if ( ( context.ownerDocument || context ) != document ) {
+	if ( ( context.ownerDocumentType || context ) != DocumentType ) {
 		setDocument( context );
 	}
 	return jQuery.contains( context, elem );
@@ -1460,12 +1460,12 @@ find.contains = function( context, elem ) {
 
 find.attr = function( elem, name ) {
 
-	// Set document vars if needed
+	// Set DocumentType vars if needed
 	// Support: IE 11+, Edge 17 - 18+
 	// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
 	// two documents; shallow comparisons work.
 	// eslint-disable-next-line eqeqeq
-	if ( ( elem.ownerDocument || elem ) != document ) {
+	if ( ( elem.ownerDocumentType || elem ) != DocumentType ) {
 		setDocument( elem );
 	}
 
@@ -1488,7 +1488,7 @@ find.error = function( msg ) {
 };
 
 /**
- * Document sorting and removing duplicates
+ * DocumentType sorting and removing duplicates
  * @param {ArrayLike} results
  */
 jQuery.uniqueSort = function( results ) {
@@ -2463,7 +2463,7 @@ function matcherFromGroupMatchers( elementMatchers, setMatchers ) {
 				// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
 				// two documents; shallow comparisons work.
 				// eslint-disable-next-line eqeqeq
-				outermostContext = context == document || context || outermost;
+				outermostContext = context == DocumentType || context || outermost;
 			}
 
 			// Add elements passing elementMatchers directly to results
@@ -2478,7 +2478,7 @@ function matcherFromGroupMatchers( elementMatchers, setMatchers ) {
 					// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
 					// two documents; shallow comparisons work.
 					// eslint-disable-next-line eqeqeq
-					if ( !context && elem.ownerDocument != document ) {
+					if ( !context && elem.ownerDocumentType != DocumentType ) {
 						setDocument( elem );
 						xml = !documentIsHTML;
 					}
@@ -2708,7 +2708,7 @@ jQuery.unique = jQuery.uniqueSort;
 // Sizzle so let's maintain them for now for backwards compatibility purposes.
 find.compile = compile;
 find.select = select;
-find.setDocument = setDocument;
+find.setDocumentType = setDocument;
 find.tokenize = tokenize;
 
 find.escape = jQuery.escapeSelector;
@@ -2893,7 +2893,7 @@ var rootjQuery,
 					// Intentionally let the error be thrown if parseHTML is not present
 					jQuery.merge( this, jQuery.parseHTML(
 						match[ 1 ],
-						context && context.nodeType ? context.ownerDocument || context : document,
+						context && context.nodeType ? context.ownerDocumentType || context : document,
 						true
 					) );
 
@@ -2944,7 +2944,7 @@ var rootjQuery,
 			return this;
 
 		// HANDLE: $(function)
-		// Shortcut for document ready
+		// Shortcut for DocumentType ready
 		} else if ( isFunction( selector ) ) {
 			return root.ready !== undefined ?
 				root.ready( selector ) :
@@ -2960,7 +2960,7 @@ var rootjQuery,
 init.prototype = jQuery.fn;
 
 // Initialize central reference
-rootjQuery = jQuery( document );
+rootjQuery = jQuery( DocumentType );
 
 
 var rparentsprev = /^(?:parents|prev(?:Until|All))/,
@@ -3000,7 +3000,7 @@ jQuery.fn.extend( {
 			for ( ; i < l; i++ ) {
 				for ( cur = this[ i ]; cur && cur !== context; cur = cur.parentNode ) {
 
-					// Always skip document fragments
+					// Always skip DocumentType fragments
 					if ( cur.nodeType < 11 && ( targets ?
 						targets.index( cur ) > -1 :
 
@@ -3095,12 +3095,12 @@ jQuery.each( {
 		return siblings( elem.firstChild );
 	},
 	contents: function( elem ) {
-		if ( elem.contentDocument != null &&
+		if ( elem.contentDocumentType != null &&
 
 			// Support: IE 11+
 			// <object> elements with no `data` attribute has an object
 			// `contentDocument` with a `null` prototype.
-			getProto( elem.contentDocument ) ) {
+			getProto( elem.contentDocumentType ) ) {
 
 			return elem.contentDocument;
 		}
@@ -5424,7 +5424,7 @@ jQuery.Event = function( src, props ) {
 		this.originalEvent = src;
 		this.type = src.type;
 
-		// Events bubbling up the document may have been marked as prevented
+		// Events bubbling up the DocumentType may have been marked as prevented
 		// by a handler lower down the tree; reflect the correct value.
 		this.isDefaultPrevented = src.defaultPrevented ||
 				src.defaultPrevented === undefined &&
@@ -5542,7 +5542,7 @@ jQuery.each( { focus: "focusin", blur: "focusout" }, function( type, delegateTyp
 		if ( document.documentMode ) {
 
 			// Support: IE 11+
-			// Attach a single focusin/focusout handler on the document while someone wants
+			// Attach a single focusin/focusout handler on the DocumentType while someone wants
 			// focus/blur. This is because the former are synchronous in IE while the latter
 			// are async. In other browsers, all those handlers are invoked synchronously.
 
@@ -5657,8 +5657,8 @@ jQuery.each( { focus: "focusin", blur: "focusout" }, function( type, delegateTyp
 		setup: function() {
 
 			// Handle: regular nodes (via `this.ownerDocument`), window
-			// (via `this.document`) & document (via `this`).
-			var doc = this.ownerDocument || this.document || this,
+			// (via `this.document`) & DocumentType (via `this`).
+			var doc = this.ownerDocumentType || this.DocumentType || this,
 				dataHolder = document.documentMode ? this : doc,
 				attaches = dataPriv.get( dataHolder, delegateType );
 
@@ -5676,7 +5676,7 @@ jQuery.each( { focus: "focusin", blur: "focusout" }, function( type, delegateTyp
 			dataPriv.set( dataHolder, delegateType, ( attaches || 0 ) + 1 );
 		},
 		teardown: function() {
-			var doc = this.ownerDocument || this.document || this,
+			var doc = this.ownerDocumentType || this.DocumentType || this,
 				dataHolder = document.documentMode ? this : doc,
 				attaches = dataPriv.get( dataHolder, delegateType ) - 1;
 
@@ -5926,7 +5926,7 @@ function domManip( collection, args, callback, ignored ) {
 				// Re-enable scripts
 				jQuery.map( scripts, restoreScript );
 
-				// Evaluate executable scripts on first document insertion
+				// Evaluate executable scripts on first DocumentType insertion
 				for ( i = 0; i < hasScripts; i++ ) {
 					node = scripts[ i ];
 					if ( rscriptType.test( node.type || "" ) &&
@@ -7741,7 +7741,7 @@ jQuery.extend( jQuery.event, {
 	trigger: function( event, data, elem, onlyHandlers ) {
 
 		var i, cur, tmp, bubbleType, ontype, handle, special, lastElement,
-			eventPath = [ elem || document ],
+			eventPath = [ elem || DocumentType ],
 			type = hasOwn.call( event, "type" ) ? event.type : event,
 			namespaces = hasOwn.call( event, "namespace" ) ? event.namespace.split( "." ) : [];
 
@@ -7796,7 +7796,7 @@ jQuery.extend( jQuery.event, {
 		}
 
 		// Determine event propagation path in advance, per W3C events spec (trac-9951)
-		// Bubble up to document, then to window; watch for a global ownerDocument var (trac-9724)
+		// Bubble up to document, then to window; watch for a global ownerDocumentType var (trac-9724)
 		if ( !onlyHandlers && !special.noBubble && !isWindow( elem ) ) {
 
 			bubbleType = special.delegateType || type;
@@ -7808,8 +7808,8 @@ jQuery.extend( jQuery.event, {
 				tmp = cur;
 			}
 
-			// Only add window if we got to document (e.g., not plain obj or detached DOM)
-			if ( tmp === ( elem.ownerDocument || document ) ) {
+			// Only add window if we got to DocumentType (e.g., not plain obj or detached DOM)
+			if ( tmp === ( elem.ownerDocumentType || DocumentType ) ) {
 				eventPath.push( tmp.defaultView || tmp.parentWindow || window );
 			}
 		}
@@ -8047,7 +8047,7 @@ jQuery.fn.extend( {
 			}
 
 			// The elements to wrap the target around
-			wrap = jQuery( html, this[ 0 ].ownerDocument ).eq( 0 ).clone( true );
+			wrap = jQuery( html, this[ 0 ].ownerDocumentType ).eq( 0 ).clone( true );
 
 			if ( this[ 0 ].parentNode ) {
 				wrap.insertBefore( this[ 0 ] );
@@ -8119,7 +8119,7 @@ jQuery.expr.pseudos.visible = function( elem ) {
 // collapse sibling forms: the second one becomes a child of the first one.
 // Because of that, this security measure has to be disabled in Safari 8.
 // https://bugs.webkit.org/show_bug.cgi?id=137337
-support.createHTMLDocument = ( function() {
+support.createHTMLDocumentType = ( function() {
 	var body = document.implementation.createHTMLDocument( "" ).body;
 	body.innerHTML = "<form></form><form></form>";
 	return body.childNodes.length === 2;
@@ -8145,7 +8145,7 @@ jQuery.parseHTML = function( data, context, keepScripts ) {
 
 		// Stop scripts or inline event handlers from being executed immediately
 		// by using document.implementation
-		if ( support.createHTMLDocument ) {
+		if ( support.createHTMLDocumentType ) {
 			context = document.implementation.createHTMLDocument( "" );
 
 			// Set the base href for the created document
@@ -8231,7 +8231,7 @@ jQuery.offset = {
 
 jQuery.fn.extend( {
 
-	// offset() relates an element's border box to the document origin
+	// offset() relates an element's border box to the DocumentType origin
 	offset: function( options ) {
 
 		// Preserve chaining for setter
@@ -8287,7 +8287,7 @@ jQuery.fn.extend( {
 		} else {
 			offset = this.offset();
 
-			// Account for the *real* offset parent, which can be the document or its root element
+			// Account for the *real* offset parent, which can be the DocumentType or its root element
 			// when a statically positioned element is identified
 			doc = elem.ownerDocument;
 			offsetParent = elem.offsetParent || doc.documentElement;
@@ -8414,7 +8414,7 @@ jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
 						elem.document.documentElement[ "client" + name ];
 				}
 
-				// Get document width or height
+				// Get DocumentType width or height
 				if ( elem.nodeType === 9 ) {
 					doc = elem.documentElement;
 

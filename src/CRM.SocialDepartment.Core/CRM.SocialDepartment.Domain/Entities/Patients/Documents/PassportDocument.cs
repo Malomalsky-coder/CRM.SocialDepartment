@@ -1,32 +1,32 @@
-﻿using CRM.SocialDepartment.Domain.Exceptions;
+﻿using DDD.Values;
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients.Documents
 {
-    public sealed class PassportDocument : Document
+    public class PassportDocument : DocumentType
     {
-        public override string DisplayName => "Паспорт";
+        public string? Number { get; }
 
-        //Пример будущего расширения
-        //public string Series { get; private set; } // Серия (например, "4500")
-
-        public PassportDocument(string number) : base(number)
+        public PassportDocument(string? number) : base(0, "Паспорт")
         {
-            if (!IsValid())
-                throw new InvalidDocumentNumberException(GetType().Name, number);
-
             Number = number;
         }
 
-        public override bool IsValid()
+        protected PassportDocument() : base(0, "Паспорт")
         {
-            return !string.IsNullOrEmpty(Number) && Number.Length == 11 && Number.All(char.IsDigit);
+            Number = null;
         }
 
-        //Если расширять тип, то необходимо переопределить метод
-        //protected override IEnumerable<object> GetAtomicValues()
-        //{
-        //    yield return Series;
-        //    yield return Number;
-        //}
+        public bool IsValid()
+        {
+            // Простая валидация формата паспорта: 4 цифры, пробел, 6 цифр
+            return !string.IsNullOrEmpty(Number) && System.Text.RegularExpressions.Regex.IsMatch(Number, @"^\d{4}\s\d{6}$");
+        }
+
+        protected override IEnumerable<object> GetAtomicValues()
+        {
+            yield return Number ?? string.Empty;
+        }
+
+        public override string ToString() => $"Паспорт: {Number ?? "не указан"}";
     }
 }

@@ -1,5 +1,7 @@
-﻿#nullable disable
+﻿using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
+using CRM.SocialDepartment.Site.Helpers;
+using CRM.SocialDepartment.Site.Models.Patient;
 using CRM.SocialDepartment.Site.ViewModels.Validation;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System.ComponentModel;
@@ -22,29 +24,26 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Полное имя пациента
         /// </summary>
         [Required(ErrorMessage = "ФИО обязательно для заполнения")]
-        [StringLength(100, MinimumLength = 3, ErrorMessage = "ФИО должно содержать от 3 до 100 символов")]
-        [Display(Name = "ФИО")]
-        public string FullName { get; init; }
+        [StringLength(100, ErrorMessage = "ФИО не может быть длиннее 100 символов")]
+        public string FullName { get; init; } = string.Empty;
 
         /// <summary>
         /// История болезни
         /// </summary>
         [Required(ErrorMessage = "История болезни обязательна для заполнения")]
-        [Display(Name = "История болезни")]
-        public MedicalHistory MedicalHistory { get; init; }
+        public MedicalHistoryModel MedicalHistory { get; init; } = new();
 
         /// <summary>
         /// Информация о гражданстве
         /// </summary>
         [Required(ErrorMessage = "Информация о гражданстве обязательна для заполнения")]
-        [Display(Name = "Информация о гражданстве")]
-        public CitizenshipInfo CitizenshipInfo { get; init; }
+        public CitizenshipInfoModel CitizenshipInfo { get; init; } = new();
 
         /// <summary>
         /// Список документов
         /// </summary>
         [Display(Name = "Список документов")]
-        public Dictionary<DocumentType, DocumentViewModel>? Documents { get; init; }
+        public Dictionary<DocumentType, DocumentViewModel> Documents { get; init; } = new();
 
         /// <summary>
         /// Пациент является дееспособным?
@@ -56,7 +55,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Дееспособный
         /// </summary>
         [Display(Name = "Информация о дееспособности")]
-        public Capable? Capable { get; init; }
+        public CapableModel? Capable { get; init; }
 
         /// <summary>
         /// Получает ли пациент пенсию
@@ -68,7 +67,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Пенсия
         /// </summary>
         [Display(Name = "Информация о пенсии")]
-        public Pension? Pension { get; init; }
+        public PensionModel? Pension { get; init; }
 
         /// <summary>
         /// Примечание
@@ -80,6 +79,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// Дата рождения пациента
         /// </summary>
         [DisplayName("Дата рождения")]
+        [DisplayFormat(DataFormatString = "{0:dd.MM.yyyy}", ApplyFormatInEditMode = true)]
         public DateTime Birthday { get; }
 
         [DisplayName("Несовершеннолетний")]
@@ -116,38 +116,71 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            // Валидация обязательных документов
-            if (Documents != null)
+            var results = new List<ValidationResult>();
+
+            // Проверка документов
+            foreach (var document in Documents)
             {
-                if (!Documents.ContainsKey(DocumentType.Passport))
+                if (!string.IsNullOrWhiteSpace(document.Value.Number))
                 {
-                    yield return new ValidationResult("Паспорт обязателен для заполнения", new[] { nameof(Documents) });
-                }
-
-                if (!Documents.ContainsKey(DocumentType.MedicalPolicy))
-                {
-                    yield return new ValidationResult("Полис ОМС обязателен для заполнения", new[] { nameof(Documents) });
-                }
-
-                if (!Documents.ContainsKey(DocumentType.Snils))
-                {
-                    yield return new ValidationResult("СНИЛС обязателен для заполнения", new[] { nameof(Documents) });
+                    var validationError = ValidateDocumentFormat(document.Key, document.Value.Number);
+                    if (!string.IsNullOrEmpty(validationError))
+                    {
+                        results.Add(new ValidationResult(validationError, new[] { $"Documents[{document.Key}]" }));
+                    }
                 }
             }
 
-            // Валидация дееспособности
-            if (IsCapable && Capable == null)
+            return results;
+        }
+
+        private static string? ValidateDocumentFormat(DocumentType documentType, string number)
+        {
+            return documentType switch
             {
-                yield return new ValidationResult("Если пациент дееспособен, необходимо указать информацию о дееспособности", 
-                    new[] { nameof(Capable) });
+                var dt when dt == DocumentType.Passport => ValidatePassportFormat(number),
+                var dt when dt == DocumentType.MedicalPolicy => ValidateMedicalPolicyFormat(number),
+                var dt when dt == DocumentType.Snils => ValidateSnilsFormat(number),
+                _ => null
+            };
+        }
+
+        private static string? ValidatePassportFormat(string number)
+        {
+            if (string.IsNullOrWhiteSpace(number)) return null;
+
+            var cleanNumber = number.Replace(" ", "");
+            if (!System.Text.RegularExpressions.Regex.IsMatch(cleanNumber, @"^\d{10}$"))
+            {
+                return "Номер паспорта должен содержать 10 цифр в формате: 1234 567890";
             }
 
-            // Валидация пенсии
-            if (ReceivesPension && Pension == null)
+            return null;
+        }
+
+        private static string? ValidateMedicalPolicyFormat(string number)
+        {
+            if (string.IsNullOrWhiteSpace(number)) return null;
+
+            var cleanNumber = number.Replace(" ", "");
+            if (!System.Text.RegularExpressions.Regex.IsMatch(cleanNumber, @"^\d{16}$"))
             {
-                yield return new ValidationResult("Если пациент получает пенсию, необходимо указать информацию о пенсии", 
-                    new[] { nameof(Pension) });
+                return "Номер полиса ОМС должен содержать 16 цифр";
             }
+
+            return null;
+        }
+
+        private static string? ValidateSnilsFormat(string number)
+        {
+            if (string.IsNullOrWhiteSpace(number)) return null;
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(number, @"^\d{3}-\d{3}-\d{3}\s\d{2}$"))
+            {
+                return "Номер СНИЛС должен быть в формате: 123-456-789 01";
+            }
+
+            return null;
         }
     }
 }

@@ -9,10 +9,10 @@ namespace CRM.SocialDepartment.Site.Extensions
         {
             return
             [
-                new SelectListItem { Value = "0", Text = PensionAddress.None.DisplayName },
-                new SelectListItem { Value = "1", Text = PensionAddress.PHC5.DisplayName },
-                new SelectListItem { Value = "2", Text = PensionAddress.OSB.DisplayName },
-                new SelectListItem { Value = "3", Text = PensionAddress.Registration.DisplayName }
+                new SelectListItem { Value = "0", Text = PensionAddressType.None.DisplayName },
+                new SelectListItem { Value = "1", Text = PensionAddressType.PHC5.DisplayName },
+                new SelectListItem { Value = "2", Text = PensionAddressType.OSB.DisplayName },
+                new SelectListItem { Value = "3", Text = PensionAddressType.Registration.DisplayName }
             ];
         }
     }

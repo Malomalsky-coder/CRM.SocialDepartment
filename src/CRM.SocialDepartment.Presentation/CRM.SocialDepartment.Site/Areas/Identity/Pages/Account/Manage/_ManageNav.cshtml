@@ -3,14 +3,84 @@
 @{
     var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
 }
-<ul class="nav nav-pills flex-column">
-    <li class="nav-item"><a class="nav-link @ManageNavPages.IndexNavClass(ViewContext)" id="profile" asp-page="./Index">Profile</a></li>
-    <li class="nav-item"><a class="nav-link @ManageNavPages.EmailNavClass(ViewContext)" id="email" asp-page="./Email">Email</a></li>
-    <li class="nav-item"><a class="nav-link @ManageNavPages.ChangePasswordNavClass(ViewContext)" id="change-password" asp-page="./ChangePassword">Password</a></li>
-    @if (hasExternalLogins)
-    {
-        <li id="external-logins" class="nav-item"><a id="external-login" class="nav-link @ManageNavPages.ExternalLoginsNavClass(ViewContext)" asp-page="./ExternalLogins">External logins</a></li>
+
+<nav class="manage-nav">
+    <ul class="nav nav-pills flex-column">
+        <li class="nav-item">
+            <a class="nav-link @ManageNavPages.IndexNavClass(ViewContext)" id="profile" asp-page="./Index">
+                <i class="fa fa-user me-2"></i>Профиль
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @ManageNavPages.EmailNavClass(ViewContext)" id="email" asp-page="./Email">
+                <i class="fa fa-envelope me-2"></i>Email
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @ManageNavPages.ChangePasswordNavClass(ViewContext)" id="change-password" asp-page="./ChangePassword">
+                <i class="fa fa-key me-2"></i>Пароль
+            </a>
+        </li>
+        @if (hasExternalLogins)
+        {
+            <li id="external-logins" class="nav-item">
+                <a id="external-login" class="nav-link @ManageNavPages.ExternalLoginsNavClass(ViewContext)" asp-page="./ExternalLogins">
+                    <i class="fa fa-link me-2"></i>Внешние входы
+                </a>
+            </li>
+        }
+        <li class="nav-item">
+            <a class="nav-link @ManageNavPages.TwoFactorAuthenticationNavClass(ViewContext)" id="two-factor" asp-page="./TwoFactorAuthentication">
+                <i class="fa fa-shield me-2"></i>Двухфакторная аутентификация
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @ManageNavPages.PersonalDataNavClass(ViewContext)" id="personal-data" asp-page="./PersonalData">
+                <i class="fa fa-database me-2"></i>Персональные данные
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<style>
+    .manage-nav .nav-pills .nav-link {
+        border-radius: 0;
+        border: none;
+        color: var(--bs-body-color);
+        padding: 12px 20px;
+        margin-bottom: 2px;
+        transition: all 0.3s ease;
+        background: transparent;
+        display: flex;
+        align-items: center;
     }
-    <li class="nav-item"><a class="nav-link @ManageNavPages.TwoFactorAuthenticationNavClass(ViewContext)" id="two-factor" asp-page="./TwoFactorAuthentication">Two-factor authentication</a></li>
-    <li class="nav-item"><a class="nav-link @ManageNavPages.PersonalDataNavClass(ViewContext)" id="personal-data" asp-page="./PersonalData">Personal data</a></li>
-</ul>
+    
+    .manage-nav .nav-pills .nav-link:hover {
+        background-color: rgba(37, 99, 235, 0.1);
+        color: var(--bs-primary);
+        transform: translateX(5px);
+    }
+    
+    .manage-nav .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, var(--bs-primary), #1d4ed8);
+        color: white;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        transform: translateX(5px);
+    }
+    
+    .manage-nav .nav-pills .nav-link.active i {
+        animation: pulse 2s infinite;
+    }
+    
+    @@keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    .manage-nav .nav-pills .nav-link i {
+        width: 20px;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+</style>

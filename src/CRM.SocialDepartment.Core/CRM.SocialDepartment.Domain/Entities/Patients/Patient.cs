@@ -42,7 +42,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Список документов
         /// </summary>
-        public Dictionary<DocumentType, Document> Documents { get; private set; }
+        public Dictionary<DocumentType, object> Documents { get; private set; }
 
         /// <summary>
         /// Пациент является дееспособным?
@@ -82,7 +82,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         #pragma warning disable CS8618
         private Patient() 
         {
-            _medicalHistories = new List<MedicalHistory>();
+            _medicalHistories = [];
         }
         #pragma warning restore CS8618
 
@@ -100,9 +100,9 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             Id = id;
             FullName = fullname;
             Birthday = birthday;
-            _medicalHistories = new List<MedicalHistory> { medicalHistory };
+            _medicalHistories = [medicalHistory];
             CitizenshipInfo = citizenshipInfo;
-            Documents = new Dictionary<DocumentType, Document>();
+            Documents = [];
             Capable = capable;
             Pension = pension;
             Note = note;
@@ -136,7 +136,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <param name="earlyRegistration">Ранняя регистрация</param>
         /// <param name="placeOfBirth">Место рождения</param>
         /// <param name="documentAttached">Имеющиеся документы</param>
-        public void ChangeCitizenshipInfo(CitizenshipType citizenship, string? country, string? registration, City? earlyRegistration, string? placeOfBirth, string? documentAttached)
+        public void ChangeCitizenshipInfo(CitizenshipType citizenship, string? country, string? registration, CityType? earlyRegistration, string? placeOfBirth, string? documentAttached)
         {
             if (citizenship == CitizenshipType.RussianFederation)
             {
@@ -184,7 +184,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// Изменить раннюю регистрацию
         /// </summary>
         /// <param name="earlyRegistration">Новая ранняя регистрация</param>
-        public void SetEarlyRegistration(City? earlyRegistration)
+        public void SetEarlyRegistration(CityType? earlyRegistration)
         {
             CitizenshipInfo.SetEarlyRegistration(earlyRegistration);
         }
@@ -212,19 +212,18 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// </summary>
         /// <param name="document">Документ для добавления</param>
         /// <exception cref="DomainException">Если документ такого типа уже существует</exception>
-        public void AddDocument(Document document)
+        public void AddDocument(DocumentType document)
         {
             if (document is null)
                 throw new ArgumentNullException(nameof(document), "Документ не может быть null");
 
-            var documentType = GetDocumentType(document);
-            if (Documents.ContainsKey(documentType))
+            if (Documents.ContainsKey(document))
                 throw new DomainException($"Документ типа {document.DisplayName} уже существует");
 
-            Documents[documentType] = document;
+            Documents[document] = document;
             
             // Генерируем событие добавления документа
-            AddDomainEvent(new PatientDocumentAddedEvent(Id, documentType.ToString(), document.Number));
+            AddDomainEvent(new PatientDocumentAddedEvent(Id, document.DisplayName ?? "Неизвестный документ", GetDocumentNumber(document) ?? string.Empty));
         }
 
         /// <summary>
@@ -232,29 +231,36 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// </summary>
         /// <param name="document">Новая версия документа</param>
         /// <exception cref="DomainException">Если документ такого типа не существует</exception>
-        public void UpdateDocument(Document document)
+        public void UpdateDocument(DocumentType document)
         {
             if (document is null)
                 throw new ArgumentNullException(nameof(document), "Документ не может быть null");
 
-            var documentType = GetDocumentType(document);
-            if (!Documents.ContainsKey(documentType))
+            if (!Documents.ContainsKey(document))
                 throw new DomainException($"Документ типа {document.DisplayName} не найден");
 
-            Documents[documentType] = document;
+            Documents[document] = document;
         }
 
         /// <summary>
-        /// Определяет тип документа на основе его типа
+        /// Получает отображаемое имя документа
         /// </summary>
-        private static DocumentType GetDocumentType(Document document)
+        private static string? GetDocumentDisplayName(DocumentType document)
         {
-            return document switch
+            return document.DisplayName;
+        }
+
+        /// <summary>
+        /// Получает номер документа
+        /// </summary>
+        private static string? GetDocumentNumber(DocumentType document)
+        {
+            return document.GetType().Name switch
             {
-                PassportDocument => DocumentType.Passport,
-                MedicalPolicyDocument => DocumentType.MedicalPolicy,
-                SnilsDocument => DocumentType.Snils,
-                _ => throw new DomainException($"Неизвестный тип документа: {document.GetType().Name}")
+                nameof(PassportDocument) => ((PassportDocument)(object)document).Number,
+                nameof(MedicalPolicyDocument) => ((MedicalPolicyDocument)(object)document).Number,
+                nameof(SnilsDocument) => ((SnilsDocument)(object)document).Number,
+                _ => null
             };
         }
 
@@ -277,9 +283,13 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <returns>True если все обязательные документы присутствуют</returns>
         public bool HasRequiredDocuments()
         {
-            return Documents.ContainsKey(DocumentType.Passport) &&
-                   Documents.ContainsKey(DocumentType.MedicalPolicy) &&
-                   Documents.ContainsKey(DocumentType.Snils);
+            var passport = DocumentType.FromValue(0);
+            var medicalPolicy = DocumentType.FromValue(1);
+            var snils = DocumentType.FromValue(2);
+            
+            return Documents.ContainsKey(passport) &&
+                   Documents.ContainsKey(medicalPolicy) &&
+                   Documents.ContainsKey(snils);
         }
 
         /// <summary>
@@ -378,7 +388,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// </summary>
         /// <param name="disabilityGroup">Новая группа инвалидности</param>
         /// <exception cref="DomainException">Если пациент не получает пенсию</exception>
-        public void SetDisabilityGroup(DisabilityGroup disabilityGroup)
+        public void SetDisabilityGroup(DisabilityGroupType disabilityGroup)
         {
             if (Pension is null)
                 throw new DomainException("Пациент не получает пенсию");
@@ -404,7 +414,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// </summary>
         /// <param name="pensionAddress">Новый способ получения пенсии</param>
         /// <exception cref="DomainException">Если пациент не получает пенсию</exception>
-        public void SetPensionAddress(PensionAddress pensionAddress)
+        public void SetPensionAddress(PensionAddressType pensionAddress)
         {
             if (Pension is null)
                 throw new DomainException("Пациент не получает пенсию");

@@ -6,7 +6,7 @@
 	if ( typeof define === 'function' && define.amd ) {
 		// AMD
 		define( ['jquery', 'datatables.net-bs5', 'datatables.net-fixedheader'], function ( $ ) {
-			return factory( $, window, document );
+			return factory( $, window, DocumentType );
 		} );
 	}
 	else if ( typeof exports === 'object' ) {
@@ -35,19 +35,19 @@
 				}
 
 				cjsRequires( root, $ );
-				return factory( $, root, root.document );
+				return factory( $, root, root.DocumentType );
 			};
 		}
 		else {
 			cjsRequires( window, jq );
-			module.exports = factory( jq, window, window.document );
+			module.exports = factory( jq, window, window.DocumentType );
 		}
 	}
 	else {
 		// Browser
-		factory( jQuery, window, document );
+		factory( jQuery, window, DocumentType );
 	}
-}(function( $, window, document ) {
+}(function( $, window, DocumentType ) {
 'use strict';
 var DataTable = $.fn.dataTable;
 

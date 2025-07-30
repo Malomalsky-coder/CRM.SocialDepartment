@@ -137,7 +137,7 @@ public class AssignmentService(IUnitOfWork unitOfWork, IDomainEventDispatcher? d
             assignment.UpdateDepartmentNumber(dto.DepartmentNumber);
         if (dto.DepartmentForwardDate != assignment.DepartmentForwardDate)
             assignment.UpdateDepartmentForwardDate(dto.DepartmentForwardDate);
-        if (dto.Note != assignment.Note) assignment.UpdateNote(dto.Note);
+        if (dto.Note != assignment.Note) assignment.UpdateNote(dto.Note ?? string.Empty);
 
         await _unitOfWork.Assignments.UpdateAsync(assignment, cancellationToken);
 

@@ -1,26 +1,5 @@
 ﻿@{
-    Layout = "_LayoutWithoutContainer";
     ViewData["Title"] = "Список пациентов";
-}
-
-@section Styles
-{
-    <link href="~/lib/datatables.net-bs5/css/jquery.datatables.css" rel="stylesheet" />
-    <link href="~/lib/datatables.net-bs5/css/datatables.bootstrap5.min.css" rel="stylesheet" />
-    <link href="~/lib/datatables.net-bs5/css/searchpanes.bootstrap5.min.css" rel="stylesheet" />
-    <link href="~/lib/datatables.net-bs5/css/fixedheader.bootstrap5.min.css" rel="stylesheet" />
-    <link href="~/lib/datatables.net-bs5/css/scroller.bootstrap5.min.css" rel="stylesheet" />
-}
-
-@section Scripts
-{
-    <script src="~/lib/datatables.net-bs5/js/jquery.datatables.min.js"></script>
-    <script src="~/lib/datatables.net-bs5/js/datatables.bootstrap5.min.js"></script>
-    <script src="~/lib/datatables.net-bs5/js/searchpanes.bootstrap5.min.js"></script>
-    <script src="~/lib/datatables.net-bs5/js/fixedheader.bootstrap5.min.js"></script>
-    <script src="~/lib/datatables.net-bs5/js/scroller.bootstrap5.min.js"></script>
-    <script src="~/js/patient.js" asp-append-version="true"></script>
-    @await Html.PartialAsync("_ValidationScriptsPartial")
 }
 
 <!-- Модальные окна -->
@@ -37,12 +16,69 @@
         </div>
     </div>
 </div>
-<!-- Модальное окно для печати документов -->
-<div id="form-print-modal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
+
+<!-- Модальное окно настроек таблицы -->
+<div id="table-settings-modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Печать документа</h5>
+                <h5 class="modal-title">
+                    <i class="fa fa-cog me-2"></i>Настройки таблицы
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Показывать записей на странице:</label>
+                    <select id="page-length-setting" class="form-select">
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                        <option value="250">250</option>
+                        <option value="-1">Все</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="auto-refresh-setting" checked>
+                        <label class="form-check-label" for="auto-refresh-setting">
+                            Автообновление каждые 30 секунд
+                        </label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="compact-mode-setting">
+                        <label class="form-check-label" for="compact-mode-setting">
+                            Компактный режим
+                        </label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="save-state-setting" checked>
+                        <label class="form-check-label" for="save-state-setting">
+                            Сохранять состояние таблицы
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="apply-settings">Применить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для печати документов -->
+<div id="print-modal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fa fa-print me-2"></i>Печать документов
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -63,49 +99,116 @@
 </div>
 <!-- Конец модальных окн -->
 
-<div class="card" style="margin: 10px;">
-    <div class="col-sm-12" style="padding:20px">
-        <!-- Меню -->
-        <a id="add-patient" class="btn btn-primary"><i class="fa fa-plus"></i> пациент</a>
-        <a id="reload" class="btn btn-outline-info"><i class="fa fa-refresh"></i> список</a>
-        <a onclick="" class="btn btn-outline-danger"><i class="fa fa-bitbucket"></i> (2)</a>
-        <!-- onclick="printModalShow()" -->
+<div class="modern-datatable-container">
+    <!-- Заголовок страницы с интегрированными элементами управления -->
+    <div class="datatable-header">
+        <div class="header-content">
+            <div class="header-info">
+                <h1 class="page-title">
+                    <i class="fa fa-users me-2"></i>
+                    <span id="title-text">Список пациентов</span>
+                    <span id="records-badge" class="badge bg-primary ms-2">0</span>
+                </h1>
+                <p class="page-subtitle">
+                    <i class="fa fa-heartbeat me-1"></i>
+                    Управление активными пациентами в системе
+                    <span class="status-indicator ms-2" id="connection-status">
+                        <i class="fa fa-circle text-success"></i>
+                        <small>Подключено</small>
+                    </span>
+                </p>
+            </div>
+            <div class="header-actions">
+                <div class="btn-group me-2" role="group">
+                    <button id="add-patient" class="btn btn-primary">
+                        <i class="fa fa-plus me-2"></i>Добавить пациента
+                    </button>
+                    <button id="reload-data" class="btn btn-primary" title="Обновить данные">
+                        <i class="fa fa-refresh"></i>
+                    </button>
+                </div>
+                <div class="btn-group me-2" role="group">
+                    <button id="table-settings" class="btn btn-outline-secondary" title="Настройки таблицы" data-bs-toggle="modal" data-bs-target="#table-settings-modal">
+                        <i class="fa fa-cog"></i>
+                    </button>
+                    <button id="fullscreen-toggle" class="btn btn-outline-secondary" title="Полноэкранный режим">
+                        <i class="fa fa-expand"></i>
+                    </button>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fa fa-ellipsis-v me-2"></i>Действия
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#"><i class="fa fa-download me-2"></i>Экспорт Excel</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fa fa-file-pdf-o me-2"></i>Экспорт PDF</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="header-stats">
+            <div class="stat-item">
+                <i class="fa fa-clock-o text-muted me-1"></i>
+                <small>Последнее обновление: <span id="last-update" class="fw-medium">сейчас</span></small>
+            </div>
+            <div class="stat-item">
+                <i class="fa fa-wifi text-success me-1"></i>
+                <small>Режим реального времени: <span class="text-success fw-medium">Активен</span></small>
+            </div>
+        </div>
     </div>
-    <div class="card-body table-responsive">
-        <div style="width: 100%; overflow-x: auto;">
-            <table id="table" class="table table-custom table-bordered table-hover">
+
+    <!-- Основная таблица -->
+    @* <div class="modern-datatable-container"> *@
+    <div class="datatable-card" id="datatable-main-card">
+        <div class="table-container">
+            <table id="table" class="table table-custom table-hover mb-0">
                 <thead>
                     <tr>
-                        @* <th></th> *@
-                        @* <th>ID</th> *@
-                        @* <th>Тип госпитализации</th> *@
-                        @* <th>Постановление</th> *@
-                        @* <th>Номер истории болезни</th> *@
-                        @* <th>Дата поступления</th> *@
-                        @* <th>Отделение</th> *@
-                        @* <th>ФИО</th> *@
-                        @* <th>Дата рожденья</th> *@
-                        @* <th>Несовершеннолетний</th> *@
-                        @* <th>Гражданство</th> *@
-                        @* <th>Страна</th> *@
-                        @* <th>Место регистрация</th> *@
-                        @* <th>БОМЖ</th> *@
-                        @* <th>Раняя регистрация</th> *@
-                        @* <th>Место рождения</th> *@
-                        @* <th>Дееспособный</th> *@
-                        @* <th>Получает ли пенсию</th> *@
-                        @* <th>Группа инвалидности</th> *@
-                        @* <th>Примечание</th> *@
-
+                        <th>Действия</th>
                         <th>ID</th>
+                        <th>Тип госпитализации</th>
+                        <th>Постановление</th>
+                        <th>Номер истории болезни</th>
+                        <th>Дата поступления</th>
+                        <th>Отделение</th>
                         <th>ФИО</th>
+                        <th>Дата рождения</th>
+                        <th>Несовершеннолетний</th>
+                        <th>Гражданство</th>
+                        <th>Страна</th>
+                        <th>Место регистрации</th>
+                        <th>БОМЖ</th>
+                        <th>Ранняя регистрация</th>
+                        <th>Место рождения</th>
+                        <th>Дееспособный</th>
+                        <th>Получает пенсию</th>
+                        <th>Группа инвалидности</th>
+                        <th>Примечание</th>
                     </tr>
                 </thead>
-                @{
-                    //todo: Переименовать viewAll в patientActiveAll
-                }
-                <tbody id="viewAll"></tbody>
+                <tbody>
+                </tbody>
             </table>
         </div>
     </div>
+    @* </div> *@
 </div>
+
+@section Styles
+{
+    <link href="~/lib/datatables.net-bs5/css/jquery.datatables.css" rel="stylesheet" />
+    <link href="~/lib/datatables.net-bs5/css/datatables.bootstrap5.min.css" rel="stylesheet" />
+}
+
+@section Scripts
+{
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/datatables.net-bs5/js/jquery.datatables.min.js"></script>
+    <script src="~/lib/datatables.net-bs5/js/datatables.bootstrap5.min.js"></script>
+    <script src="~/js/validation-helper.js"></script>
+    <script src="~/js/add-patient-form-validation.js"></script>
+    <script src="~/js/patient.js" asp-append-version="true"></script>
+    <script src="~/js/documents.js"></script>
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

@@ -20,6 +20,7 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
         // Lazy initialization репозиториев
         private IPatientRepository? _patients;
         private IAssignmentRepository? _assignments;
+        private IUserRepository? _users;
 
         public MongoUnitOfWork(IMongoDatabase database, IDomainEventDispatcher? domainEventDispatcher = null)
         {
@@ -49,6 +50,18 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
             {
                 _assignments ??= new MongoAssignmentRepository(_database, _session);
                 return _assignments;
+            }
+        }
+
+        /// <summary>
+        /// Репозиторий для работы с пользователями
+        /// </summary>
+        public IUserRepository Users
+        {
+            get
+            {
+                _users ??= new MongoUserRepository(_database, _session);
+                return _users;
             }
         }
 
@@ -89,6 +102,7 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
             // Пересоздаем репозитории с новой сессией
             _patients = null;
             _assignments = null;
+            _users = null;
         }
 
         /// <summary>

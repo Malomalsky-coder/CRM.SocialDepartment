@@ -5,25 +5,86 @@
     }
     else
     {
-        Layout = "/Areas/Identity/Pages/_Layout.cshtml";
+        Layout = "/Views/Shared/_Layout.cshtml";
     }
 }
 
-<h1>Manage your account</h1>
-
-<div>
-    <h2>Change your account settings</h2>
-    <hr />
+<div class="container-fluid py-4">
     <div class="row">
-        <div class="col-md-3">
-            <partial name="_ManageNav" />
+        <div class="col-12 mb-4">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fa fa-user-circle text-primary" style="font-size: 2.5rem;"></i>
+                </div>
+                <div>
+                    <h1 class="h2 mb-1 text-primary">Управление профилем</h1>
+                    <p class="text-muted mb-0">Настройте параметры вашей учетной записи и безопасности</p>
+                </div>
+            </div>
         </div>
-        <div class="col-md-9">
-            @RenderBody()
+    </div>
+
+    <div class="row">
+        <div class="col-xl-3 col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fa fa-cog me-2"></i>Настройки
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <partial name="_ManageNav" />
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-9 col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    @RenderBody()
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
     @RenderSection("Scripts", required: false)
+    
+    <script>
+        // Глобальные улучшения для страниц управления профилем
+        document.addEventListener('DOMContentLoaded', function() {
+            // Добавляем плавную анимацию появления для карточек
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.4s ease-out';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+
+            // Улучшаем обработку форм
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        const originalText = submitBtn.innerHTML;
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Сохранение...';
+                        
+                        // Возвращаем кнопку в исходное состояние через 5 секунд (на случай ошибки)
+                        setTimeout(() => {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalText;
+                        }, 5000);
+                    }
+                });
+            });
+        });
+    </script>
 }

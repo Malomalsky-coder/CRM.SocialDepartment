@@ -6,16 +6,20 @@ using CRM.SocialDepartment.Domain.Entities;
 using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Domain.Events;
 using CRM.SocialDepartment.Domain.Repositories;
+using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
 using CRM.SocialDepartment.Infrastructure.Identity;
+using CRM.SocialDepartment.Site.Extensions;
 using CRM.SocialDepartment.Site.Filters;
+using CRM.SocialDepartment.Site.Localization;
 using CRM.SocialDepartment.Site.MappingProfile;
 using CRM.SocialDepartment.Site.Middleware;
 using CRM.SocialDepartment.Site.Services;
 using CRM.SocialDepartment.WebApp.Settings;
 using DDD.Events;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using MongoDB.Driver;
 
 namespace CRM.SocialDepartment.Site;
@@ -45,9 +49,10 @@ public class Program
             mongoDbConfiguration.ConnectionString,
             mongoDbConfiguration.Database)
         .AddDefaultTokenProviders()
-        .AddDefaultUI();
+        .AddDefaultUI()
+        .AddErrorDescriber<RussianIdentityErrorDescriber>(); // Подключаем русский ErrorDescriber
 
-        //BsonConfiguration.RegisterMappings(); // Настройка маппинга для MongoDB
+        BsonConfiguration.RegisterMappings(); // Настройка маппинга для MongoDB
 
         // Регистрация MediatR и доменных событий ///////////////////////////////////////////////////////////////////
         
@@ -65,39 +70,50 @@ public class Program
             return new MongoUnitOfWork(database, domainEventDispatcher);
         });
 
-        // Регистрация отдельных репозиториев для обратной совместимости (опционально)
-        builder.Services.AddScoped<IPatientRepository>(provider =>
-        {
-            var database = provider.GetRequiredService<IMongoDatabase>();
-            return new MongoPatientRepository(database);
-        });
-
-        builder.Services.AddScoped<IAssignmentRepository>(provider =>
-        {
-            var database = provider.GetRequiredService<IMongoDatabase>();
-            return new MongoAssignmentRepository(database);
-        });
-
         // Регистрация сервисов /////////////////////////////////////////////////////////////////////////////////////
 
         builder.Services.AddControllers(options =>
         {
             options.Filters.Add<ResultFilter>();
+            // Регистрируем кастомные конвертеры
+            options.ModelBinderProviders.Insert(0, new DocumentTypeConverterProvider());
+            options.ModelBinderProviders.Insert(0, new CitizenshipTypeConverterProvider());
+            options.ModelBinderProviders.Insert(0, new HospitalizationTypeConverterProvider());
         })
         .AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;   // True говорит, что регистр названий свойств не учитывается.
-            options.JsonSerializerOptions.PropertyNamingPolicy = null;          // Отключает camelCase
-            options.JsonSerializerOptions.WriteIndented = true;                 // Включает форматирование JSON
-        });
+            options.JsonSerializerOptions.PropertyNamingPolicy = null;          // Отключаем camelCase
+            options.JsonSerializerOptions.WriteIndented = true;                 // Включаем форматирование JSON
+        })
+        .AddControllersAsServices();
 
         builder.Services.AddRazorPages();
         builder.Services.AddScoped<DataTableNetService>();
         builder.Services.AddAutoMapper(typeof(ProjectMappingProfile));
         builder.Services.AddScoped<PatientAppService>();
         builder.Services.AddScoped<AssignmentService>();
-        builder.Services.AddScoped<UserRepository>();
         builder.Services.AddScoped<UserAppService>();
+
+        // Добавляем поддержку CORS
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(builder =>
+            {
+                builder.AllowAnyOrigin()
+                       .AllowAnyMethod()
+                       .AllowAnyHeader();
+            });
+        });
+
+        // Настройка культуры для правильного отображения дат
+        builder.Services.Configure<RequestLocalizationOptions>(options =>
+        {
+            var supportedCultures = new[] { "ru-RU" };
+            options.SetDefaultCulture(supportedCultures[0])
+                   .AddSupportedCultures(supportedCultures)
+                   .AddSupportedUICultures(supportedCultures);
+        });
 
         var app = builder.Build();
 
@@ -112,17 +128,23 @@ public class Program
         }
 
         app.UseHttpsRedirection();
+        app.UseStaticFiles();
+
+        app.UseCors();
         app.UseRouting();
+        app.UseRequestLocalization();
         app.UseAuthentication();
         app.UseAuthorization();
-        app.MapStaticAssets();
+
+        app.UseMiddleware<GlobalExceptionHandler>();
+
         app.MapControllerRoute(
             name: "default",
-            pattern: "{controller=Home}/{action=Index}/{id?}")
-            .WithStaticAssets();
-        app.MapRazorPages()
-           .WithStaticAssets();
-        app.UseGlobalExceptionHandler();
+            pattern: "{controller=Home}/{action=Index}/{id?}");
+
+        app.MapControllers();
+        app.MapRazorPages();
+
         app.Run();
     }
 }

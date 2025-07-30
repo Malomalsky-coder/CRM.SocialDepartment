@@ -2,58 +2,58 @@
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
-    public class DisabilityGroup : ValueObject
+    public class DisabilityGroupType : ValueObject
     {
         /// <summary>
         /// Значение не выбрано
         /// </summary>
-        public static readonly DisabilityGroup None = new(0, "Выберите значение");
+        public static readonly DisabilityGroupType None = new(0, "Выберите значение");
 
         /// <summary>
         /// 1 группа
         /// </summary>
-        public static readonly DisabilityGroup OneGroup = new(1, "1 группа");
+        public static readonly DisabilityGroupType OneGroup = new(1, "1 группа");
 
         /// <summary>
         /// 1 группа б/с
         /// </summary>
-        public static readonly DisabilityGroup OneGroupWithoutPeriod = new(2, "1 группа б/с");
+        public static readonly DisabilityGroupType OneGroupWithoutPeriod = new(2, "1 группа б/с");
 
         /// <summary>
         /// 2 группа
         /// </summary>
-        public static readonly DisabilityGroup TwoGroup = new(3, "2 группа");
+        public static readonly DisabilityGroupType TwoGroup = new(3, "2 группа");
 
         /// <summary>
         /// 2 группа б/с
         /// </summary>
-        public static readonly DisabilityGroup TwoGroupWithoutPeriod = new(4, "2 группа б/с");
+        public static readonly DisabilityGroupType TwoGroupWithoutPeriod = new(4, "2 группа б/с");
 
         /// <summary>
         /// 3 группа
         /// </summary>
-        public static readonly DisabilityGroup ThreeGroup = new(5, "3 группа");
+        public static readonly DisabilityGroupType ThreeGroup = new(5, "3 группа");
 
         /// <summary>
         /// 3 группа б/с
         /// </summary>
-        public static readonly DisabilityGroup ThreeGroupWithoutPeriod = new(6, "3 группа б/с");
+        public static readonly DisabilityGroupType ThreeGroupWithoutPeriod = new(6, "3 группа б/с");
 
         /// <summary>
         /// Ребенок инвалид
         /// </summary>
-        public static readonly DisabilityGroup ChildrenDisable = new(7, "Ребенок инвалид");
+        public static readonly DisabilityGroupType ChildrenDisable = new(7, "Ребенок инвалид");
 
         public byte Value { get; }
         public string DisplayName { get; }
 
-        private DisabilityGroup(byte value, string displayName)
+        private DisabilityGroupType(byte value, string displayName)
         {
             Value = value;
             DisplayName = displayName;
         }
 
-        public static DisabilityGroup FromValue(byte value)
+        public static DisabilityGroupType FromValue(byte value)
         {
             return value switch
             {
@@ -69,7 +69,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             };
         }
 
-        public static DisabilityGroup FromDisplayName(string displayName)
+        public static DisabilityGroupType FromDisplayName(string displayName)
         {
             return displayName switch
             {
@@ -85,8 +85,8 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             };
         }
 
-        public static implicit operator byte(DisabilityGroup disabilityGroup) => disabilityGroup.Value;
-        public static implicit operator DisabilityGroup(byte value) => FromValue(value);
+        public static implicit operator byte(DisabilityGroupType disabilityGroup) => disabilityGroup.Value;
+        public static implicit operator DisabilityGroupType(byte value) => FromValue(value);
 
         protected override IEnumerable<object> GetAtomicValues()
         {

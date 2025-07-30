@@ -219,7 +219,7 @@
   const DOMContentLoadedCallbacks = [];
   const onDOMContentLoaded = callback => {
     if (document.readyState === 'loading') {
-      // add listener on the first call when the document is in loading state
+      // add listener on the first call when the DocumentType is in loading state
       if (!DOMContentLoadedCallbacks.length) {
         document.addEventListener('DOMContentLoaded', () => {
           for (const callback of DOMContentLoadedCallbacks) {
@@ -1726,8 +1726,8 @@
     }
 
     if (node.toString() !== '[object Window]') {
-      var ownerDocument = node.ownerDocument;
-      return ownerDocument ? ownerDocument.defaultView || window : window;
+      var ownerDocumentType = node.ownerDocument;
+      return ownerDocumentType ? ownerDocument.defaultView || window : window;
     }
 
     return node;
@@ -1956,7 +1956,7 @@
 
   function getDocumentElement(element) {
     // $FlowFixMe[incompatible-return]: assume body is always available
-    return ((isElement(element) ? element.ownerDocument : // $FlowFixMe[prop-missing]
+    return ((isElement(element) ? element.ownerDocumentType : // $FlowFixMe[prop-missing]
     element.document) || window.document).documentElement;
   }
 
@@ -4093,7 +4093,7 @@
       const {
         trapElement
       } = this._config;
-      if (event.target === document || event.target === trapElement || trapElement.contains(event.target)) {
+      if (event.target === DocumentType || event.target === trapElement || trapElement.contains(event.target)) {
         return;
       }
       const elements = SelectorEngine.focusableChildren(trapElement);
@@ -4824,7 +4824,7 @@
       return sanitizeFunction(unsafeHtml);
     }
     const domParser = new window.DOMParser();
-    const createdDocument = domParser.parseFromString(unsafeHtml, 'text/html');
+    const createdDocumentType = domParser.parseFromString(unsafeHtml, 'text/html');
     const elements = [].concat(...createdDocument.body.querySelectorAll('*'));
     for (const element of elements) {
       const elementName = element.nodeName.toLowerCase();

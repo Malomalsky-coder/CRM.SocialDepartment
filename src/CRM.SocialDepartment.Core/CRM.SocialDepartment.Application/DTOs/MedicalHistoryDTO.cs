@@ -17,12 +17,12 @@ namespace CRM.SocialDepartment.Application.DTOs
         /// <summary>
         /// Постановление
         /// </summary>
-        public required string Resolution { get; init; }
+        public string Resolution { get; init; } = string.Empty;
 
         /// <summary>
         /// Номер истории болезни
         /// </summary>
-        public required string NumberDocument { get; init; }
+        public string NumberDocument { get; init; } = string.Empty;
 
         /// <summary>
         /// Дата поступления

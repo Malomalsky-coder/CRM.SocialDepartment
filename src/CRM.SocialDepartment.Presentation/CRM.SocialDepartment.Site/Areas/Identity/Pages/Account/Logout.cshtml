@@ -1,21 +1,80 @@
 ﻿@page
 @model LogoutModel
 @{
-    ViewData["Title"] = "Log out";
+    ViewData["Title"] = "Выход из системы";
+    Layout = "_LayoutWithoutContainer";
 }
 
-<header>
-    <h1>@ViewData["Title"]</h1>
-    @{
-        if (User.Identity?.IsAuthenticated ?? false)
-        {
-            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/", new { area = "" })" method="post">
-                <button type="submit" class="nav-link btn btn-link text-dark">Click here to Logout</button>
-            </form>
+<div class="auth-card">
+    <div class="text-center mb-4">
+        <div class="mb-3">
+            <i class="fa fa-sign-out fa-3x text-info"></i>
+        </div>
+        <h1 class="h3 mb-2">Выход из системы</h1>
+        <p class="text-muted">Вы успешно вышли из системы управления</p>
+    </div>
+
+    <div class="alert alert-success border-0 mb-4" style="background: rgba(5, 150, 105, 0.1);">
+        <div class="d-flex align-items-start">
+            <i class="fa fa-shield text-success me-3 mt-1"></i>
+            <div>
+                <strong>Сеанс завершен</strong>
+                <p class="mb-1">Все данные сохранены, сеанс работы безопасно завершен.</p>
+                <small class="text-muted">
+                    <i class="fa fa-lightbulb-o me-1"></i>
+                    Всегда выходите из системы на общих компьютерах.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-grid gap-2 mb-3">
+        <a asp-page="./Login" class="btn btn-primary btn-lg">
+            <i class="fa fa-sign-in me-2"></i>Войти снова
+        </a>
+        <a href="/" class="btn btn-outline-secondary">
+            <i class="fa fa-home me-2"></i>На главную
+        </a>
+    </div>
+    
+    <div class="text-center">
+        <small class="text-muted">
+            <i class="fa fa-clock-o me-1"></i>
+            Автоматический переход через <span id="countdown">10</span> сек.
+        </small>
+    </div>
+</div>
+
+<script>
+    // Добавляем плавную анимацию появления
+    document.addEventListener('DOMContentLoaded', function() {
+        const authCard = document.querySelector('.auth-card');
+        authCard.style.opacity = '0';
+        authCard.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+            authCard.style.transition = 'all 0.6s ease-out';
+            authCard.style.opacity = '1';
+            authCard.style.transform = 'translateY(0)';
+        }, 100);
+    });
+
+    // Автоматическое перенаправление через 10 секунд
+    let timeLeft = 10;
+    const countdownElement = document.getElementById('countdown');
+    const loginBtn = document.querySelector('a[asp-page="./Login"]');
+    
+    const timer = setInterval(() => {
+        timeLeft--;
+        countdownElement.textContent = timeLeft;
+        
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            loginBtn.style.background = 'linear-gradient(45deg, #3b82f6, #1d4ed8)';
+            loginBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Перенаправление...';
+            setTimeout(() => {
+                window.location.href = loginBtn.href;
+            }, 1000);
         }
-        else
-        {
-            <p>You have successfully logged out of the application.</p>
-        }
-    }
-</header>
+    }, 1000);
+</script>

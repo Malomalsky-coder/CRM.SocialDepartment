@@ -31,7 +31,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Ранняя регистрация
         /// </summary>
-        public City? EarlyRegistration { get; private set; }
+        public CityType? EarlyRegistration { get; private set; }
 
         /// <summary>
         /// Место рождения
@@ -51,7 +51,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             CitizenshipType citizenship,
             string? country,
             string? registration,
-            City? earlyRegistration,
+            CityType? earlyRegistration,
             string? placeOfBirth,
             string? documentAttached)
         {
@@ -97,7 +97,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// Изменить раннюю регистрацию
         /// </summary>
         /// <param name="earlyRegistration">Новая ранняя регистрация</param>
-        public CitizenshipInfo SetEarlyRegistration(City? earlyRegistration)
+        public CitizenshipInfo SetEarlyRegistration(CityType? earlyRegistration)
         {
             EarlyRegistration = earlyRegistration;
             return this;
@@ -129,7 +129,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             yield return Country ?? string.Empty;
             yield return Registration ?? string.Empty;
             yield return NotRegistered;
-            yield return EarlyRegistration ?? City.None;
+            yield return EarlyRegistration ?? CityType.None;
             yield return PlaceOfBirth ?? string.Empty;
             yield return DocumentAttached ?? string.Empty;
         }

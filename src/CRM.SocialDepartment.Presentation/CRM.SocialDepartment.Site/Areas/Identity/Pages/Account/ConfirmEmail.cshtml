@@ -1,8 +1,125 @@
 ﻿@page
 @model ConfirmEmailModel
 @{
-    ViewData["Title"] = "Confirm email";
+    ViewData["Title"] = "Подтверждение email";
+    Layout = "_LayoutWithoutContainer";
 }
 
-<h1>@ViewData["Title"]</h1>
-<partial name="_StatusMessage" model="Model.StatusMessage" />
+<div class="auth-card">
+    <div class="text-center mb-4">
+        @if (!string.IsNullOrEmpty(Model.StatusMessage))
+        {
+            @if (Model.StatusMessage.Contains("Thank you") || Model.StatusMessage.Contains("успешно"))
+            {
+                <i class="fa fa-check-circle fa-3x text-success mb-3"></i>
+                <h1 class="h3 mb-2">Email подтвержден!</h1>
+                <p class="text-muted">Ваш адрес электронной почты успешно подтвержден</p>
+            }
+            else
+            {
+                <i class="fa fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                <h1 class="h3 mb-2">Проблема с подтверждением</h1>
+                <p class="text-muted">Возникла ошибка при подтверждении вашего email</p>
+            }
+        }
+        else
+        {
+            <i class="fa fa-envelope fa-3x text-primary mb-3"></i>
+            <h1 class="h3 mb-2">Подтверждение email</h1>
+            <p class="text-muted">Обработка запроса подтверждения</p>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.StatusMessage))
+    {
+        <div class="alert @(Model.StatusMessage.Contains("Thank you") || Model.StatusMessage.Contains("успешно") ? "alert-success" : "alert-warning") border-0 mb-4">
+            <div class="d-flex align-items-start">
+                <i class="fa @(Model.StatusMessage.Contains("Thank you") || Model.StatusMessage.Contains("успешно") ? "fa-check-circle" : "fa-info-circle") me-3 mt-1"></i>
+                <div>
+                    @if (Model.StatusMessage.Contains("Thank you"))
+                    {
+                        <text><strong>Поздравляем!</strong><br>
+                        Ваш адрес электронной почты был успешно подтвержден. Теперь вы можете пользоваться всеми функциями системы.</text>
+                    }
+                    else if (Model.StatusMessage.Contains("Error"))
+                    {
+                        <text><strong>Ошибка подтверждения!</strong><br>
+                        Произошла ошибка при подтверждении вашего email. Возможно, ссылка устарела или была использована ранее.</text>
+                    }
+                    else
+                    {
+                        @Html.Raw(Model.StatusMessage)
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="d-grid gap-2 mb-3">
+        @if (Model.StatusMessage.Contains("Thank you") || Model.StatusMessage.Contains("успешно"))
+        {
+            <a asp-page="./Login" class="btn btn-primary btn-lg">
+                <i class="fa fa-sign-in me-2"></i>Войти в систему
+            </a>
+        }
+        else
+        {
+            <a asp-page="./ResendEmailConfirmation" class="btn btn-primary btn-lg">
+                <i class="fa fa-paper-plane me-2"></i>Отправить письмо повторно
+            </a>
+            <a asp-page="./Login" class="btn btn-outline-secondary">
+                <i class="fa fa-arrow-left me-2"></i>Вернуться к входу
+            </a>
+        }
+    </div>
+    
+    <div class="text-center">
+        <small class="text-muted">
+            <i class="fa fa-info-circle me-1"></i>
+            Нужна помощь? Обратитесь к администратору системы
+        </small>
+    </div>
+</div>
+
+<script>
+    // Добавляем плавную анимацию появления
+    document.addEventListener('DOMContentLoaded', function() {
+        const authCard = document.querySelector('.auth-card');
+        authCard.style.opacity = '0';
+        authCard.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+            authCard.style.transition = 'all 0.6s ease-out';
+            authCard.style.opacity = '1';
+            authCard.style.transform = 'translateY(0)';
+        }, 100);
+        
+        // Анимация иконки успеха
+        const successIcon = document.querySelector('.fa-check-circle');
+        if (successIcon) {
+            setTimeout(() => {
+                successIcon.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    successIcon.style.transform = 'scale(1)';
+                }, 200);
+            }, 1000);
+        }
+    });
+
+    // Автоматическое перенаправление при успешном подтверждении
+    @if (Model.StatusMessage.Contains("Thank you") || Model.StatusMessage.Contains("успешно"))
+    {
+        <text>
+        setTimeout(() => {
+            const loginBtn = document.querySelector('a[asp-page="./Login"]');
+            if (loginBtn) {
+                loginBtn.style.background = 'linear-gradient(45deg, #3b82f6, #1d4ed8)';
+                loginBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Перенаправление...';
+                setTimeout(() => {
+                    window.location.href = loginBtn.href;
+                }, 1000);
+            }
+        }, 3000);
+        </text>
+    }
+</script>

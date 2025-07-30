@@ -7,8 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\CRM.SocialDepartment.Infrastructure\Implemententions\DataAccess\MongoDb\CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.csproj" />
-    <ProjectReference Include="..\..\CRM.SocialDepartment.Infrastructure\Interfaces\CRM.SocialDepartment.Infrastructure.Interfaces\CRM.SocialDepartment.Infrastructure.Interfaces.csproj" />
     <ProjectReference Include="..\CRM.SocialDepartment.Domain\CRM.SocialDepartment.Domain.csproj" />
   </ItemGroup>
 
@@ -18,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="14.0.0" />
+    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.6.6" />
   </ItemGroup>
 
 </Project>

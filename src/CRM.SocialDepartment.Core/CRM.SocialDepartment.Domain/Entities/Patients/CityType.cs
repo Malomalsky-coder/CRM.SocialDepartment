@@ -2,22 +2,22 @@
 
 namespace CRM.SocialDepartment.Domain.Entities.Patients
 {
-    public class City : ValueObject
+    public class CityType : ValueObject
     {
-        public static readonly City None            = new(0, "Выберите значение");
-        public static readonly City Moscow          = new(1, "Москва");
-        public static readonly City FromAnotherTown = new(2, "Иногородний");
+        public static readonly CityType None            = new(0, "Выберите значение");
+        public static readonly CityType Moscow          = new(1, "Москва");
+        public static readonly CityType FromAnotherTown = new(2, "Иногородний");
 
         public byte Value { get; }
         public string DisplayName { get; }
 
-        private City(byte value, string displayName)
+        private CityType(byte value, string displayName)
         {
             Value = value;
             DisplayName = displayName;
         }
 
-        public static City FromValue(byte value)
+        public static CityType FromValue(byte value)
         {
             return value switch
             {
@@ -28,7 +28,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             };
         }
 
-        public static City FromDisplayName(string displayName)
+        public static CityType FromDisplayName(string displayName)
         {
             return displayName switch
             {
@@ -39,8 +39,8 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
             };
         }
 
-        public static implicit operator byte(City city) => city.Value;
-        public static implicit operator City(byte value) => FromValue(value);
+        public static implicit operator byte(CityType city) => city.Value;
+        public static implicit operator CityType(byte value) => FromValue(value);
 
         protected override IEnumerable<object> GetAtomicValues()
         {

@@ -1,10 +1,11 @@
 ﻿using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
+using System.ComponentModel.DataAnnotations;
 
 namespace CRM.SocialDepartment.Application.DTOs
 {
-    public record DocumentDTO
+    public class DocumentDTO
     {
-        public required DocumentType Type { get; init; }
-        public required string Number { get; init; }
+        public DocumentType Type { get; init; } = DocumentType.Passport;
+        public string Number { get; init; } = string.Empty;
     }
 }

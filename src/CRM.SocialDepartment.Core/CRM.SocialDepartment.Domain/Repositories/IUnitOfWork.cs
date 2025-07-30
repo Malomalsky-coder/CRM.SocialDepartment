@@ -16,6 +16,11 @@ namespace CRM.SocialDepartment.Domain.Repositories
         IAssignmentRepository Assignments { get; }
 
         /// <summary>
+        /// Репозиторий для работы с пользователями
+        /// </summary>
+        IUserRepository Users { get; }
+
+        /// <summary>
         /// Начать транзакцию
         /// </summary>
         /// <param name="cancellationToken">Токен отмены</param>

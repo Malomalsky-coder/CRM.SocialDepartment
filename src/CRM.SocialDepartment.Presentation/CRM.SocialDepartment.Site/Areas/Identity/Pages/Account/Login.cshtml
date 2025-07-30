@@ -2,82 +2,105 @@
 @model LoginModel
 
 @{
-    ViewData["Title"] = "Log in";
+    ViewData["Title"] = "Вход в систему";
+    Layout = "_LayoutWithoutContainer";
 }
 
-<h1>@ViewData["Title"]</h1>
-<div class="row">
-    <div class="col-md-4">
-        <section>
-            <form id="account" method="post">
-                <h2>Use a local account to log in.</h2>
-                <hr />
-                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label asp-for="Input.Email" class="form-label">Email</label>
-                    <span asp-validation-for="Input.Email" class="text-danger"></span>
-                </div>
-                <div class="form-floating mb-3">
-                    <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label asp-for="Input.Password" class="form-label">Password</label>
-                    <span asp-validation-for="Input.Password" class="text-danger"></span>
-                </div>
-                <div class="checkbox mb-3">
-                    <label asp-for="Input.RememberMe" class="form-label">
-                        <input class="form-check-input" asp-for="Input.RememberMe" />
-                        @Html.DisplayNameFor(m => m.Input.RememberMe)
-                    </label>
-                </div>
-                <div>
-                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <div>
-                    <p>
-                        <a id="forgot-password" asp-page="./ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a id="resend-confirmation" asp-page="./ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
-                </div>
-            </form>
-        </section>
+<div class="auth-card">
+    <div class="text-center mb-4">
+        <i class="fa fa-shield fa-3x text-primary mb-3"></i>
+        <h1 class="h3 mb-2">Добро пожаловать</h1>
+        <p class="text-muted">Войдите в систему управления отделом социальной защиты</p>
     </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            @{
-                if ((Model.ExternalLogins?.Count ?? 0) == 0)
-                {
-                    <div>
-                        <p>
-                            There are no external authentication services configured. See this <a href="https://go.microsoft.com/fwlink/?LinkID=532715">article
-                            about setting up this ASP.NET application to support logging in via external services</a>.
-                        </p>
-                    </div>
-                }
-                else
-                {
-                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                        <div>
-                            <p>
-                                @foreach (var provider in Model.ExternalLogins!)
-                                {
-                                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                                }
-                            </p>
-                        </div>
-                    </form>
-                }
-            }
-        </section>
-    </div>
+
+    <form id="account" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+        
+        <div class="mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fa fa-envelope text-primary"></i>
+                </span>
+                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="Электронная почта" />
+            </div>
+            <span asp-validation-for="Input.Email" class="invalid-feedback d-block"></span>
+        </div>
+        
+        <div class="mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fa fa-lock text-primary"></i>
+                </span>
+                <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Пароль" />
+            </div>
+            <span asp-validation-for="Input.Password" class="invalid-feedback d-block"></span>
+        </div>
+        
+        <div class="mb-3">
+            <div class="form-check">
+                <input class="form-check-input" asp-for="Input.RememberMe" />
+                <label class="form-check-label" asp-for="Input.RememberMe">
+                    Запомнить меня
+                </label>
+            </div>
+        </div>
+        
+        <div class="d-grid mb-3">
+            <button id="login-submit" type="submit" class="btn btn-primary btn-lg">
+                <i class="fa fa-sign-in me-2"></i>Войти в систему
+            </button>
+        </div>
+        
+        <div class="row">
+            <div class="col">
+                <a class="text-decoration-none" asp-page="./ForgotPassword">
+                    <i class="fa fa-question-circle me-1"></i>Забыли пароль?
+                </a>
+            </div>
+            <div class="col text-end">
+                <a class="text-decoration-none" asp-page="./Register">
+                    <i class="fa fa-user-plus me-1"></i>Регистрация
+                </a>
+            </div>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Добавляем плавную анимацию появления
+        document.addEventListener('DOMContentLoaded', function() {
+            const authCard = document.querySelector('.auth-card');
+            authCard.style.opacity = '0';
+            authCard.style.transform = 'translateY(30px)';
+            
+            setTimeout(() => {
+                authCard.style.transition = 'all 0.6s ease-out';
+                authCard.style.opacity = '1';
+                authCard.style.transform = 'translateY(0)';
+            }, 100);
+        });
+
+        // Фокус на поле email при загрузке
+        document.querySelector('input[name="Input.Email"]').focus();
+        
+        // Анимация кнопки при отправке
+        document.getElementById('login-submit').addEventListener('click', function() {
+            const btn = this;
+            const icon = btn.querySelector('i');
+            
+            // Показываем спиннер
+            icon.classList.remove('fa-sign-in');
+            icon.classList.add('fa-spinner', 'fa-spin');
+            btn.disabled = true;
+            
+            // Возвращаем обратно через 3 секунды (если форма не отправилась)
+            setTimeout(() => {
+                icon.classList.remove('fa-spinner', 'fa-spin');
+                icon.classList.add('fa-sign-in');
+                btn.disabled = false;
+            }, 3000);
+        });
+    </script>
 }

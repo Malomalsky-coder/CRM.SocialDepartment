@@ -2,13 +2,13 @@
 
 namespace CRM.SocialDepartment.Domain.Specifications
 {
-    public class DisabilityGroupWithoutPeriodSpecification : ISpecification<DisabilityGroup>
+    public class DisabilityGroupWithoutPeriodSpecification : ISpecification<DisabilityGroupType>
     {
-        public bool IsSatisfiedBy(DisabilityGroup group)
+        public bool IsSatisfiedBy(DisabilityGroupType group)
         {
-            return group == DisabilityGroup.OneGroupWithoutPeriod ||
-                   group == DisabilityGroup.TwoGroupWithoutPeriod ||
-                   group == DisabilityGroup.ThreeGroupWithoutPeriod;
+            return group == DisabilityGroupType.OneGroupWithoutPeriod ||
+                   group == DisabilityGroupType.TwoGroupWithoutPeriod ||
+                   group == DisabilityGroupType.ThreeGroupWithoutPeriod;
         }
     }
 }

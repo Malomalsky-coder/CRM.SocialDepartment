@@ -11,7 +11,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Номер отделения
         /// </summary>
-        sbyte NumberDepartment { get; }
+        sbyte? NumberDepartment { get; }
 
         /// <summary>
         /// Тип госпитализации
@@ -46,7 +46,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Номер отделения
         /// </summary>
-        public sbyte NumberDepartment { get; private set; }
+        public sbyte? NumberDepartment { get; private set; }
 
         /// <summary>
         /// Тип госпитализации

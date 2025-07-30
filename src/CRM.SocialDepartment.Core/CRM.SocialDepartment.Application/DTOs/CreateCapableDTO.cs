@@ -2,9 +2,9 @@
 {
     public class CreateCapableDTO
     {
-        public required string CourtDecision { get; init; }
-        public required DateTime TrialDate { get; init; }
-        public required string Guardian { get; init; }
-        public required string GuardianOrderAppointment { get; init; }
+        public string CourtDecision { get; init; } = string.Empty;
+        public DateTime? TrialDate { get; init; } = DateTime.MinValue;
+        public string Guardian { get; init; } = string.Empty;
+        public string GuardianOrderAppointment { get; init; } = string.Empty;
     }
 }

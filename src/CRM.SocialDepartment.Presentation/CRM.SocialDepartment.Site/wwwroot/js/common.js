@@ -10,6 +10,7 @@ var malomalsky = malomalsky || {};
 //Открыть модальное окно с запрашиваемой моделью
 GetFormModal = (url, title) => {
     let options = {
+        dataType: 'html',
         success: function (res) {
             $('#form-modal .modal-title').html(title);
             $('#form-modal .modal-body').html(res);
@@ -34,12 +35,59 @@ PostFormModal = (url, data, headers) => {
             $('#form-modal').modal('hide');
         },
         error: function (err) {
+            $("#form-modal").find(':submit').html('Сохранить');
+            $("#form-modal").find(':submit').attr('disabled', false);
+
+            // Обработка ошибок валидации (400 и 422)
             if (err.status === 422) {
                 $('#form-modal .modal-body').html(err.responseText);
                 throw new Error;
             }
+            
+            if (err.status === 400) {
+                // Пытаемся распарсить JSON ответ с ошибками валидации
+                try {
+                    var response = JSON.parse(err.responseText);
+                    if (response && response.Data && response.Data.Errors && Array.isArray(response.Data.Errors)) {
+                        // Используем ValidationHelper для улучшенного отображения ошибок
+                        var errorHtml = '';
+                        if (typeof ValidationHelper !== 'undefined') {
+                            errorHtml = ValidationHelper.createErrorHtml(response.Data.Errors);
+                            errorHtml += ValidationHelper.createRecommendationsHtml(response.Data.Errors);
+                        } else {
+                            // Fallback на простое отображение, если ValidationHelper не загружен
+                            errorHtml = '<div class="alert alert-danger" role="alert">';
+                            errorHtml += '<h6 class="alert-heading">Ошибки валидации:</h6>';
+                            errorHtml += '<ul class="mb-0">';
+                            response.Data.Errors.forEach(function(error) {
+                                errorHtml += '<li>' + malomalsky.utils.htmlEscape(error) + '</li>';
+                            });
+                            errorHtml += '</ul></div>';
+                        }
+                        
+                        // Показываем ошибки через SweetAlert2
+                        if (typeof malomalsky !== 'undefined' && malomalsky.message && malomalsky.message.validationError) {
+                            malomalsky.message.validationError('Исправьте ошибки в форме', errorHtml);
+                        } else {
+                            // Fallback на добавление в модальное окно если SweetAlert2 недоступен
+                            var existingContent = $('#form-modal .modal-body').html();
+                            $('#form-modal .modal-body').html(errorHtml + existingContent);
+                        }
+                        
+                        // Подсвечиваем поля с ошибками
+                        if (typeof malomalsky !== 'undefined' && malomalsky.ajax && malomalsky.ajax.highlightErrorFields) {
+                            malomalsky.ajax.highlightErrorFields(response.Data.Errors);
+                        }
+                        
+                        throw new Error;
+                    }
+                } catch (parseError) {
+                    console.log('Не удалось распарсить ответ с ошибками:', parseError);
+                }
+            }
 
-            malomalsky.ajax.handleErrorStatusCode(err.status);
+            // Fallback на общую обработку ошибок
+            malomalsky.ajax.handleErrorStatusCode(err.status, err.responseText);
             throw new Error;
         }
     }

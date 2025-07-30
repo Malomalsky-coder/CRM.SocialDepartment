@@ -8,19 +8,24 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
     public class HospitalizationType : ValueObject
     {
         /// <summary>
+        /// Значение не выбрано
+        /// </summary>
+        public static readonly HospitalizationType None = new(0, "Выберите значение");
+
+        /// <summary>
         /// Принудительно
         /// </summary>
-        public static readonly HospitalizationType Force = new(0, "Принудительно");
+        public static readonly HospitalizationType Force = new(1, "Принудительно");
 
         /// <summary>
         /// Добровольный
         /// </summary>
-        public static readonly HospitalizationType Voluntary = new(1, "Добровольный");
+        public static readonly HospitalizationType Voluntary = new(2, "Добровольный");
 
         /// <summary>
         /// Статья 435 УК РФ
         /// </summary>
-        public static readonly HospitalizationType CriminalCodeRFArticle435 = new (2, "Статья 435 УК РФ");
+        public static readonly HospitalizationType CriminalCodeRFArticle435 = new (3, "Статья 435 УК РФ");
 
         public byte Value { get; }
         public string DisplayName { get; }
@@ -42,9 +47,9 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         {
             return value switch
             {
-                0 => Force,
-                1 => Voluntary,
-                2 => CriminalCodeRFArticle435,
+                1 => Force,
+                2 => Voluntary,
+                3 => CriminalCodeRFArticle435,
                 _ => throw new ArgumentException($"Недопустимое значение для HospitalizationType: {value}")
             };
         }

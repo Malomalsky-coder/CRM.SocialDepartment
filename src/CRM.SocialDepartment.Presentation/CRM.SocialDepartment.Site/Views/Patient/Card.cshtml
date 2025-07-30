@@ -1,0 +1,480 @@
+﻿@using System.ComponentModel.DataAnnotations
+@model CRM.SocialDepartment.Application.Patients.PatientCardViewModel
+
+@section Styles
+{
+    <link href="~/lib/datatables.net-bs5/css/datatables.bootstrap5.css" rel="stylesheet" />
+    <link href="~/lib/select2/css/select2.min.css" rel="stylesheet" />
+    <!-- <link href="~/lib/jquery-ui/jquery-ui.min.css" rel="stylesheet" /> -->
+}
+
+@section Scripts
+{
+    <script src="~/lib/datatables.net-bs5/js/datatables.bootstrap5.js"></script>
+    <!-- <script src="~/lib/select2/js/select2.full.min.js"></script> -->
+    <!-- <script src="~/lib/jquery-ui/jquery-ui.min.js"></script> -->
+    <script src="~/js/patient-card.js" asp-append-version="true"></script>
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}
+
+<!-- Модальные окна -->
+<div id="form-modal" class="modal fade" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Современный контейнер для карточки пациента -->
+<div class="modern-datatable-container">
+    <!-- Заголовок с навигацией -->
+    <div class="datatable-header">
+        <div class="header-content">
+            <div class="header-title">
+                <h2 class="mb-0">
+                    <i class="fa fa-user-circle me-2"></i>
+                    Карточка пациента
+                    <span class="badge bg-primary ms-2" id="patient-id-badge">@Model.PatientId.ToString().Substring(0, 8)...</span>
+                </h2>
+            </div>
+            <div class="header-actions">
+                <div class="btn-group me-2" role="group">
+                    <button id="edit-patient" class="btn btn-primary" title="Редактировать пациента">
+                        <i class="fa fa-pencil me-2"></i>Редактировать
+                    </button>
+                    <button id="print-document" class="btn btn-outline-info" title="Сгенерировать документ на печать">
+                        <i class="fa fa-print"></i>
+                    </button>
+                </div>
+                <div class="btn-group me-2" role="group">
+                    <button id="add-todo" class="btn btn-outline-success" title="Добавить задачу">
+                        <i class="fa fa-plus me-2"></i>Задача
+                    </button>
+                    @if (Model.IsArchive)
+                    {
+                        <button id="unarchive-patient" class="btn btn-outline-warning" title="Разархивировать">
+                            <i class="fa fa-archive me-2"></i>Разархивировать
+                        </button>
+                    }
+                    else
+                    {
+                        <button id="archive-patient" class="btn btn-outline-danger" title="Добавить в архив">
+                            <i class="fa fa-archive me-2"></i>В архив
+                        </button>
+                    }
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fa fa-ellipsis-v me-2"></i>Действия
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#"><i class="fa fa-download me-2"></i>Экспорт карточки</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fa fa-file-pdf-o me-2"></i>Печать PDF</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#"><i class="fa fa-trash me-2"></i>Удалить пациента</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="header-stats">
+            <div class="stat-item">
+                <i class="fa fa-calendar text-muted me-1"></i>
+                <small>Дата рождения: <span class="fw-medium">@Model.Birthday.ToString("dd.MM.yyyy")</span></small>
+            </div>
+            <div class="stat-item">
+                <i class="fa fa-map-marker text-info me-1"></i>
+                <small>Отделение: <span class="text-info fw-medium">@Model.NumberDepartment</span></small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статус пациента -->
+    @if (Model.IsArchive)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fa fa-archive me-2"></i>
+            <strong>Пациент в архиве</strong>
+            @if (Model.Archive?.Status != 0)
+            {
+                <span class="ms-2">- @Model.Archive.Status</span>
+            }
+            @if (!string.IsNullOrEmpty(Model.Archive?.Note))
+            {
+                <div class="mt-2">
+                    <strong>Примечание:</strong> @Model.Archive.Note
+                </div>
+            }
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-hospital-o me-2"></i>
+            <strong>Пациент находится в больнице</strong> в <b>@Model.NumberDepartment</b> отделении.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(@Model.Note))
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fa fa-info-circle me-2"></i>
+            <strong>Примечание:</strong> @Model.Note
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Основная карточка с информацией -->
+    <div class="datatable-card mt-4" id="datatable-main-card">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fa fa-user me-2"></i>
+                    Персональные данные
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-bold text-muted">ФИО:</label>
+                            <div class="info-value">@Model.FullName</div>
+                        </div>
+                        
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-bold text-muted">Дата рождения:</label>
+                            <div class="info-value">@Model.Birthday.ToString("dd.MM.yyyy")</div>
+                        </div>
+                        
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-bold text-muted">Гражданство:</label>
+                            <div class="info-value">@Model.Citizenship</div>
+                        </div>
+                        
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-bold text-muted">Страна:</label>
+                            <div class="info-value">@Model.Country</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        @if (Model.NoRegistration)
+                        {
+                            <div class="info-item mb-3">
+                                <label class="form-label fw-bold text-muted">Социальный статус:</label>
+                                <div class="info-value">
+                                    <span class="badge bg-warning">Бомж</span>
+                                </div>
+                            </div>
+                            
+                            @if (Model.EarlyRegistration != 0)
+                            {
+                                <div class="info-item mb-3">
+                                    <label class="form-label fw-bold text-muted">Ранняя регистрация:</label>
+                                    <div class="info-value">@Model.EarlyRegistration</div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="info-item mb-3">
+                                <label class="form-label fw-bold text-muted">Место регистрации:</label>
+                                <div class="info-value">@Model.Registration</div>
+                            </div>
+                        }
+                        
+                        @if (Model.Citizenship == "ЛБГ")
+                        {
+                            <div class="info-item mb-3">
+                                <label class="form-label fw-bold text-muted">Имеющиеся документы:</label>
+                                <div class="info-value">@Model.DocumentAttached</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Документы -->
+    <div id="DocumentIsEnable" class="datatable-card">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fa fa-id-card me-2"></i>
+                    Документы
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-bold text-muted">Паспортные данные:</label>
+                            <div class="info-value">@Model.Passport</div>
+                        </div>
+                        
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-bold text-muted">СНИЛС:</label>
+                            <div class="info-value">@Model.Snils</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="info-item mb-3">
+                            <label class="form-label fw-bold text-muted">Медицинский полис:</label>
+                            <div class="info-value">@Model.MedicalPolicy</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Дееспособность -->
+    @if (Model.IsCapable)
+    {
+        <div class="datatable-card">
+            <div class="card">
+                <div class="card-body">
+                    <div class="info-item">
+                        <label class="form-label fw-bold text-muted">Дееспособный:</label>
+                        <div class="info-value">
+                            <span class="badge bg-success">Да</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="datatable-card">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        Недееспособный
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="form-label fw-bold text-muted">Решение суда:</label>
+                                <div class="info-value">@Model.CourtDecision</div>
+                            </div>
+                            
+                            <div class="info-item mb-3">
+                                <label class="form-label fw-bold text-muted">Дата проведения суда:</label>
+                                <div class="info-value">@Model.TrialDate?.ToString("dd.MM.yyyy")</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="form-label fw-bold text-muted">Опекун:</label>
+                                <div class="info-value">@Model.Guardian</div>
+                            </div>
+                            
+                            <div class="info-item mb-3">
+                                <label class="form-label fw-bold text-muted">Распоряжение о назначение опекуна:</label>
+                                <div class="info-value">@Model.GuardianOrderAppointment</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Пенсия -->
+    @if (Model.PensionIsActive)
+    {
+        <div class="datatable-card">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fa fa-money me-2"></i>
+                        Пенсия
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="form-label fw-bold text-muted">Группа инвалидности:</label>
+                                <div class="info-value">
+                                    @if (Model.DisabilityGroup != 0)
+                                    {
+                                        <span class="badge bg-info">@Model.DisabilityGroup</span>
+                                    }
+                                </div>
+                            </div>
+
+                            @* @if (Model.DisabilityGroup.GetAttribute<DisplayAttribute>()?.Name?.Contains("б/с") ?? false) *@
+                            @if (Model.DisabilityGroup == 1) // Предполагаем, что 1 = бессрочная группа
+                            {
+                                <div class="info-item mb-3">
+                                    <label class="form-label fw-bold text-muted">С какого числа бессрочная группа:</label>
+                                    <div class="info-value">@Model.PensionStartDateTime?.ToString("dd.MM.yyyy")</div>
+                                </div>
+                            }
+                            
+                            <div class="info-item mb-3">
+                                <label class="form-label fw-bold text-muted">Способ получения пенсии:</label>
+                                <div class="info-value">
+                                    @if (Model.PensionAddress != 0)
+                                    {
+                                        @Model.PensionAddress
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="info-item mb-3">
+                                <label class="form-label fw-bold text-muted">Филиал СФР:</label>
+                                <div class="info-value">@Model.SfrBranch</div>
+                            </div>
+                            
+                            <div class="info-item mb-3">
+                                <label class="form-label fw-bold text-muted">Отделение СФР:</label>
+                                <div class="info-value">@Model.SfrDepartment</div>
+                            </div>
+                            
+                            <div class="info-item mb-3">
+                                <label class="form-label fw-bold text-muted">РСД:</label>
+                                <div class="info-value">@Model.Rsd</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="datatable-card">
+            <div class="card">
+                <div class="card-body">
+                    <div class="info-item">
+                        <label class="form-label fw-bold text-muted">Получает ли пенсию?</label>
+                        <div class="info-value">
+                            <span class="badge bg-secondary">Нет</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- История болезни -->
+    <div class="datatable-card">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fa fa-history me-2"></i>
+                    История болезни
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table id="history-table" class="table table-custom table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Номер</th>
+                                <th>Дата поступления</th>
+                                <th>Дата выписки</th>
+                                <th>Примечание</th>
+                                <th>Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.HistoryOfIllnesses.Count != 0)
+                            {
+                                @foreach (var historyOfIllness in Model.HistoryOfIllnesses)
+                                {
+                                    <tr data-id="@historyOfIllness.Id" data-patient-id="@Model.PatientId">
+                                        <td>@historyOfIllness.Id</td>
+                                        <td>@historyOfIllness.NumberDocument</td>
+                                        <td>@historyOfIllness.DateOfReceipt.ToString("dd.MM.yyyy")</td>
+                                        <td>@historyOfIllness.DateOfDischarge?.ToString("dd.MM.yyyy")</td>
+                                        <td>@historyOfIllness.Note</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" title="Изменить">
+                                                <i class="fa fa-pencil"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">
+                                        <i class="fa fa-info-circle me-2"></i>
+                                        Нет данных по истории болезни.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Стили для карточки пациента */
+    .info-item {
+        border-bottom: 1px solid #f0f0f0;
+        padding-bottom: 0.5rem;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-value {
+        font-size: 1rem;
+        color: #333;
+        margin-top: 0.25rem;
+    }
+    
+    .datatable-card {
+        margin-bottom: 1.5rem;
+    }
+    
+    .datatable-card .card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+    }
+    
+    .datatable-card .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+        border: none;
+    }
+    
+    .datatable-card .card-header h5 {
+        margin: 0;
+        font-weight: 600;
+    }
+    
+    /* Hover эффект для таблицы истории болезни */
+    #history-table tbody tr:hover {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(37, 99, 235, 0.02)) !important;
+        transition: background 0.2s ease;
+    }
+</style>

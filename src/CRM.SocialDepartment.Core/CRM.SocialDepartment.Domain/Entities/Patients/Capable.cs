@@ -15,7 +15,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Дата суда
         /// </summary>
-        DateTime TrialDate { get; }
+        DateTime? TrialDate { get; }
 
         /// <summary>
         /// Опекун
@@ -50,7 +50,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Дата суда
         /// </summary>
-        public DateTime TrialDate { get; private set; }
+        public DateTime? TrialDate { get; private set; }
 
         /// <summary>
         /// Опекун
@@ -68,7 +68,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
 
         public Capable(
             string courtDecision,
-            DateTime trialDate,
+            DateTime? trialDate,
             string guardian,
             string guardianOrderAppointment)
         {
@@ -99,7 +99,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         protected override IEnumerable<object> GetAtomicValues()
         {
             yield return CourtDecision;
-            yield return TrialDate;
+            yield return TrialDate!.Value;
             yield return Guardian;
             yield return GuardianOrderAppointment;
         }

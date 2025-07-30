@@ -5,15 +5,17 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients.Factories
 {
     public static class DocumentFactory
     {
-        public static Document Create(DocumentType type, string number)
+        public static DocumentType Create(DocumentType documentType, string? number)
         {
-            return type switch
+            object result = documentType.Value switch
             {
-                DocumentType.Passport       => new PassportDocument(number),
-                DocumentType.MedicalPolicy  => new MedicalPolicyDocument(number),
-                DocumentType.Snils          => new SnilsDocument(number),
-                _                           => throw new DocumentTypeNotSupportedException($"Неподдерживаемый тип документа: {type}")
+                0 => new PassportDocument(number),
+                1 => new MedicalPolicyDocument(number),
+                2 => new SnilsDocument(number),
+                _ => throw new DocumentTypeNotSupportedException($"Неподдерживаемый тип документа: {documentType}")
             };
+            
+            return (DocumentType)result;
         }
     }
 }

@@ -30,7 +30,7 @@
 	if ( typeof define === 'function' && define.amd ) {
 		// AMD
 		define( ['jquery'], function ( $ ) {
-			return factory( $, window, document );
+			return factory( $, window, DocumentType );
 		} );
 	}
 	else if ( typeof exports === 'object' ) {
@@ -48,12 +48,12 @@
 					require('jquery')( root );
 			}
 
-			return factory( $, root, root.document );
+			return factory( $, root, root.DocumentType );
 		};
 	}
 	else {
 		// Browser
-		factory( jQuery, window, document );
+		factory( jQuery, window, DocumentType );
 	}
 }
 (function( $, window, document, undefined ) {
@@ -2957,7 +2957,7 @@
 	 *   parameter should also be given and will be used to write the data into.
 	 *   Only the column in question will be written
 	 * @returns {object} Object with two parameters: `data` the data read, in
-	 *   document order, and `cells` and array of nodes (they can be useful to the
+	 *   DocumentType order, and `cells` and array of nodes (they can be useful to the
 	 *   caller, so rather than needing a second traversal to get them, just return
 	 *   them from here).
 	 * @memberof DataTable#oApi
@@ -5635,7 +5635,7 @@
 			// duplicated in the dom (radio elements for example)
 			$('[name]', tmpTable).removeAttr('name');
 	
-			// Table has been built, attach to the document so we can work with it.
+			// Table has been built, attach to the DocumentType so we can work with it.
 			// A holding element is used, positioned at the top of the container
 			// with minimal height, so it has no effect on if the container scrolls
 			// or not. Otherwise it might trigger scrolling when it actually isn't

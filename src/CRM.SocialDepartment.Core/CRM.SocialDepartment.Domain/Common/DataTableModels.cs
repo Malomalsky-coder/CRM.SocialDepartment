@@ -18,5 +18,7 @@ namespace CRM.SocialDepartment.Domain.Common
         public int Skip { get; set; }
         public int PageSize { get; set; }
         public string? SearchTerm { get; set; }
+        public string? SortColumn { get; set; }
+        public string? SortDirection { get; set; }
     }
 } 
