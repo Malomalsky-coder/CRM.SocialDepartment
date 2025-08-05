@@ -33,6 +33,8 @@ namespace CRM.SocialDepartment.Site.Controllers
             return View(nameof(Index));
         }
 
+        [HttpGet]
+        [Route("api/User/GetAllUsers")]
         public JsonResult GetAllUsers()
         {
             var users = _userAppService.GetAllUsers();

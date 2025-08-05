@@ -11,7 +11,7 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data
         public string LastName { get; set; }
         public object?[] GetKeys()
         {
-            return new object?[] { Id };
+            return new object?[] { UserName };
         }
     }
 

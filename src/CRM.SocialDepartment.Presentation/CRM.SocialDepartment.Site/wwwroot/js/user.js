@@ -1,6 +1,6 @@
 ﻿/*
     Назначение: Для страницы списка пользователей.
-    Версия: 2.0.0 - Современный дизайн
+    Версия: 3.0.0 - Современный дизайн с полной функциональностью
 */
 
 $(document).ready(function () {
@@ -38,8 +38,8 @@ $(document).ready(function () {
         "stateDuration": 60 * 60 * 24, // 24 часа
         "deferRender": true,
         "ajax": {
-            "url": "/api/users/active",
-            "type": "POST",
+            "url": "/api/User/GetAllUsers",
+            "type": "GET",
             "contentType": "application/x-www-form-urlencoded; charset=UTF-8",
             "datatype": "json",
             "error": function(xhr, error, code) {
@@ -208,23 +208,65 @@ $(document).ready(function () {
         $icon.addClass('fa-spin');
         dataTable.ajax.reload(function() {
             $icon.removeClass('fa-spin');
-            malomalsky.message.success('Обновлено', 'Данные таблицы обновлены');
+            updateLastUpdateTime();
+            if (window.malomalsky && window.malomalsky.message) {
+                malomalsky.message.success('Обновлено', 'Данные таблицы обновлены');
+            }
         }, false);
+    });
+
+    // Полноэкранный режим
+    $('#fullscreen-toggle').on('click', function() {
+        const $container = $('.modern-datatable-container');
+        const $icon = $(this).find('i');
+        
+        if ($container.hasClass('fullscreen-mode')) {
+            // Выход из полноэкранного режима
+            $container.removeClass('fullscreen-mode');
+            $('body').removeClass('datatable-fullscreen');
+            $icon.removeClass('fa-compress').addClass('fa-expand');
+            $(this).attr('title', 'Полноэкранный режим');
+        } else {
+            // Вход в полноэкранный режим
+            $container.addClass('fullscreen-mode');
+            $('body').addClass('datatable-fullscreen');
+            $icon.removeClass('fa-expand').addClass('fa-compress');
+            $(this).attr('title', 'Выйти из полноэкранного режима');
+        }
+        
+        // Перерисовываем таблицу для корректного отображения
+        setTimeout(() => {
+            dataTable.columns.adjust().draw();
+        }, 100);
     });
 
     // Функция для обновления статистики таблицы
     function updateTableStats() {
         const info = dataTable.page.info();
-        const $card = $('.card');
         
-        // Обновляем заголовок карточки с количеством записей
+        // Обновляем бейдж с количеством записей
+        $('#records-badge').text(info.recordsTotal);
+        
+        // Обновляем заголовок
         let title = 'Список пользователей';
         if (info.recordsTotal > 0) {
             title += ` (${info.recordsTotal})`;
         }
+        $('#title-text').text(title);
         
-        // Можно добавить бейдж с количеством
-        $('.card-header h5, .page-title').text(title);
+        // Обновляем время последнего обновления
+        updateLastUpdateTime();
+    }
+
+    // Функция для обновления времени последнего обновления
+    function updateLastUpdateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        $('#last-update').text(timeString);
     }
 
     // Утилита debounce для оптимизации поиска
@@ -251,6 +293,10 @@ $(document).ready(function () {
     $(window).on('resize', debounce(function() {
         dataTable.columns.adjust().draw();
     }, 250));
+
+    // Инициализация при загрузке страницы
+    updateTableStats();
+    updateLastUpdateTime();
 
     // Экспорт DataTable для глобального доступа
     window.userDataTable = dataTable;

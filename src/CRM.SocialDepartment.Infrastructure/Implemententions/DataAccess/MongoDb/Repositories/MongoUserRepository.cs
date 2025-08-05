@@ -1,7 +1,7 @@
 using CRM.SocialDepartment.Domain.Common;
 using CRM.SocialDepartment.Domain.Repositories;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
-using CRM.SocialDepartment.Infrastructure.Identity;
+//using CRM.SocialDepartment.Infrastructure.Identity;
 using MongoDB.Driver;
 
 namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
@@ -44,7 +44,14 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
 
                 // Здесь должна быть логика хеширования пароля
                 // Пока просто сохраняем пользователя
-                await _users.InsertOneAsync(_session, applicationUser);
+                if (_session != null)
+                {
+                    await _users.InsertOneAsync(_session, applicationUser);
+                }
+                else
+                {
+                    await _users.InsertOneAsync(applicationUser);
+                }
                 
                 return Result.Success();
             }
@@ -60,7 +67,9 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
         public IEnumerable<object> GetAllUsers()
         {
             var filter = Builders<ApplicationUser>.Filter.Empty;
-            var users = _users.Find(_session, filter).ToList();
+            var users = _session != null 
+                ? _users.Find(_session, filter).ToList()
+                : _users.Find(filter).ToList();
             return users.Cast<object>();
         }
     }

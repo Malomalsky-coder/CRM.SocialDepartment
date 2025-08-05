@@ -9,7 +9,7 @@ using CRM.SocialDepartment.Domain.Repositories;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
-using CRM.SocialDepartment.Infrastructure.Identity;
+//using CRM.SocialDepartment.Infrastructure.Identity;
 using CRM.SocialDepartment.Site.Extensions;
 using CRM.SocialDepartment.Site.Filters;
 using CRM.SocialDepartment.Site.Localization;

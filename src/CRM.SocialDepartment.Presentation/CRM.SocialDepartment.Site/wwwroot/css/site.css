@@ -1618,3 +1618,33 @@ thead th {
 .dataTables_scrollBody::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8 !important;
 }
+
+/* Специфичные стили для таблицы пользователей */
+/* Применяются только на странице пользователей */
+body:has(.modern-datatable-container) .datatable-card #table th:nth-child(1),
+body:has(.modern-datatable-container) .datatable-card #table td:nth-child(1) { 
+    width: auto; min-width: 150px; 
+} /* Пользователь */
+body:has(.modern-datatable-container) .datatable-card #table th:nth-child(2),
+body:has(.modern-datatable-container) .datatable-card #table td:nth-child(2) { 
+    width: auto; min-width: 120px; 
+} /* Имя */
+body:has(.modern-datatable-container) .datatable-card #table th:nth-child(3),
+body:has(.modern-datatable-container) .datatable-card #table td:nth-child(3) { 
+    width: auto; min-width: 120px; 
+} /* Фамилия */
+body:has(.modern-datatable-container) .datatable-card #table th:nth-child(4),
+body:has(.modern-datatable-container) .datatable-card #table td:nth-child(4) { 
+    width: auto; min-width: 200px; 
+} /* E-mail */
+body:has(.modern-datatable-container) .datatable-card #table th:nth-child(5),
+body:has(.modern-datatable-container) .datatable-card #table td:nth-child(5) { 
+    width: auto; min-width: 150px; 
+} /* Дата создания */
+
+/* Альтернативный способ для браузеров без поддержки :has() */
+.user-page #table th:nth-child(1), .user-page #table td:nth-child(1) { width: auto; min-width: 150px; }
+.user-page #table th:nth-child(2), .user-page #table td:nth-child(2) { width: auto; min-width: 120px; }
+.user-page #table th:nth-child(3), .user-page #table td:nth-child(3) { width: auto; min-width: 120px; }
+.user-page #table th:nth-child(4), .user-page #table td:nth-child(4) { width: auto; min-width: 200px; }
+.user-page #table th:nth-child(5), .user-page #table td:nth-child(5) { width: auto; min-width: 150px; }
