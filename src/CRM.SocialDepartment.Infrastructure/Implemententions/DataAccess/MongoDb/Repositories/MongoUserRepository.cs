@@ -3,6 +3,7 @@ using CRM.SocialDepartment.Domain.Repositories;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 //using CRM.SocialDepartment.Infrastructure.Identity;
 using MongoDB.Driver;
+using System.Reflection;
 
 namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
 {
@@ -31,15 +32,8 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
             {
                 if (user is not ApplicationUser applicationUser)
                 {
-                    // Создаем ApplicationUser из анонимного объекта
-                    var userData = (dynamic)user;
-                    applicationUser = new ApplicationUser
-                    {
-                        FirstName = userData.FirstName,
-                        LastName = userData.LastName,
-                        UserName = userData.UserName,
-                        Email = userData.Email
-                    };
+                    // Создаем ApplicationUser из объекта с помощью рефлексии
+                    applicationUser = CreateApplicationUserFromObject(user);
                 }
 
                 // Здесь должна быть логика хеширования пароля
@@ -59,6 +53,35 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
             {
                 return Result.Failure($"Ошибка создания пользователя: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Создает ApplicationUser из объекта с помощью рефлексии
+        /// </summary>
+        private static ApplicationUser CreateApplicationUserFromObject(object user)
+        {
+            var userType = user.GetType();
+            var applicationUser = new ApplicationUser();
+
+            // Безопасно получаем значения свойств через рефлексию
+            var firstNameProperty = userType.GetProperty("FirstName");
+            var lastNameProperty = userType.GetProperty("LastName");
+            var userNameProperty = userType.GetProperty("UserName");
+            var emailProperty = userType.GetProperty("Email");
+
+            if (firstNameProperty != null)
+                applicationUser.FirstName = firstNameProperty.GetValue(user)?.ToString() ?? string.Empty;
+            
+            if (lastNameProperty != null)
+                applicationUser.LastName = lastNameProperty.GetValue(user)?.ToString() ?? string.Empty;
+            
+            if (userNameProperty != null)
+                applicationUser.UserName = userNameProperty.GetValue(user)?.ToString() ?? string.Empty;
+            
+            if (emailProperty != null)
+                applicationUser.Email = emailProperty.GetValue(user)?.ToString() ?? string.Empty;
+
+            return applicationUser;
         }
 
         /// <summary>

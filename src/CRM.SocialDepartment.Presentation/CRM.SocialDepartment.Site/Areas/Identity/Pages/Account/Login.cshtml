@@ -86,8 +86,8 @@
         document.querySelector('input[name="Input.Email"]').focus();
         
         // Анимация кнопки при отправке
-        document.getElementById('login-submit').addEventListener('click', function() {
-            const btn = this;
+        document.getElementById('account').addEventListener('submit', function(e) {
+            const btn = document.getElementById('login-submit');
             const icon = btn.querySelector('i');
             
             // Показываем спиннер

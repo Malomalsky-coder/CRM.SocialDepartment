@@ -122,7 +122,7 @@
         confirmPasswordInput.addEventListener('input', validatePasswords);
         
         // Анимация кнопки при отправке
-        document.getElementById('registerSubmit').addEventListener('click', function() {
+        document.getElementById('registerForm').addEventListener('submit', function() {
             const btn = this;
             const icon = btn.querySelector('i');
             
@@ -131,12 +131,6 @@
             icon.classList.add('fa-spinner', 'fa-spin');
             btn.disabled = true;
             
-            // Возвращаем обратно через 3 секунды (если форма не отправилась)
-            setTimeout(() => {
-                icon.classList.remove('fa-spinner', 'fa-spin');
-                icon.classList.add('fa-user-plus');
-                btn.disabled = false;
-            }, 3000);
         });
     </script>
 }
