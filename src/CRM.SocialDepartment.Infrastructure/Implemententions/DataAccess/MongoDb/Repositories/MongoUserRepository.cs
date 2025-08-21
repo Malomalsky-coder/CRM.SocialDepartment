@@ -1,6 +1,7 @@
 using CRM.SocialDepartment.Domain.Common;
 using CRM.SocialDepartment.Domain.Repositories;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
+using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Helpers;
 //using CRM.SocialDepartment.Infrastructure.Identity;
 using MongoDB.Driver;
 using System.Reflection;
@@ -36,8 +37,8 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
                     applicationUser = CreateApplicationUserFromObject(user);
                 }
 
-                // Здесь должна быть логика хеширования пароля
-                // Пока просто сохраняем пользователя
+                // Хешируем пароль перед сохранением
+                applicationUser.PasswordHash = PasswordHasher.HashPassword(applicationUser, password);
                 if (_session != null)
                 {
                     await _users.InsertOneAsync(_session, applicationUser);
@@ -63,7 +64,6 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
             var userType = user.GetType();
             var applicationUser = new ApplicationUser();
 
-            // Безопасно получаем значения свойств через рефлексию
             var firstNameProperty = userType.GetProperty("FirstName");
             var lastNameProperty = userType.GetProperty("LastName");
             var userNameProperty = userType.GetProperty("UserName");
@@ -81,6 +81,18 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
             if (emailProperty != null)
                 applicationUser.Email = emailProperty.GetValue(user)?.ToString() ?? string.Empty;
 
+            applicationUser.Id = Guid.NewGuid(); 
+            applicationUser.EmailConfirmed = true; 
+            applicationUser.PhoneNumberConfirmed = true; 
+            applicationUser.TwoFactorEnabled = false; 
+            applicationUser.LockoutEnd = null; 
+            applicationUser.AccessFailedCount = 0; 
+            applicationUser.LockoutEnabled = false; 
+            applicationUser.NormalizedUserName = applicationUser.UserName.ToUpperInvariant();
+            applicationUser.NormalizedEmail = applicationUser.Email.ToUpperInvariant();
+            applicationUser.SecurityStamp = Guid.NewGuid().ToString();
+            applicationUser.ConcurrencyStamp = Guid.NewGuid().ToString();
+
             return applicationUser;
         }
 
@@ -94,6 +106,32 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
                 ? _users.Find(_session, filter).ToList()
                 : _users.Find(filter).ToList();
             return users.Cast<object>();
+        }
+
+        public async Task<Result> VerifyPasswordAsync(string userName, string password)
+        {
+            try
+            {
+                var filter = Builders<ApplicationUser>.Filter.Eq(u => u.UserName, userName);
+                var user = _session != null 
+                    ? await _users.Find(_session, filter).FirstOrDefaultAsync()
+                    : await _users.Find(filter).FirstOrDefaultAsync();
+
+                if (user == null)
+                {
+                    return Result.Failure("Пользователь не найден");
+                }
+
+                var verificationResult = PasswordHasher.VerifyPassword(user.PasswordHash, password);
+                
+                return verificationResult == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Success
+                    ? Result.Success()
+                    : Result.Failure("Неверный пароль");
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure($"Ошибка проверки пароля: {ex.Message}");
+            }
         }
     }
 } 

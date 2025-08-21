@@ -20,17 +20,6 @@
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                    <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/Index">
-                        <i class="fa fa-cog text-secondary me-2"></i>Настройки профиля
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/ChangePassword">
-                        <i class="fa fa-key text-warning me-2"></i>Сменить пароль
-                    </a>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
                     <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" 
                           class="d-inline" method="post">
                         <button type="submit" class="dropdown-item text-danger">
@@ -46,10 +35,6 @@ else
 {
     <!-- Неавторизованный пользователь -->
     <div class="navbar-nav">
-        <a class="nav-link" asp-area="Identity" asp-page="/Account/Register">
-            <i class="fa fa-user-plus me-1"></i>
-            <span class="d-none d-md-inline">Регистрация</span>
-        </a>
         <a class="nav-link btn btn-primary text-white px-3 rounded" asp-area="Identity" asp-page="/Account/Login">
             <i class="fa fa-sign-in me-1"></i>Войти
         </a>

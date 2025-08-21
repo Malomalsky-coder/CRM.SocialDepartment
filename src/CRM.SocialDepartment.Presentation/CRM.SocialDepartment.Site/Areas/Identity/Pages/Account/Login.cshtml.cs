@@ -137,7 +137,6 @@ namespace CRM.SocialDepartment.Site.Areas.Identity.Pages.Account
                         userName = user.UserName;
                     }
                 }
-
                 var result = await _signInManager.PasswordSignInAsync(userName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
                 //var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)

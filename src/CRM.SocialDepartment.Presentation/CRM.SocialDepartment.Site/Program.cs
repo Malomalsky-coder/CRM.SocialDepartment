@@ -44,6 +44,24 @@ public class Program
         builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
         {
             options.SignIn.RequireConfirmedAccount = false; // подтверждение email
+            options.SignIn.RequireConfirmedEmail = false; // подтверждение email
+            options.SignIn.RequireConfirmedPhoneNumber = false; // подтверждение телефона
+            
+            // Отключаем регистрацию
+            options.User.RequireUniqueEmail = false;
+            
+            // Настройки паролей
+            options.Password.RequireDigit = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequireUppercase = true;
+            options.Password.RequiredLength = 6;
+            options.Password.RequiredUniqueChars = 1;
+            
+            // Отключаем блокировку аккаунта
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.AllowedForNewUsers = false;
         })
         .AddMongoDbStores<ApplicationUser, ApplicationRole, Guid>(
             mongoDbConfiguration.ConnectionString,

@@ -20,5 +20,13 @@ namespace CRM.SocialDepartment.Domain.Repositories
         /// </summary>
         /// <returns>Список всех пользователей</returns>
         IEnumerable<object> GetAllUsers();
+
+        /// <summary>
+        /// Проверить пароль пользователя
+        /// </summary>
+        /// <param name="userName">Имя пользователя</param>
+        /// <param name="password">Пароль для проверки</param>
+        /// <returns>Результат проверки</returns>
+        Task<Result> VerifyPasswordAsync(string userName, string password);
     }
 } 
