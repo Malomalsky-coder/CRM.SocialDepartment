@@ -1,5 +1,4 @@
-﻿using System;
-using CRM.SocialDepartment.Domain.Entities.Patients;
+﻿using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;

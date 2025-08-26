@@ -73,19 +73,17 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// <returns></returns>
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            var results = new List<ValidationResult>();
-
             #region Проверка возраста
             var age = DateTime.Now.Year - Birthday.Year;
 
             if (age < 0)
             {
-                results.Add(new ValidationResult("Дата рождения не может быть в будущем", [nameof(Birthday)]));
+                yield return new ValidationResult("Дата рождения не может быть в будущем", [nameof(Birthday)]);
             }
 
             if (Birthday == default)
             {
-                results.Add(new ValidationResult("Дата рождения обязательна для заполнения", [nameof(Birthday)]));
+                yield return new ValidationResult("Дата рождения обязательна для заполнения", [nameof(Birthday)]);
             }
 
             #endregion
@@ -94,32 +92,32 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
             {
                 if (MedicalHistory?.NumberDepartment <= 0)
                 {
-                    results.Add(new ValidationResult("Номер отделения не может быть меньше или равен 0", ["MedicalHistory.NumberDepartment"]));
+                    yield return new ValidationResult("Номер отделения не может быть меньше или равен 0", ["MedicalHistory.NumberDepartment"]);
                 }
 
                 if (MedicalHistory?.HospitalizationType is null || MedicalHistory.HospitalizationType.Value < 0)
                 {
-                    results.Add(new ValidationResult("Тип госпитализации обязателен для заполнения", ["MedicalHistory.HospitalizationType"]));
+                    yield return new ValidationResult("Тип госпитализации обязателен для заполнения", ["MedicalHistory.HospitalizationType"]);
                 }
 
                 if (string.IsNullOrWhiteSpace(MedicalHistory?.Resolution))
                 {
-                    results.Add(new ValidationResult("Постановление обязательно для заполнения", ["MedicalHistory.Resolution"]));
+                    yield return new ValidationResult("Постановление обязательно для заполнения", ["MedicalHistory.Resolution"]);
                 }
 
                 if (string.IsNullOrWhiteSpace(MedicalHistory?.NumberDocument))
                 {
-                    results.Add(new ValidationResult("Номер истории болезни обязателен для заполнения", ["MedicalHistory.NumberDocument"]));
+                    yield return new ValidationResult("Номер истории болезни обязателен для заполнения", ["MedicalHistory.NumberDocument"]);
                 }
 
                 if (MedicalHistory?.DateOfReceipt is null || MedicalHistory.DateOfReceipt == default) 
                 {
-                    results.Add(new ValidationResult("Дата поступления обязателено для заполнения", ["MedicalHistory.DateOfReceipt"]));
+                    yield return new ValidationResult("Дата поступления обязателено для заполнения", ["MedicalHistory.DateOfReceipt"]);
                 }
             }
             else
             {
-                results.Add(new ValidationResult("История болезни обязателеный параметр", ["MedicalHistory"]));
+                yield return new ValidationResult("История болезни обязателеный параметр", ["MedicalHistory"]);
             }
             #endregion
             #region Проверка обязательных полей гражданства
@@ -128,7 +126,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
                 // Проверяем, что гражданство установлено (включая 0 = RussianFederation)
                 if (CitizenshipInfo.Citizenship is null)
                 {
-                    results.Add(new ValidationResult("Гражданство обязательно", ["CitizenshipInfo.Citizenship"]));
+                    yield return new ValidationResult("Гражданство обязательно", ["CitizenshipInfo.Citizenship"]);
                 }
             }
             #endregion
@@ -141,7 +139,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
 
                     if (!string.IsNullOrEmpty(validationError))
                     {
-                        results.Add(new ValidationResult(validationError, [$"Documents[{document.Key}]"]));
+                        yield return new ValidationResult(validationError, [$"Documents[{document.Key}]"]);
                     }
                 }
             }
@@ -149,68 +147,66 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
             #region Проверка дееспособности
             if (!IsCapable && Capable is null)
             {
-                results.Add(new ValidationResult("Для недееспособного пациента необходимо указать информацию о дееспособности", [nameof(Capable)]));
+                yield return new ValidationResult("Для недееспособного пациента необходимо указать информацию о дееспособности", [nameof(Capable)]);
             }
 
             if (!IsCapable)
             {
                 if (Capable is not null && string.IsNullOrEmpty(Capable?.CourtDecision))
                 {
-                    results.Add(new ValidationResult("Решение суда обязательно для заполнения"));
+                    yield return new ValidationResult("Решение суда обязательно для заполнения");
                 }
 
                 if (Capable is not null && Capable?.TrialDate is null)
                 {
-                    results.Add(new ValidationResult("Дата проведения суда обязательно для заполнения"));
+                    yield return new ValidationResult("Дата проведения суда обязательно для заполнения");
                 }
 
                 if (Capable is not null && string.IsNullOrEmpty(Capable?.Guardian))
                 {
-                    results.Add(new ValidationResult("Опекун обязательно для заполнения"));
+                    yield return new ValidationResult("Опекун обязательно для заполнения");
                 }
 
                 if (Capable is not null && string.IsNullOrEmpty(Capable?.GuardianOrderAppointment))
                 {
-                    results.Add(new ValidationResult("Распоряжение о назначении опекуна обязательно для заполнения"));
+                    yield return new ValidationResult("Распоряжение о назначении опекуна обязательно для заполнения");
                 }
             }
             #endregion
             #region Проверка пенсии
             if (ReceivesPension && Pension == null)
             {
-                results.Add(new ValidationResult("Для пациента, получающего пенсию, необходимо указать информацию о пенсии", [nameof(Pension)]));
+                yield return new ValidationResult("Для пациента, получающего пенсию, необходимо указать информацию о пенсии", [nameof(Pension)]);
             }
 
             if (ReceivesPension)
             {
                 if (Pension is not null && Pension?.DisabilityGroup.Value == 0)
                 {
-                    results.Add(new ValidationResult("Группа инвалидности обязательно для заполнения"));
+                    yield return new ValidationResult("Группа инвалидности обязательно для заполнения");
                 }
 
                 if (Pension is not null && Pension?.PensionStartDateTime is null)
                 {
-                    results.Add(new ValidationResult("Дата установления статуса пенсионера обязательна для заполнения"));
+                    yield return new ValidationResult("Дата установления статуса пенсионера обязательна для заполнения");
                 }
 
                 if (Pension is not null && Pension?.PensionAddress.Value == 0)
                 {
-                    results.Add(new ValidationResult("Способ получения пенсии обязательно для заполнения"));
+                    yield return new ValidationResult("Способ получения пенсии обязательно для заполнения");
                 }
 
                 if (Pension is not null && Pension?.SfrBranch == 0 && Pension?.SfrBranch < 1)
                 {
-                    results.Add(new ValidationResult("Филиал СФР значение не может быть рано 0 или отрицательным"));
+                    yield return new ValidationResult("Филиал СФР значение не может быть рано 0 или отрицательным");
                 }
 
                 if (Pension is not null && string.IsNullOrEmpty(Pension?.SfrDepartment))
                 {
-                    results.Add(new ValidationResult("Отделение СФР обязательно для заполнения"));
+                    yield return new ValidationResult("Отделение СФР обязательно для заполнения");
                 }
             }
             #endregion
-
-            return results;
         }
 
         /// <summary>
