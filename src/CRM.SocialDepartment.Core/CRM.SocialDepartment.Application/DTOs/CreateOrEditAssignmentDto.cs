@@ -2,6 +2,7 @@
 {
     public class CreateOrEditAssignmentDto
     {
+        public string Name { get; set; }
         public Guid Id { get; init; }
         public string Description { get; init; } = string.Empty;
         public DateTime CreatedDate { get; init; }

@@ -97,7 +97,7 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
         /// </summary>
         public async Task<IEnumerable<Assignment>> GetAssignmentsByPatientIdAsync(Guid patientId, CancellationToken cancellationToken = default)
         {
-            return await GetAllAsync(a => a.Patient.Id == patientId && !a.SoftDeleted, cancellationToken);
+            return await GetAllAsync(a => a.PatientId == patientId && !a.SoftDeleted, cancellationToken);
         }
 
         /// <summary>

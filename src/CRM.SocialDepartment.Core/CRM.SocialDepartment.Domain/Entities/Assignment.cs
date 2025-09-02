@@ -7,8 +7,9 @@ namespace CRM.SocialDepartment.Domain.Entities;
 
 public class Assignment : AggregateRoot<Guid>, IArchive, ISoftDelete
 {
-    public Assignment(DateTime acceptDate, int departmentNumber, string description, DateTime forwardDate, string forwardDepartment, Dictionary<string, string> statusLog, DateTime departmentForwardDate, string assignee, string? note, DateTime creationDate, Patient patient)
+    public Assignment(string name, DateTime acceptDate, int departmentNumber, string description, DateTime forwardDate, string forwardDepartment, Dictionary<string, string> statusLog, DateTime departmentForwardDate, string assignee, string? note, DateTime creationDate, Guid patientId)
     {
+        Name = name;
         AcceptDate = acceptDate;
         DepartmentNumber = departmentNumber;
         Description = description;
@@ -19,11 +20,13 @@ public class Assignment : AggregateRoot<Guid>, IArchive, ISoftDelete
         Assignee = assignee;
         Note = note;
         CreationDate = creationDate;
-        Patient = patient;
+        PatientId = patientId;
 
         // Генерируем событие создания назначения
         AddDomainEvent(new AssignmentCreatedEvent(this));
     }
+    
+    public string Name { get; private set; }
 
     /// <summary>
     /// Дата приема заявки от отделения
@@ -78,7 +81,7 @@ public class Assignment : AggregateRoot<Guid>, IArchive, ISoftDelete
     /// <summary>
     /// Пациент
     /// </summary>
-    public Patient Patient { get; private set; }
+    public Guid PatientId { get; private set; }
 
     /// <summary>
     /// Помечен как в архиве (пациент выписан)
@@ -172,7 +175,7 @@ public class Assignment : AggregateRoot<Guid>, IArchive, ISoftDelete
         SoftDeleted = true;
         
         // Генерируем событие удаления назначения
-        AddDomainEvent(new AssignmentDeletedEvent(Id, Description, Patient.Id));
+        AddDomainEvent(new AssignmentDeletedEvent(Id, Description, PatientId));
     }
 
     /// <summary>

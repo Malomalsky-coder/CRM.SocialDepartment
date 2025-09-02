@@ -20,7 +20,7 @@ namespace CRM.SocialDepartment.Application.Handlers.EventHandlers
         {
             _logger.LogInformation("Создано новое назначение: {AssignmentId} для пациента {PatientId} в {CreatedAt}", 
                 notification.Assignment.Id, 
-                notification.Assignment.Patient.Id, 
+                notification.Assignment.PatientId, 
                 notification.CreatedAt);
 
             // Логика создания назначения:

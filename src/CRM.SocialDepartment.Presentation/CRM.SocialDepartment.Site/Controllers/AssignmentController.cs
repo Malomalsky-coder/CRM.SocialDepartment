@@ -2,55 +2,84 @@
 using CRM.SocialDepartment.Application.DTOs;
 using CRM.SocialDepartment.Domain.Common;
 using CRM.SocialDepartment.Domain.Entities;
+using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Site.Services;
+using CRM.SocialDepartment.Site.ViewModels.Assignment;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CRM.SocialDepartment.Site.Controllers;
 
-[Route("api/assignments")]
 public class AssignmentController(AssignmentService assignmentService) : Controller
 {
-    private readonly AssignmentService _assignmentService = assignmentService;
-
-    public IActionResult Active()
+    [HttpGet]
+    [Route("assignments")]
+    public IActionResult Index()
     {
-        return View(nameof(Index));
+        return View("~/Views/Assignment/Index.cshtml");
     }
 
+    [HttpGet]
+    [Route("assignments/archive")]
     public IActionResult Archive()
     {
-        return View();
+        return View("~/Views/Assignment/Archive.cshtml");
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllAsync(CancellationToken cancellationToken)
+    [Route("[controller]/modal/create")]
+    public IActionResult CreateModal()
     {
-        var assignments = await _assignmentService.GetAllAssignmentsAsync(null, cancellationToken);
-        return Ok(assignments);
-    }
-
-    [HttpGet]
-    [Route("{id:guid}")]
-    public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
+        ViewData.Model = new CreateAssignmentViewModel()
         {
-            HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-            return new JsonResult(ModelState);
-        }
+            Name = "Название",
+            AcceptDate = DateTime.UtcNow,
+            Description = "Описание",
+            Assignee = "Исполнитель",
+            PatientId = "Пациент"
+        };
 
-        var assignment = await _assignmentService.GetAssignmentByIdAsync(id, cancellationToken);
+        return new PartialViewResult
+        {
+            ViewName = "~/Views/Assignment/_CreateAssignmentModal.cshtml",
+            ViewData = ViewData
+        };
+    }
 
-        if (assignment is not null) return Ok(assignment);
+    [HttpGet]
+    [Route("[controller]/modal/edit")]
+    public async Task<IActionResult> EditModal([FromQuery] Guid id, CancellationToken cancellationToken)
+    {
+        var dto = await assignmentService.GetAssignmentByIdAsync(id, cancellationToken);
+        if (dto == null)
+            return NotFound();
 
-        HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-        return NotFound(new { message = "Assignment not found." });
+        ViewData.Model = new EditAssignmentViewModel
+        {
+            Id = dto.Id,
+            Name = dto.Name,
+            Description = dto.Description,
+            CreatedDate = dto.CreationDate,
+            ForwardDepartment = dto.ForwardDepartment,
+            Assignee = dto.Assignee,
+            AcceptDate = dto.AcceptDate,
+            ForwardDate = dto.ForwardDate,
+            DepartmentNumber = dto.DepartmentNumber,
+            DepartmentForwardDate = dto.DepartmentForwardDate,
+            Note = dto.Note,
+            PatientId = dto.PatientId
+        };
+
+        return new PartialViewResult
+        {
+            ViewName = "~/Views/Assignment/_EditAssignmentModal.cshtml",
+            ViewData = ViewData
+        };
     }
 
     [HttpPost]
-    [Route("active")]
-    public async Task<IActionResult> GetActiveAsync([FromServices] DataTableNetService dataTableNetService,
-        CancellationToken cancellationToken)
+    [Route("api/assignments/active")]
+    public async Task<JsonResult> GetActiveForDataTableAsync([FromServices] DataTableNetService dataTableNetService,
+        CancellationToken cancellationToken = default)
     {
         var input = dataTableNetService.Parse(Request);
 
@@ -59,11 +88,11 @@ public class AssignmentController(AssignmentService assignmentService) : Control
         {
             Skip = input.Skip,
             PageSize = input.PageSize,
-            SearchTerm = input.SearchTerm
+            SearchTerm = input.SearchTerm,
         };
 
         // Используем доменный метод репозитория
-        var result = await _assignmentService.GetActiveAssignmentsForDataTableAsync(parameters, cancellationToken);
+        var result = await assignmentService.GetActiveAssignmentsForDataTableAsync(parameters, cancellationToken);
 
         // Преобразовать данные для представления
         var dataResult = result.Data.Select(x => new RepresentAssignmentDto
@@ -84,8 +113,8 @@ public class AssignmentController(AssignmentService assignmentService) : Control
     }
 
     [HttpPost]
-    [Route("archive")]
-    public async Task<JsonResult> GetAssignmentForDataTableAsync([FromServices] DataTableNetService dataTableNetService,
+    [Route("api/assignments/archive")]
+    public async Task<JsonResult> GetArchivedForDataTableAsync([FromServices] DataTableNetService dataTableNetService,
         CancellationToken cancellationToken = default)
     {
         var input = dataTableNetService.Parse(Request);
@@ -95,23 +124,22 @@ public class AssignmentController(AssignmentService assignmentService) : Control
         {
             Skip = input.Skip,
             PageSize = input.PageSize,
-            SearchTerm = input.SearchTerm
+            SearchTerm = input.SearchTerm,
         };
 
         // Используем доменный метод репозитория
-        var result = await _assignmentService.GetArchivedAssignmentsForDataTableAsync(parameters, cancellationToken);
+        var result = await assignmentService.GetActiveAssignmentsForDataTableAsync(parameters, cancellationToken);
 
         // Преобразовать данные для представления
-        var dataResult = result.Data.Select(i =>
-            new RepresentAssignmentDto()
+        var dataResult = result.Data.Where(x => x.IsArchive).Select(x => new RepresentAssignmentDto
             {
-                Id = i.Id,
-                CreateDate = i.CreationDate,
-                Description = i.Description
+                Id = x.Id,
+                Description = x.Description,
+                CreateDate = x.CreationDate,
             }
         );
 
-        return new(new
+        return new JsonResult(new
         {
             draw = input.Draw,
             recordsTotal = result.TotalRecords,
@@ -119,53 +147,19 @@ public class AssignmentController(AssignmentService assignmentService) : Control
             data = dataResult
         });
     }
-
-    [HttpPost]
-    public async Task<JsonResult> AddAssignmentAsync([FromBody] CreateOrEditAssignmentDto input,
-        CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-            return new(ModelState);
-        }
-
-        var result = await _assignmentService.CreateAssignmentAsync(input, cancellationToken);
-
-        HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
-        return new(new { });
-    }
-
-    [HttpPatch]
-    [Route("{id:guid}")]
-    public async Task<JsonResult> EditAssignmentAsync([FromRoute] Guid id, [FromBody] CreateOrEditAssignmentDto input,
-        CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-            return new(ModelState);
-        }
-
-        await _assignmentService.EditAssignmentAsync(id, input, cancellationToken);
-
-        HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
-        return new(new { });
-    }
-
+    
     [HttpDelete]
-    [Route("{id:guid}")]
-    public async Task<JsonResult> DeletePatientAsync([FromRoute] Guid id, CancellationToken cancellationToken)
+    [Route("api/assignments/{id:guid}")]
+    public async Task<JsonResult> DeleteAsync([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
+        if (id == Guid.Empty)
         {
             HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-            return new(ModelState);
+            return new JsonResult(new { error = "Invalid id" });
         }
 
-        await _assignmentService.DeleteAssignmentAsync(id, cancellationToken);
-
+        await assignmentService.DeleteAssignmentAsync(id, cancellationToken);
         HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
-        return new(new { });
+        return new JsonResult(new { });
     }
 }

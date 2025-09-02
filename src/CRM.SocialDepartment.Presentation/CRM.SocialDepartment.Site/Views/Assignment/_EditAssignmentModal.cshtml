@@ -1,0 +1,72 @@
+@model CRM.SocialDepartment.Site.ViewModels.Assignment.EditAssignmentViewModel
+
+<div class="modal-header">
+    <h5 class="modal-title">Редактировать назначение</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<form id="edit-assignment-form" method="post" action="/api/assignments">
+    @Html.AntiForgeryToken()
+    <div class="modal-body">
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label"></label>
+            <textarea asp-for="Description" class="form-control"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+        <div class="row g-3">
+            <div class="col">
+                <label asp-for="Assignee" class="form-label"></label>
+                <input asp-for="Assignee" class="form-control" />
+            </div>
+        </div>
+        <div class="row g-3 mt-1">
+            <div class="col">
+                <label asp-for="DepartmentNumber" class="form-label"></label>
+                <input asp-for="DepartmentNumber" type="number" class="form-control" />
+            </div>
+            <div class="col">
+                <label asp-for="ForwardDepartment" class="form-label"></label>
+                <input asp-for="ForwardDepartment" class="form-control" />
+            </div>
+        </div>
+        <input type="hidden" asp-for="PatientId" />
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="CreatedDate" />
+        <input type="hidden" asp-for="AcceptDate" />
+        <input type="hidden" asp-for="ForwardDate" />
+        <input type="hidden" asp-for="DepartmentForwardDate" />
+        <div class="mb-3 mt-2">
+            <label asp-for="Note" class="form-label"></label>
+            <textarea asp-for="Note" class="form-control"></textarea>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+    </div>
+</form>
+
+<script>
+document.getElementById('edit-assignment-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const resp = await fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    if (resp.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('form-modal')).hide();
+        if (window.assignmentTable) window.assignmentTable.ajax.reload(null, false);
+    } else {
+        const text = await resp.text();
+        console.error(text);
+        alert('Ошибка сохранения');
+    }
+});
+</script>

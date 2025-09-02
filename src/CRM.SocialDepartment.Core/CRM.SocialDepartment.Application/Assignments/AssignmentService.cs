@@ -39,6 +39,7 @@ public class AssignmentService(IUnitOfWork unitOfWork, IDomainEventDispatcher? d
                       throw new EntityNotFoundException("Пациент не найден");
 
         var assignment = new Assignment(
+            dto.Name,
             dto.AcceptDate,
             dto.DepartmentNumber,
             dto.Description,
@@ -52,7 +53,7 @@ public class AssignmentService(IUnitOfWork unitOfWork, IDomainEventDispatcher? d
             dto.Assignee,
             dto.Note,
             DateTime.Now,
-            patient
+            patient.Id
         );
 
         await _unitOfWork.Assignments.InsertAsync(assignment, cancellationToken);
@@ -78,6 +79,7 @@ public class AssignmentService(IUnitOfWork unitOfWork, IDomainEventDispatcher? d
                           throw new EntityNotFoundException("Пациент не найден");
 
             var assignment = new Assignment(
+                dto.Name,
                 dto.AcceptDate,
                 dto.DepartmentNumber,
                 dto.Description,
@@ -91,7 +93,7 @@ public class AssignmentService(IUnitOfWork unitOfWork, IDomainEventDispatcher? d
                 dto.Assignee,
                 dto.Note,
                 DateTime.Now,
-                patient
+                patient.Id
             );
 
             // Все операции выполняются в рамках одной транзакции
