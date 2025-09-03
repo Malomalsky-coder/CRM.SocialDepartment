@@ -7,6 +7,8 @@ using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Site.Models.Patient;
 using CRM.SocialDepartment.Site.ViewModels.Patient;
 using CRM.SocialDepartment.Site.ViewModels.User;
+using CRM.SocialDepartment.Site.ViewModels.Role;
+using CRM.SocialDepartment.Site.ViewModels.UserActivityLog;
 
 namespace CRM.SocialDepartment.Site.MappingProfile
 {
@@ -172,7 +174,51 @@ namespace CRM.SocialDepartment.Site.MappingProfile
 
             CreateMap<EditPatientViewModel, EditPatientDTO>();
             CreateMap<CreateUserViewModel, CreateUserDTO>();
+            CreateMap<EditUserViewModel, CreateUserDTO>();
+            CreateMap<IUser, UserDTO>();
             CreateMap<ApplicationUser, UserDTO>();
+            
+            // Маппинг для пользователей
+            CreateMap<ApplicationUser, EditUserViewModel>()
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
+                .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
+                .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role))
+                .ForMember(dest => dest.Position, opt => opt.MapFrom(src => src.Position))
+                .ForMember(dest => dest.DepartmentNumber, opt => opt.MapFrom(src => src.DepartmentNumber))
+                .ForMember(dest => dest.Password, opt => opt.Ignore()) // Пароль не маппим из базы
+                .ForMember(dest => dest.ConfirmPassword, opt => opt.Ignore()); // Подтверждение пароля не маппим из базы
+                
+            CreateMap<UserDTO, EditUserViewModel>()
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
+                .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
+                .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role))
+                .ForMember(dest => dest.Position, opt => opt.MapFrom(src => src.Position))
+                .ForMember(dest => dest.DepartmentNumber, opt => opt.MapFrom(src => src.DepartmentNumber))
+                .ForMember(dest => dest.Password, opt => opt.Ignore()) // Пароль не маппим из DTO
+                .ForMember(dest => dest.ConfirmPassword, opt => opt.Ignore()); // Подтверждение пароля не маппим из DTO
+
+            // Маппинг для ролей
+            CreateMap<CreateRoleViewModel, CreateRoleDTO>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
+            CreateMap<EditRoleViewModel, CreateRoleDTO>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
+            CreateMap<IRole, RoleDTO>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => Guid.Empty))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.NormalizedName, opt => opt.MapFrom(src => src.Name.ToUpperInvariant()))
+                .ForMember(dest => dest.CreatedOn, opt => opt.MapFrom(src => DateTime.UtcNow));
+            CreateMap<ApplicationRole, RoleDTO>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.NormalizedName, opt => opt.MapFrom(src => src.NormalizedName))
+                .ForMember(dest => dest.CreatedOn, opt => opt.MapFrom(src => src.CreatedOn));
+            CreateMap<RoleDTO, EditRoleViewModel>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
 
             // Маппинг DTO в ViewModels с правильной обработкой дат
             CreateMap<CreatePatientDTO, CreatePatientViewModel>()
@@ -333,6 +379,34 @@ namespace CRM.SocialDepartment.Site.MappingProfile
                     !string.IsNullOrEmpty(src.Note)
                         ? src.Note
                         : "—"));
+
+            // UserActivityLog ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+            CreateMap<UserActivityLog, UserActivityLogDTO>()
+                .ForMember(dest => dest.ActivityTypeName, opt => opt.MapFrom(src => 
+                    GetActivityTypeName(src.ActivityType)))
+                .ForMember(dest => dest.FormattedTimestamp, opt => opt.MapFrom(src => 
+                    src.Timestamp.ToString("dd.MM.yyyy HH:mm:ss")));
+
+            CreateMap<UserActivityLogFilterViewModel, UserActivityLogFilterDTO>().ReverseMap();
+        }
+
+        /// <summary>
+        /// Получает название типа активности
+        /// </summary>
+        /// <param name="activityType">Тип активности</param>
+        /// <returns>Название типа активности</returns>
+        private static string GetActivityTypeName(UserActivityType activityType)
+        {
+            return activityType switch
+            {
+                UserActivityType.Login => "Авторизация",
+                UserActivityType.Logout => "Выход",
+                UserActivityType.DataRequest => "Запрос данных",
+                UserActivityType.Create => "Создание",
+                UserActivityType.Update => "Редактирование",
+                UserActivityType.Delete => "Удаление",
+                _ => activityType.ToString()
+            };
         }
 
         /// <summary>

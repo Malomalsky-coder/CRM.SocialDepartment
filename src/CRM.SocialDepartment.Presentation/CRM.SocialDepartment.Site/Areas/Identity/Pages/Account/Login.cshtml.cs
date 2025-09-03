@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
+using CRM.SocialDepartment.Application.UserActivityLogs;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -16,11 +17,13 @@ namespace CRM.SocialDepartment.Site.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ILogger<LoginModel> _logger;
+        private readonly UserActivityLoggerService _userActivityLoggerService;
 
-        public LoginModel(SignInManager<ApplicationUser> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(SignInManager<ApplicationUser> signInManager, ILogger<LoginModel> logger, UserActivityLoggerService userActivityLoggerService)
         {
             _signInManager = signInManager;
             _logger = logger;
+            _userActivityLoggerService = userActivityLoggerService;
         }
 
         /// <summary>
@@ -135,6 +138,24 @@ namespace CRM.SocialDepartment.Site.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+                    
+                    // Логируем успешную авторизацию
+                    try
+                    {
+                        var user = await _signInManager.UserManager.FindByNameAsync(userName);
+                        if (user != null)
+                        {
+                            await _userActivityLoggerService.LogLoginAsync(
+                                user.Id,
+                                user.UserName,
+                                $"{user.FirstName} {user.LastName}".Trim());
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Ошибка при логировании активности пользователя");
+                    }
+                    
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)

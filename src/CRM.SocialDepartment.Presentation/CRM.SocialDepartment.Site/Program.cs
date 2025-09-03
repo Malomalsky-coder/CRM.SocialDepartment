@@ -2,6 +2,8 @@ using CRM.SocialDepartment.Application.Assignments;
 using CRM.SocialDepartment.Application.Handlers.EventHandlers;
 using CRM.SocialDepartment.Application.Patients;
 using CRM.SocialDepartment.Application.Users;
+using CRM.SocialDepartment.Application.Roles;
+using CRM.SocialDepartment.Application.UserActivityLogs;
 using CRM.SocialDepartment.Domain.Entities;
 using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Domain.Events;
@@ -9,6 +11,8 @@ using CRM.SocialDepartment.Domain.Repositories;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
+using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
+
 //using CRM.SocialDepartment.Infrastructure.Identity;
 using CRM.SocialDepartment.Site.Extensions;
 using CRM.SocialDepartment.Site.Filters;
@@ -16,6 +20,7 @@ using CRM.SocialDepartment.Site.Localization;
 using CRM.SocialDepartment.Site.MappingProfile;
 using CRM.SocialDepartment.Site.Middleware;
 using CRM.SocialDepartment.Site.Services;
+using CRM.SocialDepartment.Application.Common;
 using CRM.SocialDepartment.WebApp.Settings;
 using DDD.Events;
 using Microsoft.AspNetCore.Identity;
@@ -70,6 +75,17 @@ public class Program
         .AddDefaultUI()
         .AddErrorDescriber<RussianIdentityErrorDescriber>(); // Подключаем русский ErrorDescriber
 
+        // Регистрируем кастомный UserClaimsPrincipalFactory для интеграции с кастомной системой ролей
+        builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, CustomUserClaimsPrincipalFactory>();
+
+        // Добавляем авторизацию с политиками для ролей
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
+            options.AddPolicy("User", policy => policy.RequireRole("User"));
+            // Можно добавить другие политики по необходимости
+        });
+
         BsonConfiguration.RegisterMappings(); // Настройка маппинга для MongoDB
 
         // Регистрация MediatR и доменных событий ///////////////////////////////////////////////////////////////////
@@ -87,6 +103,8 @@ public class Program
             var domainEventDispatcher = provider.GetService<IDomainEventDispatcher>();
             return new MongoUnitOfWork(database, domainEventDispatcher);
         });
+
+
 
         // Регистрация сервисов /////////////////////////////////////////////////////////////////////////////////////
 
@@ -112,6 +130,14 @@ public class Program
         builder.Services.AddScoped<PatientAppService>();
         builder.Services.AddScoped<AssignmentService>();
         builder.Services.AddScoped<UserAppService>();
+        builder.Services.AddScoped<RoleAppService>();
+        builder.Services.AddScoped<AdminInitializationService>();
+        builder.Services.AddHostedService<AdminInitializationHostedService>();
+
+        // Регистрация сервисов для логирования активности пользователей
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddScoped<UserActivityLogAppService>();
+        builder.Services.AddScoped<UserActivityLoggerService>();
 
         // Добавляем поддержку CORS
         builder.Services.AddCors(options =>

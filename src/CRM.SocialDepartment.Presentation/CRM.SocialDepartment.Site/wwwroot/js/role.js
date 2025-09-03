@@ -1,4 +1,4 @@
-﻿/*
+/*
     Назначение: Для страницы списка пользователей.
     Версия: 3.0.0 - Современный дизайн с полной функциональностью
 */
@@ -38,13 +38,13 @@ $(document).ready(function () {
         "stateDuration": 60 * 60 * 24, // 24 часа
         "deferRender": true,
         "ajax": {
-            "url": "/api/User/GetAllUsers",
+            "url": "/api/Role/GetAllRoles",
             "type": "GET",
             "contentType": "application/x-www-form-urlencoded; charset=UTF-8",
             "datatype": "json",
-            "error": function(xhr, error, code) {
+            "error": function (xhr, error, code) {
                 console.error('User DataTable AJAX Error:', error, code, xhr);
-                
+
                 // Обработка различных типов ошибок
                 if (xhr.status === 400 && xhr.responseJSON) {
                     const response = xhr.responseJSON;
@@ -52,158 +52,78 @@ $(document).ready(function () {
                         // Показываем специальное сообщение для ошибок поиска
                         if (window.malomalsky && window.malomalsky.message) {
                             malomalsky.message.warning(
-                                'Некорректный поиск', 
+                                'Некорректный поиск',
                                 response.message + '<br><small class="text-muted">' + response.details + '</small>'
                             );
                         }
-                        
+
                         // Очищаем поле поиска
                         $('.dataTables_filter input').val('').trigger('keyup');
                         return;
                     }
                 }
-                
+
                 // Обработка общих ошибок
                 if (window.malomalsky && window.malomalsky.message) {
                     let errorMessage = 'Не удалось загрузить список пользователей. Попробуйте обновить страницу.';
-                    
+
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     }
-                    
+
                     malomalsky.message.error('Ошибка загрузки данных', errorMessage);
                 }
             }
         },
         "columns": [
-            { 
-                data: "UserName", 
-                name: "UserName",
-                title: "Имя пользователя",
+            {
+                data: "Name",
+                name: "Name",
+                title: "Название роли",
                 className: "fw-medium"
             },
-            { 
-                data: "FirstName", 
-                name: "FirstName",
-                title: "Имя"
+            {
+                data: "Name",
+                name: "Name",
+                title: "Название"
             },
-            { 
-                data: "LastName", 
-                name: "LastName",
-                title: "Фамилия"
-            },
-            { 
-                data: "Email", 
-                name: "Email",
-                title: "Электронная почта"
-            },
-            { 
-                data: "Role", 
-                name: "Role",
-                title: "Роль в системе"
-            },
-            { 
-                data: "Position", 
-                name: "Position",
-                title: "Должность"
-            },
-            { 
-                data: "DepartmentNumber", 
-                name: "DepartmentNumber",
-                title: "Номер отделения"
-            },
-            { 
-                data: "CreatedOn", 
+            {
+                data: "CreatedOn",
                 name: "CreatedOn",
                 title: "Дата создания",
                 className: "text-center",
                 width: "150px"
-            },
-            {
-                data: "UserName",
-                render: function (data, type, row) {
-                    return '<button class="btn btn-outline-primary btn-sm edit-user" ' +
-                        'data-id="' + data + '" ' +
-                        'title="Редактировать">' +
-                        '<i class="fa fa-pencil"></i>' +
-                        '</button>';
-                }
-            },
-            {
-                data: "UserName",
-                render: function (data, type, row) {
-                    return '<button class="btn btn-outline-primary btn-sm delete-user" ' +
-                        'data-id="' + data + '" ' +
-                        'title="Удалить">' +
-                        '<i class="fa fa-trash"></i>' +
-                        '</button>';
-                }
+
             }
         ],
         "columnDefs": [
             {
                 "targets": 0,
-                "render": function(data, type, row) {
+                "render": function (data, type, row) {
                     if (type === 'display' && data) {
                         return '<div class="d-flex align-items-center">' +
-                               '<i class="fa fa-user text-primary me-2"></i>' +
-                               '<span class="fw-medium">' + data + '</span>' +
-                               '</div>';
+                            '<i class="fa fa-user text-primary me-2"></i>' +
+                            '<span class="fw-medium">' + data + '</span>' +
+                            '</div>';
                     }
                     return data || '';
                 }
             },
             {
-                "targets": 3,
-                "render": function(data, type, row) {
+                "targets": 1,
+                "render": function (data, type, row) {
                     if (type === 'display' && data) {
                         return '<div class="d-flex align-items-center">' +
-                               '<i class="fa fa-envelope text-secondary me-2"></i>' +
-                               '<a href="mailto:' + data + '" class="text-decoration-none">' + data + '</a>' +
-                               '</div>';
+                            '<i class="fa fa-envelope text-secondary me-2"></i>' +
+                            '<a href="mailto:' + data + '" class="text-decoration-none">' + data + '</a>' +
+                            '</div>';
                     }
                     return data || '';
                 }
             },
             {
-                "targets": 4,
-                "render": function(data, type, row) {
-                    if (type === 'display' && data) {
-                        return '<div class="d-flex align-items-center">' +
-                               '<i class="fa fa-shield text-info me-2"></i>' +
-                               '<span class="badge bg-info text-white">' + data + '</span>' +
-                               '</div>';
-                    }
-                    return data || '';
-                }
-            },
-            {
-                "targets": 5,
-                "render": function(data, type, row) {
-                    if (type === 'display' && data) {
-                        return '<div class="d-flex align-items-center">' +
-                               '<i class="fa fa-briefcase text-warning me-2"></i>' +
-                               '<span>' + data + '</span>' +
-                               '</div>';
-                    }
-                    return data || '';
-                }
-            },
-            {
-                "targets": 6,
-                "render": function(data, type, row) {
-                    if (type === 'display' && data) {
-                        return '<div class="d-flex align-items-center">' +
-                               '<i class="fa fa-building text-success me-2"></i>' +
-                               '<span class="badge bg-success text-white">' + data + '</span>' +
-                               '</div>';
-                    }
-                    return data || '';
-                }
-            },
-            {
-                "targets": 7,
-                "render": function(data, type, row) {
+                "targets": 2,
+                "render": function (data, type, row) {
                     if (type === 'display' && data) {
                         const date = new Date(data);
                         const formatted = date.toLocaleDateString('ru-RU', {
@@ -212,32 +132,32 @@ $(document).ready(function () {
                             day: 'numeric'
                         });
                         return '<span class="badge bg-light text-dark border" title="' + date.toLocaleString('ru-RU') + '">' +
-                               '<i class="fa fa-calendar me-1"></i>' + formatted +
-                               '</span>';
+                            '<i class="fa fa-calendar me-1"></i>' + formatted +
+                            '</span>';
                     }
                     return data || '';
                 }
             }
         ],
-        "order": [[7, "desc"]],
-        "drawCallback": function(settings) {
+        "order": [[0, "desc"]],
+        "drawCallback": function (settings) {
             // Добавляем анимацию для новых строк
             $(this.api().table().body()).find('tr').addClass('fade-in');
-            
+
             // Обновляем счетчики
             updateTableStats();
-            
+
             // Инициализируем tooltips если есть
             $('[data-bs-toggle="tooltip"]').tooltip();
         },
-        "initComplete": function(settings, json) {
+        "initComplete": function (settings, json) {
             console.log('DataTable инициализирована успешно');
-            
+
             // Улучшаем поле поиска
             $('.dataTables_filter input')
                 .addClass('form-control-sm')
                 .attr('placeholder', 'Поиск пользователей...')
-                .on('keyup', debounce(function() {
+                .on('keyup', debounce(function () {
                     // Добавляем индикатор поиска
                     if (this.value.length > 0) {
                         $(this).addClass('searching');
@@ -245,18 +165,18 @@ $(document).ready(function () {
                         $(this).removeClass('searching');
                     }
                 }, 300));
-            
+
             // Улучшаем селект количества записей
             $('.dataTables_length select').addClass('form-select-sm');
-            
+
             // Добавляем кнопку обновления
             $('.dataTables_filter').append(
                 '<button type="button" class="btn btn-outline-secondary btn-sm ms-2" id="refresh-table" title="Обновить данные">' +
                 '<i class="fa fa-refresh"></i>' +
                 '</button>'
             );
-            
-            $('#refresh-table').on('click', function() {
+
+            $('#refresh-table').on('click', function () {
                 dataTable.ajax.reload(null, false);
                 $(this).find('i').addClass('fa-spin');
                 setTimeout(() => {
@@ -267,64 +187,17 @@ $(document).ready(function () {
     });
 
     // Обработчики событий для кнопок
-    $('#add-user').on('click', function () {
-        GetFormModal(window.location.origin + '/user/modal/create', 'Добавить пользователя');
-    });
-
-    $('#table').on('click', '.edit-user', function () {
-        var userName = $(this).data('id');
-        GetFormModal(window.location.origin + '/user/modal/edit?UserName='+userName, 'Редактировать пользователя');
-    });
-
-
-    $('#table').on('click', '.delete-user', function () {
-        var userName = $(this).data('id');
-        
-        // Всегда показываем диалог подтверждения
-        if (confirm('Вы уверены, что хотите удалить пользователя "' + userName + '"?')) {
-            // Создаем данные для отправки
-            var deleteData = {
-                UserName: userName
-            };
-            
-            $.ajax({
-                url: '/User/delete',
-                type: 'POST',
-                data: JSON.stringify(deleteData),
-                contentType: 'application/json',
-                success: function(response) {
-                    console.log('Пользователь удален:', userName);
-                    if (window.malomalsky && window.malomalsky.message) {
-                        var message = response.Message || 'Пользователь удален';
-                        malomalsky.message.success('Успешно', message);
-                    }
-                    dataTable.ajax.reload();
-                },
-                error: function(xhr, status, error) {
-                    console.error('Ошибка при удалении пользователя:', error);
-                    var errorMessage = 'Произошла ошибка при удалении пользователя';
-                    
-                    if (xhr.responseJSON && xhr.responseJSON.Message) {
-                        errorMessage = xhr.responseJSON.Message;
-                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
-                    
-                    if (window.malomalsky && window.malomalsky.message) {
-                        malomalsky.message.error(errorMessage, 'Ошибка удаления');
-                    }
-                }
-            });
-        }
+    $('#add-role-btn').on('click', function () {
+        GetFormModal(window.location.origin + '/role/modal/create', 'Добавить пользователя');
     });
 
     // Обновить данные в таблице
     $('#reload').on('click', function () {
         const $btn = $(this);
         const $icon = $btn.find('i');
-        
+
         $icon.addClass('fa-spin');
-        dataTable.ajax.reload(function() {
+        dataTable.ajax.reload(function () {
             $icon.removeClass('fa-spin');
             updateLastUpdateTime();
             if (window.malomalsky && window.malomalsky.message) {
@@ -334,10 +207,10 @@ $(document).ready(function () {
     });
 
     // Полноэкранный режим
-    $('#fullscreen-toggle').on('click', function() {
+    $('#fullscreen-toggle').on('click', function () {
         const $container = $('.modern-datatable-container');
         const $icon = $(this).find('i');
-        
+
         if ($container.hasClass('fullscreen-mode')) {
             // Выход из полноэкранного режима
             $container.removeClass('fullscreen-mode');
@@ -351,7 +224,7 @@ $(document).ready(function () {
             $icon.removeClass('fa-expand').addClass('fa-compress');
             $(this).attr('title', 'Выйти из полноэкранного режима');
         }
-        
+
         // Перерисовываем таблицу для корректного отображения
         setTimeout(() => {
             dataTable.columns.adjust().draw();
@@ -361,17 +234,17 @@ $(document).ready(function () {
     // Функция для обновления статистики таблицы
     function updateTableStats() {
         const info = dataTable.page.info();
-        
+
         // Обновляем бейдж с количеством записей
         $('#records-badge').text(info.recordsTotal);
-        
+
         // Обновляем заголовок
         let title = 'Список пользователей';
         if (info.recordsTotal > 0) {
             title += ` (${info.recordsTotal})`;
         }
         $('#title-text').text(title);
-        
+
         // Обновляем время последнего обновления
         updateLastUpdateTime();
     }
@@ -401,14 +274,14 @@ $(document).ready(function () {
     }
 
     // Обработка ошибок AJAX глобально
-    $(document).ajaxError(function(event, xhr, settings, thrownError) {
+    $(document).ajaxError(function (event, xhr, settings, thrownError) {
         if (settings.url && settings.url.includes('/User/GetAllUsers')) {
             console.error('User API Error:', thrownError);
         }
     });
 
     // Добавляем обработчик для адаптивности
-    $(window).on('resize', debounce(function() {
+    $(window).on('resize', debounce(function () {
         dataTable.columns.adjust().draw();
     }, 250));
 

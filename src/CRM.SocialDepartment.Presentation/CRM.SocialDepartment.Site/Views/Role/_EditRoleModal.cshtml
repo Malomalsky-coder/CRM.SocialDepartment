@@ -1,0 +1,28 @@
+@model CRM.SocialDepartment.Site.ViewModels.Role.EditRoleViewModel
+
+<form id="edit-role" method="post" asp-controller="Role" asp-action="EditRole" asp-antiforgery="true">
+    <div class="card mb-3">
+        <div class="card-header">Редактировать роль</div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label asp-for="Id" class="form-label"></label>
+                <input asp-for="Id" class="form-control" autocomplete="off" readonly>
+                <span asp-validation-for="Id" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label"></label>
+                <input asp-for="Name" class="form-control" autocomplete="off">
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="reset" class="btn btn-secondary close-button" data-bs-dismiss="modal">Отменить</button>
+        <button type="submit" class="btn btn-primary save-button">Сохранить</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,189 @@
+@model CRM.SocialDepartment.Site.ViewModels.UserActivityLog.UserActivityLogListViewModel
+@using CRM.SocialDepartment.Site.ViewModels.UserActivityLog
+@{
+    ViewData["Title"] = "Логи активности пользователей";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-history"></i> Логи активности пользователей
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Statistics")" class="btn btn-info btn-sm">
+                            <i class="fas fa-chart-bar"></i> Статистика
+                        </a>
+                        <a href="@Url.Action("ExportJson", Model.Filter)" class="btn btn-success btn-sm">
+                            <i class="fas fa-download"></i> Экспорт JSON
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Фильтры -->
+                    <form method="get" class="mb-3">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <label asp-for="Filter.ActivityType" class="form-label">Тип действия</label>
+                                <select asp-for="Filter.ActivityType" class="form-select" asp-items="@(new SelectList(UserActivityLogFilterViewModel.ActivityTypeOptions, "Key", "Value"))">
+                                    <option value="">Все типы</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label asp-for="Filter.EntityType" class="form-label">Тип сущности</label>
+                                <select asp-for="Filter.EntityType" class="form-select" asp-items="@(new SelectList(UserActivityLogFilterViewModel.EntityTypeOptions, "Key", "Value"))">
+                                    <option value="">Все сущности</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label asp-for="Filter.StartDate" class="form-label">Дата начала</label>
+                                <input asp-for="Filter.StartDate" type="date" class="form-control" />
+                            </div>
+                            <div class="col-md-2">
+                                <label asp-for="Filter.EndDate" class="form-label">Дата окончания</label>
+                                <input asp-for="Filter.EndDate" type="date" class="form-control" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Фильтровать
+                                    </button>
+                                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Сбросить
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Статистика -->
+                    <div class="alert alert-info">
+                        <strong>Всего записей:</strong> @Model.TotalCount
+                        @if (Model.Filter.ActivityType.HasValue)
+                        {
+                            <span> | <strong>Тип действия:</strong> @UserActivityLogFilterViewModel.ActivityTypeOptions[Model.Filter.ActivityType.Value]</span>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Filter.EntityType))
+                        {
+                            <span> | <strong>Тип сущности:</strong> @UserActivityLogFilterViewModel.EntityTypeOptions[Model.Filter.EntityType]</span>
+                        }
+                    </div>
+
+                    <!-- Таблица логов -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Время</th>
+                                    <th>Пользователь</th>
+                                    <th>Действие</th>
+                                    <th>Описание</th>
+                                    <th>Сущность</th>
+                                    <th>IP адрес</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var log in Model.Logs)
+                                {
+                                    <tr>
+                                        <td>
+                                            <small class="text-muted">@log.FormattedTimestamp</small>
+                                        </td>
+                                        <td>
+                                            <strong>@log.FullName</strong><br />
+                                            <small class="text-muted">@log.UserName</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge @GetActivityTypeBadgeClass(log.ActivityType)">
+                                                @log.ActivityTypeName
+                                            </span>
+                                        </td>
+                                        <td>@log.Description</td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(log.EntityType))
+                                            {
+                                                <span class="badge bg-secondary">
+                                                    @(UserActivityLogFilterViewModel.EntityTypeOptions.ContainsKey(log.EntityType) 
+                                                        ? UserActivityLogFilterViewModel.EntityTypeOptions[log.EntityType] 
+                                                        : log.EntityType)
+                                                </span>
+                                                @if (log.EntityId.HasValue)
+                                                {
+                                                    <br /><small class="text-muted">ID: @log.EntityId</small>
+                                                }
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(log.IpAddress))
+                                            {
+                                                <code>@log.IpAddress</code>
+                                            }
+                                        </td>
+                                        <td>
+                                            <a href="@Url.Action("Details", new { id = log.Id })" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> Детали
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Пагинация -->
+                    @if (Model.PageCount > 1)
+                    {
+                        <nav aria-label="Навигация по страницам">
+                            <ul class="pagination justify-content-center">
+                                @if (Model.HasPreviousPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.PreviousPage, Model.Filter.ActivityType, Model.Filter.EntityType, Model.Filter.StartDate, Model.Filter.EndDate })">
+                                            <i class="fas fa-chevron-left"></i> Предыдущая
+                                        </a>
+                                    </li>
+                                }
+
+                                @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.PageCount, Model.CurrentPage + 2); i++)
+                                {
+                                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = i, Model.Filter.ActivityType, Model.Filter.EntityType, Model.Filter.StartDate, Model.Filter.EndDate })">@i</a>
+                                    </li>
+                                }
+
+                                @if (Model.HasNextPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.NextPage, Model.Filter.ActivityType, Model.Filter.EntityType, Model.Filter.StartDate, Model.Filter.EndDate })">
+                                            Следующая <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetActivityTypeBadgeClass(CRM.SocialDepartment.Domain.Entities.UserActivityType activityType)
+    {
+        return activityType switch
+        {
+            CRM.SocialDepartment.Domain.Entities.UserActivityType.Login => "bg-success",
+            CRM.SocialDepartment.Domain.Entities.UserActivityType.Logout => "bg-secondary",
+            CRM.SocialDepartment.Domain.Entities.UserActivityType.DataRequest => "bg-info",
+            CRM.SocialDepartment.Domain.Entities.UserActivityType.Create => "bg-primary",
+            CRM.SocialDepartment.Domain.Entities.UserActivityType.Update => "bg-warning",
+            CRM.SocialDepartment.Domain.Entities.UserActivityType.Delete => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

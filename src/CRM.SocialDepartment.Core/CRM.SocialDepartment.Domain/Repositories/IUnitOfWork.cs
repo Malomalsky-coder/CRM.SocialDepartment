@@ -19,6 +19,13 @@ namespace CRM.SocialDepartment.Domain.Repositories
         /// Репозиторий для работы с пользователями
         /// </summary>
         IUserRepository Users { get; }
+        IUserRolesRepository UserRoles { get; }
+        IRoleRepository Roles { get; }
+
+        /// <summary>
+        /// Репозиторий для работы с логами активности пользователей
+        /// </summary>
+        IUserActivityLogRepository UserActivityLogs { get; }
 
         /// <summary>
         /// Начать транзакцию

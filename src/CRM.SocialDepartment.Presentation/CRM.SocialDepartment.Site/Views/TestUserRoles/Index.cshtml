@@ -1,0 +1,180 @@
+@{
+    ViewData["Title"] = "Тест таблицы userRoles";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Тест таблицы userRoles</h1>
+    
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">
+            <h4>Ошибка:</h4>
+            <p>@ViewBag.Error</p>
+            @if (ViewBag.StackTrace != null)
+            {
+                <details>
+                    <summary>Stack Trace</summary>
+                    <pre>@ViewBag.StackTrace</pre>
+                </details>
+            }
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Роли (@(ViewBag.Roles?.Count ?? 0))</h5>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Roles != null && ViewBag.Roles.Count > 0)
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var role in ViewBag.Roles)
+                            {
+                                <li class="list-group-item">
+                                    <strong>ID:</strong> @role.Id<br>
+                                    <strong>Название:</strong> @role.Name
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Роли не найдены</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Связи пользователь-роль (@(ViewBag.UserRoles?.Count ?? 0))</h5>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.UserRoles != null && ViewBag.UserRoles.Count > 0)
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var userRole in ViewBag.UserRoles)
+                            {
+                                <li class="list-group-item">
+                                    <strong>ID:</strong> @userRole.Id<br>
+                                    <strong>User ID:</strong> @userRole.UserId<br>
+                                    <strong>Role ID:</strong> @userRole.RoleId
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Связи не найдены</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Пользователи (@(ViewBag.Users?.Count ?? 0))</h5>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Users != null && ViewBag.Users.Count > 0)
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var user in ViewBag.Users)
+                            {
+                                <li class="list-group-item">
+                                    <strong>ID:</strong> @user.Id<br>
+                                    <strong>Имя:</strong> @user.UserName<br>
+                                    <strong>Email:</strong> @user.Email<br>
+                                    <strong>Role (поле):</strong> @user.Role<br>
+                                    <a href="/TestUserRoles/CheckUserRoles?userName=@user.UserName" target="_blank" class="btn btn-sm btn-info mt-2">
+                                        Проверить роли
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Пользователи не найдены</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Действия</h5>
+                </div>
+                <div class="card-body">
+                    <button id="refreshBtn" class="btn btn-primary me-2">
+                        <i class="fas fa-sync-alt"></i> Обновить данные
+                    </button>
+                    <button id="jsonBtn" class="btn btn-info me-2">
+                        <i class="fas fa-code"></i> Получить JSON
+                    </button>
+                    <a href="/TestUserRoles/GetData" target="_blank" class="btn btn-secondary me-2">
+                        <i class="fas fa-external-link-alt"></i> Открыть JSON в новой вкладке
+                    </a>
+                    <a href="/TestUserRoles/TestAuth" target="_blank" class="btn btn-success me-2">
+                        <i class="fas fa-shield-alt"></i> Тест [Authorize(Roles = "Admin")]
+                    </a>
+                    <a href="/TestUserRoles/TestAuthPolicy" target="_blank" class="btn btn-warning">
+                        <i class="fas fa-lock"></i> Тест [Authorize(Policy = "Admin")]
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>JSON данные</h5>
+                </div>
+                <div class="card-body">
+                    <pre id="jsonOutput" class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;">Нажмите "Получить JSON" для загрузки данных...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Обновление данных
+            $('#refreshBtn').click(function() {
+                location.reload();
+            });
+
+            // Получение JSON данных
+            $('#jsonBtn').click(function() {
+                var btn = $(this);
+                var originalText = btn.html();
+                
+                btn.html('<i class="fas fa-spinner fa-spin"></i> Загрузка...');
+                btn.prop('disabled', true);
+
+                $.get('/TestUserRoles/GetData')
+                    .done(function(data) {
+                        $('#jsonOutput').text(JSON.stringify(data, null, 2));
+                    })
+                    .fail(function(xhr, status, error) {
+                        $('#jsonOutput').text('Ошибка: ' + error + '\n\n' + xhr.responseText);
+                    })
+                    .always(function() {
+                        btn.html(originalText);
+                        btn.prop('disabled', false);
+                    });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,301 @@
+@model CRM.SocialDepartment.Application.DTOs.UserActivityStatisticsDTO
+@using CRM.SocialDepartment.Site.ViewModels.UserActivityLog
+@{
+    ViewData["Title"] = "Статистика активности пользователей";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar"></i> Статистика активности пользователей
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Назад к логам
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Общая статистика -->
+                    <div class="row mb-4">
+                        <div class="col-md-2">
+                            <div class="info-box bg-primary">
+                                <span class="info-box-icon"><i class="fas fa-list"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Всего действий</span>
+                                    <span class="info-box-number">@Model.TotalLogs</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box bg-success">
+                                <span class="info-box-icon"><i class="fas fa-sign-in-alt"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Авторизации</span>
+                                    <span class="info-box-number">@Model.LoginCount</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box bg-info">
+                                <span class="info-box-icon"><i class="fas fa-search"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Запросы данных</span>
+                                    <span class="info-box-number">@Model.DataRequestCount</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box bg-primary">
+                                <span class="info-box-icon"><i class="fas fa-plus"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Создания</span>
+                                    <span class="info-box-number">@Model.CreateCount</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box bg-warning">
+                                <span class="info-box-icon"><i class="fas fa-edit"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Редактирования</span>
+                                    <span class="info-box-number">@Model.UpdateCount</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box bg-danger">
+                                <span class="info-box-icon"><i class="fas fa-trash"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Удаления</span>
+                                    <span class="info-box-number">@Model.DeleteCount</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Активность по пользователям -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-users"></i> Активность по пользователям
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    @if (Model.ActivityByUser.Any())
+                                    {
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Пользователь</th>
+                                                        <th>Количество действий</th>
+                                                        <th>Процент</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var userActivity in Model.ActivityByUser.OrderByDescending(x => x.Value).Take(10))
+                                                    {
+                                                        var percentage = Model.TotalLogs > 0 ? (userActivity.Value * 100.0 / Model.TotalLogs) : 0;
+                                                        <tr>
+                                                            <td>@userActivity.Key</td>
+                                                            <td>
+                                                                <span class="badge bg-primary">@userActivity.Value</span>
+                                                            </td>
+                                                            <td>
+                                                                <div class="progress" style="height: 20px;">
+                                                                    <div class="progress-bar" role="progressbar" 
+                                                                         style="width: @percentage%;" 
+                                                                         aria-valuenow="@percentage" 
+                                                                         aria-valuemin="0" 
+                                                                         aria-valuemax="100">
+                                                                        @percentage.ToString("F1")%
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">Данные отсутствуют</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Активность по типам сущностей -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-database"></i> Активность по типам сущностей
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    @if (Model.ActivityByEntityType.Any())
+                                    {
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Тип сущности</th>
+                                                        <th>Количество действий</th>
+                                                        <th>Процент</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var entityActivity in Model.ActivityByEntityType.OrderByDescending(x => x.Value))
+                                                    {
+                                                        var percentage = Model.TotalLogs > 0 ? (entityActivity.Value * 100.0 / Model.TotalLogs) : 0;
+                                                        <tr>
+                                                            <td>
+                                                                <span class="badge bg-secondary">
+                                                                    @(UserActivityLogFilterViewModel.EntityTypeOptions.ContainsKey(entityActivity.Key) 
+                                                                        ? UserActivityLogFilterViewModel.EntityTypeOptions[entityActivity.Key] 
+                                                                        : entityActivity.Key)
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge bg-primary">@entityActivity.Value</span>
+                                                            </td>
+                                                            <td>
+                                                                <div class="progress" style="height: 20px;">
+                                                                    <div class="progress-bar" role="progressbar" 
+                                                                         style="width: @percentage%;" 
+                                                                         aria-valuenow="@percentage" 
+                                                                         aria-valuemin="0" 
+                                                                         aria-valuemax="100">
+                                                                        @percentage.ToString("F1")%
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">Данные отсутствуют</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Активность по датам -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-calendar"></i> Активность по датам
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    @if (Model.ActivityByDate.Any())
+                                    {
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Дата</th>
+                                                        <th>Количество действий</th>
+                                                        <th>График</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var dateActivity in Model.ActivityByDate.OrderByDescending(x => x.Key).Take(30))
+                                                    {
+                                                        var maxValue = Model.ActivityByDate.Max(x => x.Value);
+                                                        var percentage = maxValue > 0 ? (dateActivity.Value * 100.0 / maxValue) : 0;
+                                                        <tr>
+                                                            <td>@dateActivity.Key.ToString("dd.MM.yyyy")</td>
+                                                            <td>
+                                                                <span class="badge bg-primary">@dateActivity.Value</span>
+                                                            </td>
+                                                            <td>
+                                                                <div class="progress" style="height: 20px;">
+                                                                    <div class="progress-bar bg-info" role="progressbar" 
+                                                                         style="width: @percentage%;" 
+                                                                         aria-valuenow="@percentage" 
+                                                                         aria-valuemin="0" 
+                                                                         aria-valuemax="100">
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">Данные отсутствуют</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.info-box {
+    display: block;
+    min-height: 80px;
+    background: #fff;
+    width: 100%;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    border-radius: 2px;
+    margin-bottom: 15px;
+}
+
+.info-box-icon {
+    border-top-left-radius: 2px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 2px;
+    display: block;
+    float: left;
+    height: 80px;
+    width: 80px;
+    text-align: center;
+    font-size: 40px;
+    line-height: 80px;
+    background: rgba(0,0,0,0.2);
+}
+
+.info-box-content {
+    padding: 5px 10px;
+    margin-left: 80px;
+}
+
+.info-box-text {
+    display: block;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-box-number {
+    display: block;
+    font-weight: bold;
+    font-size: 18px;
+}
+</style>

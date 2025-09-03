@@ -21,6 +21,9 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
         private IPatientRepository? _patients;
         private IAssignmentRepository? _assignments;
         private IUserRepository? _users;
+        private IRoleRepository? _roles;
+        private IUserRolesRepository? _userRoles;
+        private IUserActivityLogRepository? _userActivityLogs;
 
         public MongoUnitOfWork(IMongoDatabase database, IDomainEventDispatcher? domainEventDispatcher = null)
         {
@@ -66,6 +69,42 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
         }
 
         /// <summary>
+        /// Репозиторий для работы с ролями
+        /// </summary>
+        public IRoleRepository Roles
+        {
+            get
+            {
+                _roles ??= new MongoRoleRepository(_database, _session);
+                return _roles;
+            }
+        }
+
+        /// <summary>
+        /// Репозиторий для работы с пользовательскими ролями
+        /// </summary>
+        public IUserRolesRepository UserRoles
+        {
+            get
+            {
+                _userRoles ??= new MongoUserRolesRepository(_database, _session);
+                return _userRoles;
+            }
+        }
+
+        /// <summary>
+        /// Репозиторий для работы с логами активности пользователей
+        /// </summary>
+        public IUserActivityLogRepository UserActivityLogs
+        {
+            get
+            {
+                _userActivityLogs ??= new MongoUserActivityLogRepository(_database, _session);
+                return _userActivityLogs;
+            }
+        }
+
+        /// <summary>
         /// Проверить, активна ли транзакция
         /// </summary>
         public bool HasActiveTransaction => _session?.IsInTransaction == true;
@@ -103,6 +142,9 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
             _patients = null;
             _assignments = null;
             _users = null;
+            _roles = null;
+            _userRoles = null;
+            _userActivityLogs = null;
         }
 
         /// <summary>

@@ -1,12 +1,12 @@
-﻿@model CRM.SocialDepartment.Site.ViewModels.User.CreateUserViewModel
+﻿@model CRM.SocialDepartment.Site.ViewModels.User.EditUserViewModel
 
-<form id="create-patient" method="post" asp-controller="User" asp-action="CreateUser" asp-antiforgery="true">
+<form id="edit-user" method="post" asp-controller="User" asp-action="EditUser" asp-antiforgery="true">
     <div class="card mb-3">
-        <div class="card-header">Новый пользователь</div>
+        <div class="card-header">Редактировать пользователя</div>
         <div class="card-body">
             <div class="mb-3">
                 <label asp-for="UserName" class="form-label"></label>
-                <input asp-for="UserName" class="form-control" autocomplete="off">
+                <input asp-for="UserName" class="form-control" autocomplete="off" readonly>
                 <span asp-validation-for="UserName" class="text-danger"></span>
             </div>
             <div class="mb-3">

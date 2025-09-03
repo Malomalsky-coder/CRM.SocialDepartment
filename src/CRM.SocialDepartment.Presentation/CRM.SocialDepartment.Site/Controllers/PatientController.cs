@@ -5,6 +5,7 @@ using CRM.SocialDepartment.Domain.Common;
 using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
 using CRM.SocialDepartment.Domain.Specifications;
+using CRM.SocialDepartment.Site.Filters;
 using CRM.SocialDepartment.Site.Helpers;
 using CRM.SocialDepartment.Site.Models;
 using CRM.SocialDepartment.Site.Services;
@@ -32,6 +33,7 @@ namespace CRM.SocialDepartment.Site.Controllers
         /// Вывод всех пациентов, которые находятся в больнице (на текущий момент).
         /// </summary>
         /// <returns></returns>
+        [LogDataRequest("Просмотр активных пациентов", "Пользователь запросил список активных пациентов")]
         public IActionResult Active()
         {
             //todo: Вывод пациентов для медицинского персонала ограничен! Необходимо выводить только тех пациентов, которые находятся в его отделение.
@@ -46,6 +48,7 @@ namespace CRM.SocialDepartment.Site.Controllers
         /// <returns></returns>
         [HttpGet]
         [Route("patients/{id:guid}")]
+        [LogDataRequest("Просмотр карточки пациента", "Пользователь запросил карточку пациента")]
         public async Task<IActionResult> Card(Guid id, CancellationToken cancellationToken = default)
         {
             var patientCard = await _patientAppService.GetPatientCardAsync(id, cancellationToken);
@@ -545,6 +548,7 @@ namespace CRM.SocialDepartment.Site.Controllers
         [HttpPost]
         [Route("api/patients")]
         [ValidateAntiForgeryToken]
+        [LogCreate("Patient", "Создание пациента", "Пользователь создал нового пациента")]
         public async Task<JsonResult> AddPatientsAsync(CreatePatientViewModel input, CancellationToken cancellationToken)
         {
             // Очищаем ModelState от автоматических ошибок для вложенных моделей
@@ -705,6 +709,7 @@ namespace CRM.SocialDepartment.Site.Controllers
         [HttpPatch]
         [Route("api/patients/{id:guid}")]
         [ValidateAntiForgeryToken]
+        [LogUpdate("Patient", "Редактирование пациента", "Пользователь отредактировал данные пациента")]
         public async Task<JsonResult> EditPatientsAsync([FromRoute] Guid id, EditPatientViewModel input, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)

@@ -1,0 +1,197 @@
+@model CRM.SocialDepartment.Application.DTOs.UserActivityLogDTO
+@using CRM.SocialDepartment.Site.ViewModels.UserActivityLog
+@{
+    ViewData["Title"] = "Детали лога активности";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-eye"></i> Детали лога активности
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Назад к списку
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Основная информация</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>ID лога:</strong></td>
+                                    <td><code>@Model.Id</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Время:</strong></td>
+                                    <td>@Model.FormattedTimestamp</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Тип действия:</strong></td>
+                                    <td>
+                                        <span class="badge @GetActivityTypeBadgeClass(Model.ActivityType)">
+                                            @Model.ActivityTypeName
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Название действия:</strong></td>
+                                    <td>@Model.ActionName</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Описание:</strong></td>
+                                    <td>@Model.Description</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Информация о пользователе</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>ID пользователя:</strong></td>
+                                    <td><code>@Model.UserId</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Имя пользователя:</strong></td>
+                                    <td>@Model.UserName</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Полное имя:</strong></td>
+                                    <td>@Model.FullName</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.EntityType))
+                    {
+                        <hr />
+                        <div class="row">
+                            <div class="col-12">
+                                <h5>Информация о сущности</h5>
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td><strong>Тип сущности:</strong></td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                @(UserActivityLogFilterViewModel.EntityTypeOptions.ContainsKey(Model.EntityType) 
+                                                    ? UserActivityLogFilterViewModel.EntityTypeOptions[Model.EntityType] 
+                                                    : Model.EntityType)
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @if (Model.EntityId.HasValue)
+                                    {
+                                        <tr>
+                                            <td><strong>ID сущности:</strong></td>
+                                            <td><code>@Model.EntityId</code></td>
+                                        </tr>
+                                    }
+                                </table>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.BeforeChange) || !string.IsNullOrEmpty(Model.AfterChange))
+                    {
+                        <hr />
+                        <div class="row">
+                            <div class="col-12">
+                                <h5>Изменения данных</h5>
+                                <div class="row">
+                                    @if (!string.IsNullOrEmpty(Model.BeforeChange))
+                                    {
+                                        <div class="col-md-6">
+                                            <h6 class="text-danger">
+                                                <i class="fas fa-minus-circle"></i> До изменений
+                                            </h6>
+                                            <pre class="bg-light p-3 border rounded"><code>@Model.BeforeChange</code></pre>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(Model.AfterChange))
+                                    {
+                                        <div class="col-md-6">
+                                            <h6 class="text-success">
+                                                <i class="fas fa-plus-circle"></i> После изменений
+                                            </h6>
+                                            <pre class="bg-light p-3 border rounded"><code>@Model.AfterChange</code></pre>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <hr />
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Техническая информация</h5>
+                            <table class="table table-borderless">
+                                @if (!string.IsNullOrEmpty(Model.IpAddress))
+                                {
+                                    <tr>
+                                        <td><strong>IP адрес:</strong></td>
+                                        <td><code>@Model.IpAddress</code></td>
+                                    </tr>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.UserAgent))
+                                {
+                                    <tr>
+                                        <td><strong>User Agent:</strong></td>
+                                        <td><small>@Model.UserAgent</small></td>
+                                    </tr>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.RequestUrl))
+                                {
+                                    <tr>
+                                        <td><strong>URL запроса:</strong></td>
+                                        <td><code>@Model.RequestUrl</code></td>
+                                    </tr>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.HttpMethod))
+                                {
+                                    <tr>
+                                        <td><strong>HTTP метод:</strong></td>
+                                        <td><span class="badge bg-info">@Model.HttpMethod</span></td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Дополнительные данные</h5>
+                            @if (!string.IsNullOrEmpty(Model.AdditionalData))
+                            {
+                                <pre class="bg-light p-3 border rounded"><code>@Model.AdditionalData</code></pre>
+                            }
+                            else
+                            {
+                                <p class="text-muted">Дополнительные данные отсутствуют</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    private string GetActivityTypeBadgeClass(CRM.SocialDepartment.Domain.Entities.UserActivityType activityType)
+    {
+        return activityType switch
+        {
+            CRM.SocialDepartment.Domain.Entities.UserActivityType.Login => "bg-success",
+            CRM.SocialDepartment.Domain.Entities.UserActivityType.Logout => "bg-secondary",
+            CRM.SocialDepartment.Domain.Entities.UserActivityType.DataRequest => "bg-info",
+            CRM.SocialDepartment.Domain.Entities.UserActivityType.Create => "bg-primary",
+            CRM.SocialDepartment.Domain.Entities.UserActivityType.Update => "bg-warning",
+            CRM.SocialDepartment.Domain.Entities.UserActivityType.Delete => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

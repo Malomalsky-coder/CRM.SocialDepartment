@@ -1,34 +1,67 @@
 ﻿<!-- Основное меню -->
 <div class="navbar-nav me-3">
-    <div class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="patientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fa fa-users me-1"></i>Пациенты
+    @if (User.IsInRole("Admin") || User.IsInRole("User"))
+    {
+        <div class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="patientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa fa-users me-1"></i>Пациенты
+            </a>
+            <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="patientsDropdown">
+                <li>
+                    <a class="dropdown-item" asp-controller="Patient" asp-action="Active">
+                        <i class="fa fa-hospital-o text-success me-2"></i>В больнице
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" asp-controller="Patient" asp-action="Archive">
+                        <i class="fa fa-archive text-secondary me-2"></i>Архив
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" asp-controller="Assignment" asp-action="Active">
+                        <i class="fa fa-tasks text-primary me-2"></i>Задания
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <a class="nav-link" asp-controller="Home" asp-action="Index">
+            <i class="fa fa-list-alt me-1"></i>Список задач
         </a>
-        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="patientsDropdown">
-            <li>
-                <a class="dropdown-item" asp-controller="Patient" asp-action="Active">
-                    <i class="fa fa-hospital-o text-success me-2"></i>В больнице
-                </a>
-            </li>
-            <li>
-                <a class="dropdown-item" asp-controller="Patient" asp-action="Archive">
-                    <i class="fa fa-archive text-secondary me-2"></i>Архив
-                </a>
-            </li>
-            <li><hr class="dropdown-divider"></li>
-            <li>
-                <a class="dropdown-item" asp-controller="Assignment" asp-action="Active">
-                    <i class="fa fa-tasks text-primary me-2"></i>Задания
-                </a>
-            </li>
-        </ul>
-    </div>
-    
-    <a class="nav-link" asp-controller="Home" asp-action="Index">
-        <i class="fa fa-list-alt me-1"></i>Список задач
-    </a>
-    
-    <a class="nav-link" href="#" onclick="AppUtils.showSuccess('Функция в разработке')">
-        <i class="fa fa-bar-chart me-1"></i>Отчеты
-    </a>
+
+        <a class="nav-link" href="#" onclick="AppUtils.showSuccess('Функция в разработке')">
+            <i class="fa fa-bar-chart me-1"></i>Отчеты
+        </a>
+    }
+    @if (User.IsInRole("Admin"))
+    {
+        <div class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa fa-cog me-1"></i>Администрирование
+            </a>
+            <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="adminDropdown">
+                <li>
+                    <a class="dropdown-item" asp-controller="User" asp-action="Active">
+                        <i class="fa fa-users text-primary me-2"></i>Пользователи
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" asp-controller="Role" asp-action="Index">
+                        <i class="fa fa-shield text-warning me-2"></i>Роли
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" asp-controller="UserActivityLog" asp-action="Index">
+                        <i class="fa fa-history text-info me-2"></i>Логи активности
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" asp-controller="UserActivityLog" asp-action="Statistics">
+                        <i class="fa fa-chart-bar text-success me-2"></i>Статистика активности
+                    </a>
+                </li>
+            </ul>
+        </div>
+    }
 </div>

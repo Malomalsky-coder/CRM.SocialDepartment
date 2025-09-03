@@ -5,7 +5,7 @@ using MimeKit;
 
 namespace CRM.SocialDepartment.Site.ViewModels.User
 {
-    public class CreateUserViewModel : ValidationBase, IValidatableObject
+    public class EditUserViewModel : ValidationBase, IValidatableObject
     {
         [Required(ErrorMessage = "Код пользователя обязателен для заполнения")]
         [Display(Name = "Код пользователя")]
@@ -24,16 +24,12 @@ namespace CRM.SocialDepartment.Site.ViewModels.User
         [Display(Name = "Email")]
         public string Email { get; set; }
 
-        [Required]
-        [StringLength(100, ErrorMessage = "{0} Должен быть минимум {2} и максимум {1} символов", MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
-        public string Password { get; set; }
+        public string? Password { get; set; }
 
-        [DataType(DataType.Password)]
-        [Display(Name = "Подтвердите пароль")]
         [Compare("Password", ErrorMessage = "Введенные пароли не совпадают")]
-        public string ConfirmPassword { get; set; }
+        public string? ConfirmPassword { get; set; }
 
         [Required(ErrorMessage = "Роль в системе обязательна для заполнения")]
         [Display(Name = "Роль в системе")]
@@ -52,6 +48,11 @@ namespace CRM.SocialDepartment.Site.ViewModels.User
             if (!IsValidEmail(Email))
             {
                 yield return new ValidationResult("Введите корректный email", new[] { nameof(Email) });
+            }
+
+            if (!string.IsNullOrEmpty(Password) && Password.Length < 6)
+            {
+                yield return new ValidationResult("Пароль должен содержать минимум 6 символов", new[] { nameof(Password) });
             }
         }
 
