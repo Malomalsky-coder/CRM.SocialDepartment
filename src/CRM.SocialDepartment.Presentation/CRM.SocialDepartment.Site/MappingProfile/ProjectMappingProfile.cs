@@ -5,6 +5,7 @@ using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Site.Models.Patient;
+using CRM.SocialDepartment.Site.ViewModels.Assignment;
 using CRM.SocialDepartment.Site.ViewModels.Patient;
 using CRM.SocialDepartment.Site.ViewModels.User;
 using CRM.SocialDepartment.Site.ViewModels.Role;
@@ -177,6 +178,7 @@ namespace CRM.SocialDepartment.Site.MappingProfile
             CreateMap<EditUserViewModel, CreateUserDTO>();
             CreateMap<IUser, UserDTO>();
             CreateMap<ApplicationUser, UserDTO>();
+            CreateMap<CreateAssignmentViewModel, CreateOrEditAssignmentDto>();
             
             // Маппинг для пользователей
             CreateMap<ApplicationUser, EditUserViewModel>()
@@ -323,7 +325,7 @@ namespace CRM.SocialDepartment.Site.MappingProfile
             CreateMap<PensionAddressType, byte>().ConvertUsing(pensionAddress => pensionAddress.Value);
 
             // Assignment ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            CreateMap<Assignment, EditPatientDTO>();
+            CreateMap<Assignment, CreateOrEditAssignmentDto>();
 
             CreateMap<Patient, ActivePatientDTO>()
                 .ForMember(dest => dest.HospitalizationType, opt => opt.MapFrom(src =>

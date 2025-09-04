@@ -1,9 +1,5 @@
 @model CRM.SocialDepartment.Site.ViewModels.Assignment.CreateAssignmentViewModel
 
-<div class="modal-header">
-    <h5 class="modal-title">Создать назначение</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
 <form id="create-assignment-form" method="post" action="/api/assignments">
     @Html.AntiForgeryToken()
     <div class="modal-body">

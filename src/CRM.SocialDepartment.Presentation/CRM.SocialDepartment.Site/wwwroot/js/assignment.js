@@ -633,7 +633,7 @@ $(document).ready(function () {
         }
     });
 
-    console.log('Инициализация assignment.js завершена');
+    console.log('Инициализация завершена');
     console.log('DataTable instance:', window.assignmentDataTable);
     console.log('AJAX URL:', window.assignmentDataTable?.ajax?.url());
 });
