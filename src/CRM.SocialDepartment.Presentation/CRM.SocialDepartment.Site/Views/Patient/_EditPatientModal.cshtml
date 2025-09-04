@@ -3,7 +3,8 @@
 
 @model CRM.SocialDepartment.Site.ViewModels.Patient.EditPatientViewModel
 
-<form id="edit-patient" method="post" asp-controller="Patient" asp-action="EditPatientAsync" asp-route-id="@Model.PatientId" asp-antiforgery="true">
+@* <form id="edit-patient" method="post" asp-controller="Patient" asp-action="EditPatientAsync" asp-route-id="@Model.PatientId" asp-antiforgery="true"> *@
+<form id="edit-patient" method="post" action="/api/patients/@Model.PatientId" asp-antiforgery="true">
     <div class="card mb-3">
         <div class="card-header">История болезни</div>
         <div class="card-body">
@@ -27,7 +28,7 @@
 
             <div class="mb-3">
                 <label asp-for="MedicalHistory.DateOfReceipt" class="form-label param-title"></label>
-                <input asp-for="MedicalHistory.DateOfReceipt" type="date" value="" class="form-control" />
+                <input asp-for="MedicalHistory.DateOfReceipt" type="date" class="form-control" />
                 <span asp-validation-for="MedicalHistory.DateOfReceipt" class="text-danger"></span>
             </div>
 
@@ -50,24 +51,50 @@
             </div>
 
             <div class="mb-3">
-                @foreach (var citizenship in Model.CitizenshipInfo.Citizenships)
-                {
-                    if (citizenship == CitizenshipType.RussianFederation.DisplayName)
+                <div class="row">
+                    <label class="form-label">Гражданство</label>
+                </div>
+                <div class="btn-group" role="group" aria-label="Гражданство">
+                    @if (Model?.CitizenshipInfo?.Citizenships?.Length > 0)
                     {
-                        <input type="radio" asp-for="CitizenshipInfo.Citizenship" value="@((byte)CitizenshipType.FromDisplayName(citizenship))" checked />
-                        <label asp-for="CitizenshipInfo.Citizenship">@citizenship</label>
-                        continue;
-                    }
+                        @foreach (var citizenship in Model.CitizenshipInfo.Citizenships)
+                        {
+                            if (citizenship == CitizenshipType.RussianFederation.DisplayName || citizenship == "РФ")
+                            {
+                                <input type="radio" asp-for="CitizenshipInfo.Citizenship" value="@((byte)CitizenshipType.RussianFederation)" class="btn-check" id="edit_citizenship_@((byte)CitizenshipType.RussianFederation)" checked />
+                                <label class="btn btn-outline-primary" for="edit_citizenship_@((byte)CitizenshipType.RussianFederation)">
+                                    <i class="fa fa-flag me-1"></i>@citizenship
+                                </label>
+                                continue;
+                            }
 
-                    <input type="radio" asp-for="CitizenshipInfo.Citizenship" value="@citizenship" />
-                    <label asp-for="CitizenshipInfo.Citizenship">@citizenship</label>
-                }
+                            <input type="radio" asp-for="CitizenshipInfo.Citizenship" value="@((byte)CitizenshipType.FromDisplayName(citizenship))" class="btn-check" id="edit_citizenship_@((byte)CitizenshipType.FromDisplayName(citizenship))" />
+                            <label class="btn btn-outline-primary" for="edit_citizenship_@((byte)CitizenshipType.FromDisplayName(citizenship))">
+                                <i class="fa fa-globe me-1"></i>@citizenship
+                            </label>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-muted">Загрузка списка гражданств...</div>
+                    }
+                </div>
+                <span asp-validation-for="CitizenshipInfo.Citizenship" class="text-danger"></span>
             </div>
 
             <div id="NoRegistrationIsEnable" class="mb-3">
-                <div class="form-check form-switch">
-                    <label asp-for="CitizenshipInfo.NotRegistered" class="form-label"></label>
-                    <input asp-for="CitizenshipInfo.NotRegistered" class="form-check-input" />
+                <div class="row align-items-center">
+                    <div class="col-9">
+                        <label class="form-check-label" for="editNotRegisteredSwitch">
+                            <span class="fw-medium">Не зарегистрирован</span>
+                            <small class="text-muted d-block">Отметить если пациент не имеет регистрации</small>
+                        </label>
+                    </div>
+                    <div class="col-3 text-end">
+                        <div class="form-check form-switch">
+                            <input asp-for="CitizenshipInfo.NotRegistered" class="form-check-input" id="editNotRegisteredSwitch" />
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -115,7 +142,7 @@
                     <div class="mb-3">
                         <label class="form-label">@document.Value.DisplayName</label>
                         <input type="@document.Value.InputType"
-                               name="Documents[@((int)document.Key)].Number"
+                               name="Documents[@document.Key].Number"
                                value="@document.Value.Number"
                                class="form-control"
                                placeholder="@document.Value.Placeholder"
@@ -123,24 +150,6 @@
                                data-error-message="@document.Value.ErrorMessage"
                                autocomplete="off" />
                         <div class="invalid-feedback"></div>
-
-                        @* <div class="row mt-2"> *@
-                        @*     <div class="col"> *@
-                        @*         <label class="form-label">Дата выдачи</label> *@
-                        @*         <input type="date" *@
-                        @*                name="Documents[@((int)document.Key)].IssueDate" *@
-                        @*                value="@(document.Value.IssueDate?.ToString("yyyy-MM-dd"))" *@
-                        @*                class="form-control" /> *@
-                        @*     </div> *@
-                        @*     <div class="col"> *@
-                        @*         <label class="form-label">Кем выдан</label> *@
-                        @*         <input type="text" *@
-                        @*                name="Documents[@((int)document.Key)].Issuer" *@
-                        @*                value="@document.Value.Issuer" *@
-                        @*                class="form-control" /> *@
-                        @*     </div> *@
-                        @* </div> *@
-
                     </div>
                 }
             </div>
@@ -148,9 +157,18 @@
     </div>
 
     <div class="mb-3">
-        <div class="form-check form-switch">
-            <label asp-for="IsCapable" class="form-label"></label>
-            <input asp-for="IsCapable" class="form-check-input" />
+        <div class="row align-items-center">
+            <div class="col-9 px-4">
+                <label class="form-check-label" for="isCapableSwitch">
+                    <span class="fw-medium">Дееспособный</span>
+                    <small class="text-muted d-block">Отменить если пациент признан недееспособным</small>
+                </label>
+            </div>
+            <div class="col-3 text-end">
+                <div class="form-check form-switch">
+                    <input asp-for="IsCapable" class="form-check-input" />
+                </div>
+            </div>
         </div>
     </div>
 
@@ -183,9 +201,18 @@
     </div>
 
     <div class="mb-3">
-        <div class="form-check form-switch">
-            <label asp-for="ReceivesPension" class="form-label"></label>
-            <input asp-for="ReceivesPension" class="form-check-input" />
+        <div class="row align-items-center">
+            <div class="col-9 px-4">
+                <label class="form-check-label" for="receivesPensionSwitch">
+                    <span class="fw-medium">Получает пенсию</span>
+                    <small class="text-muted d-block">Отметить если пациент получает пенсию</small>
+                </label>
+            </div>
+            <div class="col-3 text-end">
+                <div class="form-check form-switch">
+                    <input asp-for="ReceivesPension" class="form-check-input" />
+                </div>
+            </div>
         </div>
     </div>
 

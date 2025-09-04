@@ -1,30 +1,23 @@
 using CRM.SocialDepartment.Application.Assignments;
+using CRM.SocialDepartment.Application.Common;
 using CRM.SocialDepartment.Application.Handlers.EventHandlers;
 using CRM.SocialDepartment.Application.Patients;
-using CRM.SocialDepartment.Application.Users;
 using CRM.SocialDepartment.Application.Roles;
 using CRM.SocialDepartment.Application.UserActivityLogs;
-using CRM.SocialDepartment.Domain.Entities;
-using CRM.SocialDepartment.Domain.Entities.Patients;
-using CRM.SocialDepartment.Domain.Events;
+using CRM.SocialDepartment.Application.Users;
 using CRM.SocialDepartment.Domain.Repositories;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
 using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories;
-using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
-
-//using CRM.SocialDepartment.Infrastructure.Identity;
 using CRM.SocialDepartment.Site.Extensions;
 using CRM.SocialDepartment.Site.Filters;
 using CRM.SocialDepartment.Site.Localization;
 using CRM.SocialDepartment.Site.MappingProfile;
 using CRM.SocialDepartment.Site.Middleware;
 using CRM.SocialDepartment.Site.Services;
-using CRM.SocialDepartment.Application.Common;
 using CRM.SocialDepartment.WebApp.Settings;
 using DDD.Events;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Localization;
 using MongoDB.Driver;
 
 namespace CRM.SocialDepartment.Site;
@@ -85,6 +78,10 @@ public class Program
             options.AddPolicy("User", policy => policy.RequireRole("User"));
             // Можно добавить другие политики по необходимости
         });
+
+        // Настройка GUID представления для MongoDB (должно быть до RegisterMappings)
+        MongoDB.Bson.BsonDefaults.GuidRepresentationMode = MongoDB.Bson.GuidRepresentationMode.V2;
+        MongoDB.Bson.BsonDefaults.GuidRepresentation = MongoDB.Bson.GuidRepresentation.Standard;
 
         BsonConfiguration.RegisterMappings(); // Настройка маппинга для MongoDB
 

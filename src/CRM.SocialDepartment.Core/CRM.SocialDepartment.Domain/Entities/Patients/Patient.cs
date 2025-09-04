@@ -47,7 +47,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         /// <summary>
         /// Пациент является дееспособным?
         /// </summary>
-        public bool IsCapable => Capable is not null;
+        public bool IsCapable => Capable is null;
 
         /// <summary>
         /// Дееспособный
@@ -83,6 +83,7 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         private Patient() 
         {
             _medicalHistories = [];
+            Documents = [];
         }
         #pragma warning restore CS8618
 

@@ -21,8 +21,9 @@ namespace CRM.SocialDepartment.Site.MappingProfile
             CreateMap<CreatePatientViewModel, CreatePatientDTO>()
                 .ForMember(dest => dest.Birthday, opt => opt.MapFrom(src => 
                     DateTime.SpecifyKind(src.Birthday, DateTimeKind.Utc)))
+                .ForMember(dest => dest.MedicalHistory, opt => opt.MapFrom(src => src.MedicalHistory))
                 .ForMember(dest => dest.Documents, opt => opt.MapFrom(src =>
-                    src.Documents.ToDictionary(
+                    src.Documents != null ? src.Documents.ToDictionary(
                         kvp => kvp.Key,
                         kvp => new DocumentDTO
                         {
@@ -30,7 +31,7 @@ namespace CRM.SocialDepartment.Site.MappingProfile
                             // Селективная обработка форматов документов
                             Number = FormatDocumentNumber(kvp.Key, kvp.Value.Number)
                         }
-                    )))
+                    ) : new Dictionary<DocumentType, DocumentDTO>()))
                 // ВАЖНО: Если пациент НЕ получает пенсию, то данные о пенсии должны быть null
                 .ForMember(dest => dest.Pension, opt => opt.MapFrom(src => 
                     src.ReceivesPension ? src.Pension : null))
@@ -41,10 +42,11 @@ namespace CRM.SocialDepartment.Site.MappingProfile
                 .ForMember(dest => dest.ReceivesPension, opt => opt.MapFrom(src => src.ReceivesPension));
 
             CreateMap<EditPatientViewModel, EditPatientDTO>()
-                //.ForMember(dest => dest.Birthday, opt => opt.MapFrom(src => 
-                //    DateTime.SpecifyKind(src.Birthday, DateTimeKind.Utc)))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+                .ForMember(dest => dest.ActiveMedicalHistory, opt => opt.MapFrom(src => src.MedicalHistory))
+                .ForMember(dest => dest.CitizenshipInfo, opt => opt.MapFrom(src => src.CitizenshipInfo))
                 .ForMember(dest => dest.Documents, opt => opt.MapFrom(src =>
-                    src.Documents.ToDictionary(
+                    src.Documents != null ? src.Documents.ToDictionary(
                         kvp => kvp.Key,
                         kvp => new DocumentDTO
                         {
@@ -52,7 +54,14 @@ namespace CRM.SocialDepartment.Site.MappingProfile
                             // Селективная обработка форматов документов
                             Number = FormatDocumentNumber(kvp.Key, kvp.Value.Number)
                         }
-                    )));
+                    ) : new Dictionary<DocumentType, DocumentDTO>()))
+                // ВАЖНО: Если пациент дееспособен, то Capable должен быть null
+                .ForMember(dest => dest.Capable, opt => opt.MapFrom(src => 
+                    src.IsCapable ? null : src.Capable))
+                // ВАЖНО: Если пациент НЕ получает пенсию, то данные о пенсии должны быть null
+                .ForMember(dest => dest.Pension, opt => opt.MapFrom(src => 
+                    src.ReceivesPension ? src.Pension : null))
+                .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.Note));
 
             CreateMap<Patient, EditPatientDTO>()
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
@@ -82,14 +91,14 @@ namespace CRM.SocialDepartment.Site.MappingProfile
                     DocumentAttached = src.CitizenshipInfo != null ? src.CitizenshipInfo.DocumentAttached : null
                 }))
                 .ForMember(dest => dest.Documents, opt => opt.MapFrom(src => 
-                    src.Documents.ToDictionary(
+                    src.Documents != null ? src.Documents.ToDictionary(
                         kvp => kvp.Key,
                         kvp => new DocumentDTO
                         {
                             Type = kvp.Key,
                             Number = ExtractDocumentNumber(kvp.Value)
                         }
-                    )))
+                    ) : new Dictionary<DocumentType, DocumentDTO>()))
                 .ForMember(dest => dest.Capable, opt => opt.MapFrom(src => src.Capable != null ? new EditCapableDTO
                 {
                     Guardian = src.Capable.Guardian != null ? src.Capable.Guardian : string.Empty,
@@ -134,14 +143,14 @@ namespace CRM.SocialDepartment.Site.MappingProfile
                     DocumentAttached = src.CitizenshipInfo != null ? src.CitizenshipInfo.DocumentAttached : null
                 }))
                 .ForMember(dest => dest.Documents, opt => opt.MapFrom(src => 
-                    src.Documents.ToDictionary(
+                    src.Documents != null ? src.Documents.ToDictionary(
                         kvp => kvp.Key,
                         kvp => new DocumentDTO
                         {
                             Type = kvp.Key,
                             Number = ExtractDocumentNumber(kvp.Value)
                         }
-                    )))
+                    ) : new Dictionary<DocumentType, DocumentDTO>()))
                 .ForMember(dest => dest.IsCapable, opt => opt.MapFrom(src => src.IsCapable))
                 .ForMember(dest => dest.Capable, opt => opt.MapFrom(src => src.Capable != null ? new CreateCapableDTO
                 {
@@ -165,7 +174,7 @@ namespace CRM.SocialDepartment.Site.MappingProfile
             //По лучшим практикам, процесс маппинга из DTO -> Entity, должен осуществляться в ручную.
             //CreateMap<EditPatientDTO, Patient>()
             //.ForMember(dest => dest.Documents, opt => opt.MapFrom(src => 
-            //    src.Documents.ToDictionary(
+            //    src.Documents != null ? src.Documents.ToDictionary(
             //        kvp => kvp.Key,
             //        kvp => DocumentFactory.Create(
             //            kvp.Value.Type,
@@ -173,7 +182,6 @@ namespace CRM.SocialDepartment.Site.MappingProfile
             //        )
             //    )));
 
-            CreateMap<EditPatientViewModel, EditPatientDTO>();
             CreateMap<CreateUserViewModel, CreateUserDTO>();
             CreateMap<EditUserViewModel, CreateUserDTO>();
             CreateMap<IUser, UserDTO>();
@@ -245,7 +253,7 @@ namespace CRM.SocialDepartment.Site.MappingProfile
                         : HospitalizationType.Force,
                     Resolution = src.ActiveHistory != null ? src.ActiveHistory.Resolution : string.Empty,
                     NumberDocument = src.ActiveHistory != null ? src.ActiveHistory.NumberDocument : string.Empty,
-                    DateOfReceipt = src.ActiveHistory != null ? src.ActiveHistory.DateOfReceipt : DateTime.MinValue,
+                    DateOfReceipt = src.ActiveHistory != null ? DateTime.SpecifyKind(src.ActiveHistory.DateOfReceipt.Date, DateTimeKind.Unspecified) : DateTime.MinValue,
                     DateOfDischarge = src.ActiveHistory != null ? src.ActiveHistory.DateOfDischarge : null,
                     Note = src.ActiveHistory != null ? src.ActiveHistory.Note : null
                 }))
@@ -258,15 +266,7 @@ namespace CRM.SocialDepartment.Site.MappingProfile
                     PlaceOfBirth = src.CitizenshipInfo != null ? src.CitizenshipInfo.PlaceOfBirth : null,
                     DocumentAttached = src.CitizenshipInfo != null ? src.CitizenshipInfo.DocumentAttached : null
                 }))
-                .ForMember(dest => dest.Documents, opt => opt.MapFrom(src => 
-                    src.Documents.ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => new DocumentViewModel
-                        {
-                            Type = kvp.Key,
-                            Number = ExtractDocumentNumber(kvp.Value)
-                        }
-                    )))
+                .ForMember(dest => dest.Documents, opt => opt.MapFrom(src => CreateDocumentViewModels(src.Documents != null ? src.Documents : new Dictionary<DocumentType, object>())))
                 .ForMember(dest => dest.IsCapable, opt => opt.MapFrom(src => src.IsCapable))
                 .ForMember(dest => dest.Capable, opt => opt.MapFrom(src => src.Capable != null ? new CapableModel
                 {
@@ -390,15 +390,15 @@ namespace CRM.SocialDepartment.Site.MappingProfile
                         ? src.ActiveHistory.HospitalizationType.DisplayName
                         : "—"))
                 .ForMember(dest => dest.CourtDecision, opt => opt.MapFrom(src =>
-                    src.Capable != null && !string.IsNullOrEmpty(src.Capable.CourtDecision)
-                        ? src.Capable.CourtDecision
+                    src.ActiveHistory != null && !string.IsNullOrEmpty(src.ActiveHistory.Resolution)
+                        ? src.ActiveHistory.Resolution
                         : "—"))
                 .ForMember(dest => dest.NumberDocument, opt => opt.MapFrom(src =>
                     src.ActiveHistory != null && !string.IsNullOrEmpty(src.ActiveHistory.NumberDocument)
                         ? src.ActiveHistory.NumberDocument
                         : "—"))
                 .ForMember(dest => dest.DateOfReceipt, opt => opt.MapFrom(src =>
-                    src.ActiveHistory != null ? DateTime.SpecifyKind(src.ActiveHistory.DateOfReceipt, DateTimeKind.Utc) : DateTime.MinValue))
+                    src.ActiveHistory != null ? src.ActiveHistory.DateOfReceipt : DateTime.MinValue))
                 .ForMember(dest => dest.Department, opt => opt.MapFrom(src =>
                     src.ActiveHistory != null && src.ActiveHistory.NumberDepartment.HasValue
                         ? src.ActiveHistory.NumberDepartment.Value.ToString()
@@ -505,6 +505,84 @@ namespace CRM.SocialDepartment.Site.MappingProfile
                 var dt when dt == DocumentType.Snils => number,
                 _ => number
             };
+        }
+
+        /// <summary>
+        /// Получает placeholder для типа документа
+        /// </summary>
+        /// <param name="documentType">Тип документа</param>
+        /// <returns>Placeholder для поля ввода</returns>
+        private static string GetDocumentPlaceholder(DocumentType documentType)
+        {
+            return documentType switch
+            {
+                var dt when dt == DocumentType.Passport => "Серия и номер (например: 1234 567890)",
+                var dt when dt == DocumentType.MedicalPolicy => "Номер полиса (16 цифр)",
+                var dt when dt == DocumentType.Snils => "Номер СНИЛС (например: 123-456-789 01)",
+                _ => string.Empty
+            };
+        }
+
+        /// <summary>
+        /// Получает pattern для валидации типа документа
+        /// </summary>
+        /// <param name="documentType">Тип документа</param>
+        /// <returns>Regex pattern для валидации</returns>
+        private static string GetDocumentPattern(DocumentType documentType)
+        {
+            return documentType switch
+            {
+                var dt when dt == DocumentType.Passport => @"^\d{4}\s\d{6}$",
+                var dt when dt == DocumentType.MedicalPolicy => @"^\d{16}$",
+                var dt when dt == DocumentType.Snils => @"^\d{3}-\d{3}-\d{3}\s\d{2}$",
+                _ => string.Empty
+            };
+        }
+
+        /// <summary>
+        /// Получает сообщение об ошибке для типа документа
+        /// </summary>
+        /// <param name="documentType">Тип документа</param>
+        /// <returns>Сообщение об ошибке валидации</returns>
+        private static string GetDocumentErrorMessage(DocumentType documentType)
+        {
+            return documentType switch
+            {
+                var dt when dt == DocumentType.Passport => "Введите серию и номер паспорта в формате: 1234 567890",
+                var dt when dt == DocumentType.MedicalPolicy => "Введите 16 цифр номера полиса",
+                var dt when dt == DocumentType.Snils => "Введите номер СНИЛС в формате: 123-456-789 01",
+                _ => string.Empty
+            };
+        }
+
+        /// <summary>
+        /// Создает словарь DocumentViewModel для всех типов документов
+        /// </summary>
+        /// <param name="existingDocuments">Существующие документы пациента</param>
+        /// <returns>Словарь с DocumentViewModel для всех типов документов</returns>
+        private static Dictionary<DocumentType, DocumentViewModel> CreateDocumentViewModels(Dictionary<DocumentType, object> existingDocuments)
+        {
+            var documents = new Dictionary<DocumentType, DocumentViewModel>();
+            
+            // Инициализируем все типы документов
+            var documentTypes = new[] { DocumentType.Passport, DocumentType.MedicalPolicy, DocumentType.Snils };
+            
+            foreach (var docType in documentTypes)
+            {
+                var existingDoc = existingDocuments.ContainsKey(docType) ? existingDocuments[docType] : null;
+                documents[docType] = new DocumentViewModel
+                {
+                    Type = docType,
+                    DisplayName = docType.DisplayName,
+                    Number = existingDoc != null ? ExtractDocumentNumber(existingDoc) : string.Empty,
+                    InputType = "text",
+                    Placeholder = GetDocumentPlaceholder(docType),
+                    Pattern = GetDocumentPattern(docType),
+                    ErrorMessage = GetDocumentErrorMessage(docType)
+                };
+            }
+            
+            return documents;
         }
     }
 }

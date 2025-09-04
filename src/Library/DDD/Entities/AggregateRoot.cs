@@ -11,7 +11,7 @@ namespace DDD.Entities
     {
         public virtual string ConcurrencyStamp { get; set; }
 
-        private readonly List<INotification> _domainEvents = new List<INotification>();
+        private List<INotification>? _domainEvents;
 
         protected AggregateRoot()
         {
@@ -21,7 +21,7 @@ namespace DDD.Entities
         /// <summary>
         /// Получить список доменных событий
         /// </summary>
-        public IReadOnlyList<INotification> DomainEvents => _domainEvents.AsReadOnly();
+        public IReadOnlyList<INotification> DomainEvents => (_domainEvents ??= new List<INotification>()).AsReadOnly();
 
         /// <summary>
         /// Добавить доменное событие
@@ -29,7 +29,7 @@ namespace DDD.Entities
         /// <param name="domainEvent">Доменное событие</param>
         protected void AddDomainEvent(INotification domainEvent)
         {
-            _domainEvents.Add(domainEvent);
+            (_domainEvents ??= new List<INotification>()).Add(domainEvent);
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace DDD.Entities
         /// <param name="domainEvent">Доменное событие</param>
         protected void RemoveDomainEvent(INotification domainEvent)
         {
-            _domainEvents.Remove(domainEvent);
+            _domainEvents?.Remove(domainEvent);
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace DDD.Entities
         /// </summary>
         public void ClearDomainEvents()
         {
-            _domainEvents.Clear();
+            _domainEvents?.Clear();
         }
     }
 
@@ -55,7 +55,7 @@ namespace DDD.Entities
     {
         public virtual string ConcurrencyStamp { get; set; }
 
-        private readonly List<INotification> _domainEvents = new List<INotification>();
+        private List<INotification>? _domainEvents;
 
         protected AggregateRoot()
         {
@@ -71,7 +71,7 @@ namespace DDD.Entities
         /// <summary>
         /// Получить список доменных событий
         /// </summary>
-        public IReadOnlyList<INotification> DomainEvents => _domainEvents.AsReadOnly();
+        public IReadOnlyList<INotification> DomainEvents => (_domainEvents ??= new List<INotification>()).AsReadOnly();
 
         /// <summary>
         /// Добавить доменное событие
@@ -79,7 +79,7 @@ namespace DDD.Entities
         /// <param name="domainEvent">Доменное событие</param>
         protected void AddDomainEvent(INotification domainEvent)
         {
-            _domainEvents.Add(domainEvent);
+            (_domainEvents ??= new List<INotification>()).Add(domainEvent);
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace DDD.Entities
         /// <param name="domainEvent">Доменное событие</param>
         protected void RemoveDomainEvent(INotification domainEvent)
         {
-            _domainEvents.Remove(domainEvent);
+            _domainEvents?.Remove(domainEvent);
         }
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace DDD.Entities
         /// </summary>
         public void ClearDomainEvents()
         {
-            _domainEvents.Clear();
+            _domainEvents?.Clear();
         }
     }
 }

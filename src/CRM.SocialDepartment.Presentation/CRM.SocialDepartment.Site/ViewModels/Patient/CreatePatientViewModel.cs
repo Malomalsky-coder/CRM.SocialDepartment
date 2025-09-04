@@ -100,11 +100,6 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
                     yield return new ValidationResult("Тип госпитализации обязателен для заполнения", ["MedicalHistory.HospitalizationType"]);
                 }
 
-                if (string.IsNullOrWhiteSpace(MedicalHistory?.Resolution))
-                {
-                    yield return new ValidationResult("Постановление обязательно для заполнения", ["MedicalHistory.Resolution"]);
-                }
-
                 if (string.IsNullOrWhiteSpace(MedicalHistory?.NumberDocument))
                 {
                     yield return new ValidationResult("Номер истории болезни обязателен для заполнения", ["MedicalHistory.NumberDocument"]);

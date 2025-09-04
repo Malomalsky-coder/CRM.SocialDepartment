@@ -43,6 +43,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Assignment
         public string? Note { get; set; }
 
         [Required]
+        [Display(Name = "Пациент")]
         public Guid PatientId { get; set; }
     }
 }

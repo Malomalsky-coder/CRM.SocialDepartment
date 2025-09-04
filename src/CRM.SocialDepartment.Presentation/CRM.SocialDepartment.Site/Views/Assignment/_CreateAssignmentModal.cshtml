@@ -15,10 +15,6 @@
                 <input asp-for="AcceptDate" type="date" class="form-control" value="@Model.AcceptDate.ToString("yyyy-MM-dd")" />
                 <span asp-validation-for="AcceptDate" class="text-danger"></span>
             </div>
-            <div class="col">
-                <label asp-for="DepartmentNumber" class="form-label"></label>
-                <input asp-for="DepartmentNumber" type="number" class="form-control" />
-            </div>
         </div>
 
         <div class="mb-3 mt-2">
@@ -168,25 +164,4 @@
             select.setAttribute('disabled', 'disabled');
         }
     })();
-
-    document.getElementById('create-assignment-form').addEventListener('submit', async function (e) {
-        e.preventDefault();
-        const form = e.target;
-        const formData = new FormData(form);
-        const resp = await fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        if (resp.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('form-modal')).hide();
-            if (window.assignmentTable) window.assignmentTable.ajax.reload(null, false);
-            if (window.assignmentDataTable) window.assignmentDataTable.ajax.reload(null, false);
-        if (window.assignmentDataTable) window.assignmentDataTable.ajax.reload(null, false);
-    } else {
-        const text = await resp.text();
-        console.error(text);
-        alert('Ошибка сохранения');
-    }
-});
 </script>

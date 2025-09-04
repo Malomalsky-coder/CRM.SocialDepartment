@@ -1,14 +1,12 @@
-﻿using System.Globalization;
-using System.Linq.Expressions;
-using CRM.SocialDepartment.Application.Common;
+﻿using CRM.SocialDepartment.Application.Common;
 using CRM.SocialDepartment.Application.DTOs;
-using CRM.SocialDepartment.Application.Patients;
 using CRM.SocialDepartment.Domain.Common;
 using CRM.SocialDepartment.Domain.Entities;
 using CRM.SocialDepartment.Domain.Exceptions;
 using CRM.SocialDepartment.Domain.Repositories;
 using DDD.Events;
-using Microsoft.Extensions.DependencyInjection;
+using System.Globalization;
+using System.Linq.Expressions;
 
 namespace CRM.SocialDepartment.Application.Assignments;
 
@@ -30,11 +28,14 @@ public class AssignmentService(IUnitOfWork unitOfWork, IDomainEventDispatcher? d
     }
 
     /// <summary>
-    /// Создать новое назначение (с использованием транзакции)
+    /// Создать новое назначение (без транзакций для совместимости с standalone MongoDB)
     /// </summary>
     public async Task<Guid> CreateAssignmentAsync(CreateOrEditAssignmentDto dto,
         CancellationToken cancellationToken = default)
     {
+        // Логируем начало создания задачи в сервисе
+        Console.WriteLine($"🔧 [AssignmentService] Начинаем создание задачи: {dto.Name}");
+        
         var patient = await _unitOfWork.Patients.GetAsync(p => p.Id == dto.PatientId, cancellationToken) ??
                       throw new EntityNotFoundException("Пациент не найден");
 
@@ -56,7 +57,10 @@ public class AssignmentService(IUnitOfWork unitOfWork, IDomainEventDispatcher? d
             patient.Id
         );
 
+        // Сохраняем задание
+        Console.WriteLine($"💾 [AssignmentService] Сохраняем задачу в базу данных: {assignment.Id}");
         await _unitOfWork.Assignments.InsertAsync(assignment, cancellationToken);
+        Console.WriteLine($"✅ [AssignmentService] Задача сохранена: {assignment.Id}");
 
         // Публикуем доменные события
         await DomainEventPublisher.PublishAndClearEventsAsync(assignment, _domainEventDispatcher, cancellationToken);

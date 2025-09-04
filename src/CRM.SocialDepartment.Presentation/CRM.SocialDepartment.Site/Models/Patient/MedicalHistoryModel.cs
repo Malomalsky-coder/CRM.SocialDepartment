@@ -19,32 +19,32 @@ namespace CRM.SocialDepartment.Site.Models.Patient
         /// Тип госпитализации
         /// </summary>
         [DisplayName("Тип госпитализации")]
-        public HospitalizationType HospitalizationType { get; init; }
+        public HospitalizationType HospitalizationType { get; init; } = HospitalizationType.Force;
 
         /// <summary>
         /// Постановление
         /// </summary>
         [DisplayName("Постановление")]
-        public string Resolution { get; init; }
+        public string Resolution { get; init; } = string.Empty;
 
         /// <summary>
         /// Номер истории болезни
         /// </summary>
         [DisplayName("Номер истории болезни")]
-        public string NumberDocument { get; init; }
+        public string NumberDocument { get; init; } = string.Empty;
 
         /// <summary>
         /// Дата поступления
         /// </summary>
         [DisplayName("Дата поступления")]
-        [DisplayFormat(DataFormatString = "{0:dd.MM.yyyy}", ApplyFormatInEditMode = true)]
-        public DateTime DateOfReceipt { get; init; }
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
+        public DateTime DateOfReceipt { get; init; } = DateTime.Now;
 
         /// <summary>
         /// Дата выписки
         /// </summary>
         [DisplayName("Дата выписки")]
-        [DisplayFormat(DataFormatString = "{0:dd.MM.yyyy}", ApplyFormatInEditMode = true)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime? DateOfDischarge { get; init; }
 
         /// <summary>

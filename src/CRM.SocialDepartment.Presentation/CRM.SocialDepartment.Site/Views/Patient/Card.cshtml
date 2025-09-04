@@ -40,7 +40,6 @@
                 <h2 class="mb-0">
                     <i class="fa fa-user-circle me-2"></i>
                     Карточка пациента
-                    <span class="badge bg-primary ms-2" id="patient-id-badge">@Model.PatientId.ToString().Substring(0, 8)...</span>
                 </h2>
             </div>
             <div class="header-actions">
@@ -80,16 +79,6 @@
                         <li><a class="dropdown-item text-danger" href="#"><i class="fa fa-trash me-2"></i>Удалить пациента</a></li>
                     </ul>
                 </div>
-            </div>
-        </div>
-        <div class="header-stats">
-            <div class="stat-item">
-                <i class="fa fa-calendar text-muted me-1"></i>
-                <small>Дата рождения: <span class="fw-medium">@Model.Birthday.ToString("dd.MM.yyyy")</span></small>
-            </div>
-            <div class="stat-item">
-                <i class="fa fa-map-marker text-info me-1"></i>
-                <small>Отделение: <span class="text-info fw-medium">@Model.NumberDepartment</span></small>
             </div>
         </div>
     </div>
@@ -133,7 +122,7 @@
 
     <!-- Основная карточка с информацией -->
     <div class="datatable-card mt-4" id="datatable-main-card">
-        <div class="card">
+        <div class="">
             <div class="card-header">
                 <h5 class="mb-0">
                     <i class="fa fa-user me-2"></i>
@@ -205,7 +194,7 @@
 
     <!-- Документы -->
     <div id="DocumentIsEnable" class="datatable-card">
-        <div class="card">
+        <div class="">
             <div class="card-header">
                 <h5 class="mb-0">
                     <i class="fa fa-id-card me-2"></i>
@@ -241,7 +230,7 @@
     @if (Model.IsCapable)
     {
         <div class="datatable-card">
-            <div class="card">
+            <div class="">
                 <div class="card-body">
                     <div class="info-item">
                         <label class="form-label fw-bold text-muted">Дееспособный:</label>
@@ -256,7 +245,7 @@
     else
     {
         <div class="datatable-card">
-            <div class="card">
+            <div class="">
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="fa fa-exclamation-triangle me-2"></i>
@@ -298,7 +287,7 @@
     @if (Model.PensionIsActive)
     {
         <div class="datatable-card">
-            <div class="card">
+            <div class="">
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="fa fa-money me-2"></i>
@@ -362,7 +351,7 @@
     else
     {
         <div class="datatable-card">
-            <div class="card">
+            <div class="">
                 <div class="card-body">
                     <div class="info-item">
                         <label class="form-label fw-bold text-muted">Получает ли пенсию?</label>
@@ -377,7 +366,7 @@
 
     <!-- История болезни -->
     <div class="datatable-card">
-        <div class="card">
+        <div class="">
             <div class="card-header">
                 <h5 class="mb-0">
                     <i class="fa fa-history me-2"></i>

@@ -49,15 +49,7 @@ function addPatient() {
 
 // Функция для редактирования пациента
 function editPatient(patientId) {
-
     GetFormModal(`/Patient/modal/edit/${patientId}`, 'Редактировать пациента');
-
-    //$.get(`/Patient/modal/edit/${patientId}`, function (data) {
-    //    $('#edit-patient-modal .modal-body').html(data);
-    //    $('#edit-patient-modal').modal('show');
-    //}).fail(function () {
-    //    showMessage('error', 'Ошибка', 'Не удалось загрузить форму редактирования');
-    //});
 }
 
 // Функция для архивирования пациента
@@ -507,6 +499,126 @@ $(document).ready(function () {
         });
     });
 
+    //Отправить данные из модального окна: Редактировать пациента
+    $('#form-modal').on('submit', '#edit-patient', function (e) {
+        e.preventDefault();
+
+        $this = $(this);
+        var url = $this.attr('action');
+        
+        // Обработка дат перед отправкой
+        var formData = new FormData($this[0]);
+        var data = new URLSearchParams();
+        
+        // Преобразуем FormData в URLSearchParams с правильной обработкой дат
+        for (var pair of formData.entries()) {
+            var key = pair[0];
+            var value = pair[1];
+            
+            // Обрабатываем поля с датами
+            if (key === 'Birthday' || key === 'MedicalHistory.DateOfReceipt' || 
+                key === 'CitizenshipInfo.PlaceOfBirth' || key === 'Capable.TrialDate') {
+                if (value) {
+                    // Преобразуем дату в правильный формат для сервера
+                    var date = new Date(value);
+                    if (!isNaN(date.getTime())) {
+                        // Форматируем дату в ISO формат для сервера
+                        var year = date.getFullYear();
+                        var month = String(date.getMonth() + 1).padStart(2, '0');
+                        var day = String(date.getDate()).padStart(2, '0');
+                        value = `${year}-${month}-${day}`;
+                    }
+                }
+            }
+            
+            data.append(key, value);
+        }
+        
+        var headers = {
+            "CSRF-TOKEN": $this.find('input[name="__RequestVerificationToken"]').val()
+        };
+
+        // Очищаем предыдущие ошибки
+        if (window.AddPatientFormValidation && window.AddPatientFormValidation.clearValidationErrors) {
+            window.AddPatientFormValidation.clearValidationErrors();
+        }
+
+        // Отправляем данные
+        $.ajax({
+            url: url,
+            type: 'PUT',
+            data: data.toString(),
+            contentType: 'application/x-www-form-urlencoded',
+            headers: headers,
+            beforeSend: function () {
+                $("#form-modal").find(':submit').attr('disabled', true);
+                $("#form-modal").find(':submit').html('<div class="spinner-border spinner-border-sm" role="status"></div>');
+            },
+            success: function (response) {
+                $('#form-modal').modal('hide');
+                
+                // Показываем сообщение об успехе
+                if (typeof malomalsky !== 'undefined' && malomalsky.message && malomalsky.message.success) {
+                    malomalsky.message.success('Успешно!', 'Пациент обновлен');
+                } else {
+                    showMessage('success', 'Успешно!', 'Пациент обновлен');
+                }
+                
+                // Обновляем таблицу
+                if (window.patientDataTable) {
+                    window.patientDataTable.ajax.reload();
+                }
+            },
+            error: function (xhr) {
+                $("#form-modal").find(':submit').html('Сохранить');
+                $("#form-modal").find(':submit').attr('disabled', false);
+
+                // Обработка ошибок валидации (400)
+                if (xhr.status === 400) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        console.log('📋 Получен ответ с ошибками валидации:', response);
+                        
+                        if (response && response.Data && response.Data.Errors && Array.isArray(response.Data.Errors)) {
+                            console.log('🔍 Ошибки валидации:', response.Data.Errors);
+                            
+                            // Тестируем все поля формы для отладки
+                            if (window.AddPatientFormValidation && window.AddPatientFormValidation.testAllFormFields) {
+                                window.AddPatientFormValidation.testAllFormFields();
+                            }
+                            
+                            if (window.AddPatientFormValidation && window.AddPatientFormValidation.showValidationErrors) {
+                                window.AddPatientFormValidation.showValidationErrors(response.Data.Errors);
+                            }
+                            return;
+                        }
+                    } catch (parseError) {
+                        console.log('❌ Не удалось распарсить ответ с ошибками:', parseError);
+                    }
+                }
+
+                // Общая обработка ошибок
+                var errorMessage = 'Произошла ошибка при обновлении пациента';
+                if (xhr.responseText) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response && response.ErrorMessage) {
+                            errorMessage = response.ErrorMessage;
+                        }
+                    } catch (e) {
+                        // Игнорируем ошибки парсинга
+                    }
+                }
+
+                if (typeof malomalsky !== 'undefined' && malomalsky.message && malomalsky.message.error) {
+                    malomalsky.message.error('Ошибка!', errorMessage);
+                } else {
+                    showMessage('error', 'Ошибка!', errorMessage);
+                }
+            }
+        });
+    });
+
     // Очистка ошибок при вводе в поля
     $(document).on('input focus', '.form-control.is-invalid, .form-select.is-invalid', function() {
         $(this).removeClass('is-invalid');
@@ -601,6 +713,152 @@ $(document).ready(function () {
         archivePatient(patientId);
     });
 
+    // ========== ОБРАБОТЧИКИ ДЛЯ ФОРМЫ ДОБАВЛЕНИЯ ==========
+
+    //Тип госпитализации
+    $('#form-modal').on('change', '#MedicalHistory_HospitalizationType', function (e) {
+        $selected = $(this).find(':selected').text();
+        if ($selected === 'Добровольный' || $selected === 'Статья 435 УК РФ') {
+            $('#ResolutionIsEnable').hide();
+        }
+        else if ($selected === 'Принудительно') {
+            $('#ResolutionIsEnable').show();
+        }
+    });
+
+    //Гражданство
+    $('#form-modal').on('change', 'input[name="CitizenshipInfo.Citizenship"]', function (e) {
+        $('#RegistrationIsEnable').show();
+        $('#NoRegistrationIsEnable').show();
+        $('#LbgIsEnable').hide();
+        $('#DocumentIsEnable').show();
+
+        $radioVal = $(this).val();
+
+        if ($radioVal === '0') { // РФ
+            $('#CountryIsEnable').hide();
+            $('#CitizenshipInfo_Country').val('Россия');
+        }
+        else if ($radioVal === '1') { // Иностранец
+            $('#NoRegistrationIsEnable').hide();
+            $('#CitizenshipInfo_Country').val('');
+            $('#CountryIsEnable').show();
+        }
+        else if ($radioVal === '2') { // ЛБГ
+            $('#RegistrationIsEnable').hide();
+            $('#NoRegistrationIsEnable').hide();
+            $('#CountryIsEnable').hide();
+            $('#CitizenshipInfo_Country').val('');
+            $('#LbgIsEnable').show();
+            $('#DocumentIsEnable').hide();
+        }
+    });
+
+    //БОМЖ
+    $('#form-modal').on('change', '#notRegisteredSwitch', function (e) {
+        if (e.target.checked) {
+            $('#EarlyRegistrationIsEnable').show();
+            $('#RegistrationIsEnable').hide();
+        }
+        else {
+            $('#EarlyRegistrationIsEnable').hide();
+            $('#RegistrationIsEnable').show();
+        }
+
+    });
+
+    //Появляющиеся поля для недееспособного
+    $('#form-modal').on('change', '#IsCapable', function (e) {
+        $('#CapableIsEnable').fadeToggle();
+    });
+
+    //Появляющиеся поля для пенсии
+    $('#form-modal').on('change', '#ReceivesPension', function (e) {
+        $('#PensionFieldsetIsEnable').fadeToggle();
+    });
+
+    //Появляющиеся поля для даты с какого числа пенсия
+    $('#form-modal').on('change', '#Pension_DisabilityGroup', function (e) {
+        if ($(this).find(':selected').text().includes('б/с')) {
+            $('#PensionStartDateTimeIsEnable').show();
+            return;
+        }
+
+        $('#PensionStartDateTimeIsEnable').hide();
+    });
+
+    // ========== ОБРАБОТЧИКИ ДЛЯ ФОРМЫ РЕДАКТИРОВАНИЯ ==========
+
+    //Тип госпитализации для формы редактирования
+    $('#edit-patient').on('change', '#MedicalHistory_HospitalizationType', function (e) {
+        $selected = $(this).find(':selected').text();
+        if ($selected === 'Добровольный' || $selected === 'Статья 435 УК РФ') {
+            $('#ResolutionIsEnable').hide();
+        }
+        else if ($selected === 'Принудительно') {
+            $('#ResolutionIsEnable').show();
+        }
+    });
+
+    //Гражданство для формы редактирования
+    $('#edit-patient').on('change', 'input[name="CitizenshipInfo.Citizenship"]', function (e) {
+        $('#RegistrationIsEnable').show();
+        $('#NoRegistrationIsEnable').show();
+        $('#LbgIsEnable').hide();
+        $('#DocumentIsEnable').show();
+
+        $radioVal = $(this).val();
+
+        if ($radioVal === '0') { // РФ
+            $('#CountryIsEnable').hide();
+            $('#CitizenshipInfo_Country').val('Россия');
+        }
+        else if ($radioVal === '1') { // Иностранец
+            $('#NoRegistrationIsEnable').hide();
+            $('#CitizenshipInfo_Country').val('');
+            $('#CountryIsEnable').show();
+        }
+        else if ($radioVal === '2') { // ЛБГ
+            $('#RegistrationIsEnable').hide();
+            $('#NoRegistrationIsEnable').hide();
+            $('#CountryIsEnable').hide();
+            $('#CitizenshipInfo_Country').val('');
+            $('#LbgIsEnable').show();
+            $('#DocumentIsEnable').hide();
+        }
+    });
+
+    //БОМЖ для формы редактирования
+    $('#edit-patient').on('change', '#editNotRegisteredSwitch', function (e) {
+        if (e.target.checked) {
+            $('#EarlyRegistrationIsEnable').show();
+            $('#RegistrationIsEnable').hide();
+        }
+        else {
+            $('#EarlyRegistrationIsEnable').hide();
+            $('#RegistrationIsEnable').show();
+        }
+    });
+
+    //Появляющиеся поля для недееспособного для формы редактирования
+    $('#edit-patient').on('change', '#editIsCapableSwitch', function (e) {
+        $('#CapableIsEnable').fadeToggle();
+    });
+
+    //Появляющиеся поля для пенсии для формы редактирования
+    $('#edit-patient').on('change', '#editReceivesPensionSwitch', function (e) {
+        $('#PensionFieldsetIsEnable').fadeToggle();
+    });
+
+    //Появляющиеся поля для даты с какого числа пенсия для формы редактирования
+    $('#edit-patient').on('change', '#Pension_DisabilityGroup', function (e) {
+        if ($(this).find(':selected').text().includes('б/с')) {
+            $('#PensionStartDateTimeIsEnable').show();
+            return;
+        }
+
+        $('#PensionStartDateTimeIsEnable').hide();
+    });
 
     // Настройки таблицы
     $('#apply-settings').on('click', function () {

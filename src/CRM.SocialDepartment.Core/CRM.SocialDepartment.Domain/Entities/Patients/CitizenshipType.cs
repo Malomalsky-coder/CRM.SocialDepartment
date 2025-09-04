@@ -11,6 +11,13 @@ namespace CRM.SocialDepartment.Domain.Entities.Patients
         public byte Value { get; }
         public string DisplayName { get; }
 
+        // Публичный конструктор по умолчанию для MongoDB десериализации
+        public CitizenshipType()
+        {
+            Value = 0;
+            DisplayName = "";
+        }
+
         private CitizenshipType(byte value, string displayName)
         {
             Value = value;

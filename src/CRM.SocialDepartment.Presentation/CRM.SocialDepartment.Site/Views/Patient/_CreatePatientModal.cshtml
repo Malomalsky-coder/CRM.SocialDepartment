@@ -124,7 +124,7 @@
             <div id="LbgIsEnable" style="display:none;">
                 <div class="mb-3">
                     <label asp-for="CitizenshipInfo.PlaceOfBirth" class="form-label"></label>
-                    <input asp-for="CitizenshipInfo.PlaceOfBirth" type="date" value="" class="form-control" autocomplete="off" />
+                    <input asp-for="CitizenshipInfo.PlaceOfBirth" class="form-control" autocomplete="off" />
                     <span asp-validation-for="CitizenshipInfo.PlaceOfBirth" class="text-danger"></span>
                 </div>
 
@@ -149,7 +149,7 @@
                         <div class="mb-3">
                             <label class="form-label">@document.Value.DisplayName</label>
                             <input type="@document.Value.InputType"
-                                   name="Documents[@((int)document.Key)].Number"
+                                   name="Documents[@document.Key].Number"
                                    value="@document.Value.Number"
                                    class="form-control"
                                    placeholder="@document.Value.Placeholder"
@@ -157,24 +157,6 @@
                                    data-error-message="@document.Value.ErrorMessage"
                                    autocomplete="off" />
                             <div class="invalid-feedback"></div>
-
-                            @* <div class="row mt-2"> *@
-                            @*     <div class="col"> *@
-                            @*         <label class="form-label">Дата выдачи</label> *@
-                            @*         <input type="date" *@
-                            @*                name="Documents[@((int)document.Key)].IssueDate" *@
-                            @*                value="@(document.Value.IssueDate?.ToString("yyyy-MM-dd"))" *@
-                            @*                class="form-control" /> *@
-                            @*     </div> *@
-                            @*     <div class="col"> *@
-                            @*         <label class="form-label">Кем выдан</label> *@
-                            @*         <input type="text" *@
-                            @*                name="Documents[@((int)document.Key)].Issuer" *@
-                            @*                value="@document.Value.Issuer" *@
-                            @*                class="form-control" /> *@
-                            @*     </div> *@
-                            @* </div> *@
-
                         </div>
                     }
                 }
@@ -189,14 +171,14 @@
     <div class="mb-3">
         <div class="row align-items-center">
             <div class="col-9 px-4">
-                <label class="form-check-label" for="isCapableSwitch">
+                <label class="form-check-label" for="isCapable">
                     <span class="fw-medium">Дееспособный</span>
                     <small class="text-muted d-block">Отменить если пациент признан недееспособным</small>
                 </label>
             </div>
             <div class="col-3 text-end">
                 <div class="form-check form-switch">
-                    <input asp-for="IsCapable" class="form-check-input" id="isCapableSwitch" />
+                    <input asp-for="IsCapable" class="form-check-input" />
                 </div>
             </div>
         </div>
@@ -233,14 +215,14 @@
     <div class="mb-3">
         <div class="row align-items-center">
             <div class="col-9 px-4">
-                <label class="form-check-label" for="receivesPensionSwitch">
+                <label class="form-check-label" for="receivesPension">
                     <span class="fw-medium">Получает пенсию</span>
                     <small class="text-muted d-block">Отметить если пациент получает пенсию</small>
                 </label>
             </div>
             <div class="col-3 text-end">
                 <div class="form-check form-switch">
-                    <input asp-for="ReceivesPension" class="form-check-input" id="receivesPensionSwitch" />
+                    <input asp-for="ReceivesPension" class="form-check-input" />
                 </div>
             </div>
         </div>

@@ -25,6 +25,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
         /// </summary>
         [Required(ErrorMessage = "ФИО обязательно для заполнения")]
         [StringLength(100, ErrorMessage = "ФИО не может быть длиннее 100 символов")]
+        [Display(Name = "ФИО")]
         public string FullName { get; init; } = string.Empty;
 
         /// <summary>
@@ -123,10 +124,16 @@ namespace CRM.SocialDepartment.Site.ViewModels.Patient
             {
                 if (!string.IsNullOrWhiteSpace(document.Value.Number))
                 {
+                    Console.WriteLine($"🔍 [EditPatientViewModel] Валидируем документ: {document.Key.DisplayName} = '{document.Value.Number}'");
                     var validationError = ValidateDocumentFormat(document.Key, document.Value.Number);
                     if (!string.IsNullOrEmpty(validationError))
                     {
+                        Console.WriteLine($"❌ [EditPatientViewModel] Ошибка валидации документа: {validationError}");
                         results.Add(new ValidationResult(validationError, new[] { $"Documents[{document.Key}]" }));
+                    }
+                    else
+                    {
+                        Console.WriteLine($"✅ [EditPatientViewModel] Документ прошел валидацию");
                     }
                 }
             }

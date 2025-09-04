@@ -82,6 +82,7 @@ namespace CRM.SocialDepartment.Site.Controllers
                 {
                     HospitalizationType = HospitalizationType.Force,
                     NumberDepartment = 1,
+                    DateOfReceipt = DateTime.Today,
                 },
                 Documents = new Dictionary<DocumentType, DocumentViewModel>
                 {
@@ -120,16 +121,36 @@ namespace CRM.SocialDepartment.Site.Controllers
                 return NotFound();
             }
 
+            // Логируем данные пациента для диагностики
+            _logger.LogInformation("🔍 [PatientController] Данные пациента для редактирования:");
+            _logger.LogInformation("👤 [PatientController] Пациент: {FullName}", patient.FullName);
+            _logger.LogInformation("📅 [PatientController] ActiveHistory: {ActiveHistory}", patient.ActiveHistory != null ? "Есть" : "Нет");
+            if (patient.ActiveHistory != null)
+            {
+                _logger.LogInformation("📅 [PatientController] DateOfReceipt: {DateOfReceipt}", patient.ActiveHistory.DateOfReceipt);
+                _logger.LogInformation("📅 [PatientController] NumberDepartment: {NumberDepartment}", patient.ActiveHistory.NumberDepartment);
+                _logger.LogInformation("📅 [PatientController] Resolution: {Resolution}", patient.ActiveHistory.Resolution);
+            }
+
             var viewModel = _mapper.Map<EditPatientViewModel>(patient);
+            
+            // Логируем данные ViewModel после маппинга
+            _logger.LogInformation("🔍 [PatientController] Данные ViewModel после маппинга:");
+            _logger.LogInformation("📅 [PatientController] ViewModel DateOfReceipt: {DateOfReceipt}", viewModel.MedicalHistory.DateOfReceipt);
+            _logger.LogInformation("📅 [PatientController] ViewModel DateOfReceipt.Date: {DateOfReceiptDate}", viewModel.MedicalHistory.DateOfReceipt.Date);
+            _logger.LogInformation("📅 [PatientController] ViewModel DateOfReceipt.ToString('yyyy-MM-dd'): {DateOfReceiptFormatted}", viewModel.MedicalHistory.DateOfReceipt.ToString("yyyy-MM-dd"));
+            _logger.LogInformation("📅 [PatientController] ViewModel NumberDepartment: {NumberDepartment}", viewModel.MedicalHistory.NumberDepartment);
 
             switch (viewModel.CitizenshipInfo.Citizenship)
             {
                 case 0: //Российская Федерация
                     viewModel.CountryIsEnable        = "display:none;";
+                    viewModel.DocumentIsEnable       = ""; // Показываем документы
                     break;
 
                 case 1: //Иностранец
                     viewModel.NoRegistrationIsEnable = "display:none;";
+                    viewModel.DocumentIsEnable       = ""; // Показываем документы
                     break;
 
                 case 2: //ЛБГ
@@ -216,12 +237,10 @@ namespace CRM.SocialDepartment.Site.Controllers
         [Route("api/patients/active")]
         public async Task<JsonResult> GetPatientActiveForDataTableNetAsync([FromServices] DataTableNetService dataTableNetService, CancellationToken cancellationToken = default)
         {
-            DataTableNetModel input = null;
-
             try
             {
                 _logger.LogInformation("🔍 Получен запрос на /api/patients/active");
-                input = dataTableNetService.Parse(Request);
+                var input = dataTableNetService.Parse(Request);
                 _logger.LogInformation("📋 Параметры запроса: {@Input}", input);
 
                 // Проверяем входные параметры
@@ -237,224 +256,49 @@ namespace CRM.SocialDepartment.Site.Controllers
                     });
                 }
 
-                var patients = await _patientAppService.GetAllPatientsAsync(null, cancellationToken);
-                
-                // Проверяем, что пациенты не null
-                if (patients == null)
+                // Преобразуем в доменные параметры
+                var parameters = new DataTableParameters
                 {
-                    _logger.LogWarning("⚠️ Получен null список пациентов");
-                    return Json(new
-                    {
-                        draw = input.Draw,
-                        recordsTotal = 0,
-                        recordsFiltered = 0,
-                        data = new List<object>()
-                    });
-                }
-                
-                var query = patients.AsQueryable();
+                    Skip = input.Skip,
+                    PageSize = input.PageSize,
+                    SearchTerm = input.SearchTerm
+                };
 
-                // Проверяем, есть ли пациенты
-                if (!patients.Any())
-                {
-                    _logger.LogInformation("📭 Нет активных пациентов в базе данных");
-                    return Json(new
-                    {
-                        draw = input.Draw,
-                        recordsTotal = 0,
-                        recordsFiltered = 0,
-                        data = new List<object>()
-                    });
-                }
+                // Используем доменный метод репозитория с AutoMapper
+                var result = await _patientAppService.GetActivePatientsForDataTableAsync(parameters, cancellationToken);
 
-                // Поиск
-                if (!string.IsNullOrEmpty(input.SearchTerm))
+                // Преобразовать данные для представления (полный набор полей, ожидаемых таблицей)
+                var dataResult = result.Data.Select(x => new
                 {
-                    _logger.LogInformation("🔍 Выполняем поиск по термину: '{SearchTerm}'", input.SearchTerm);
-                    
-                    // Фильтруем пациентов с null свойствами перед поиском
-                    var validPatients = patients.Where(p => p != null).ToList();
-                    _logger.LogInformation("📋 Найдено {ValidCount} валидных пациентов", validPatients.Count);
-                    
-                    if (!validPatients.Any())
-                    {
-                        _logger.LogInformation("📭 Нет валидных пациентов для поиска");
-                        return Json(new
-                        {
-                            draw = input.Draw,
-                            recordsTotal = 0,
-                            recordsFiltered = 0,
-                            data = new List<object>()
-                        });
-                    }
-                    
-                    query = validPatients.AsQueryable().Where(p =>
-                        (p.FullName != null && p.FullName.Contains(input.SearchTerm, StringComparison.OrdinalIgnoreCase)) ||
-                        (p.CitizenshipInfo != null && p.CitizenshipInfo.Citizenship != null && p.CitizenshipInfo.Citizenship.ToString().Contains(input.SearchTerm, StringComparison.OrdinalIgnoreCase)) ||
-                        (p.ActiveHistory != null && p.ActiveHistory.HospitalizationType != null && p.ActiveHistory.HospitalizationType.ToString().Contains(input.SearchTerm, StringComparison.OrdinalIgnoreCase))
-                    );
-                }
-                else
-                {
-                    _logger.LogInformation("🔍 Поисковый термин пустой, возвращаем все записи");
-                    // Фильтруем пациентов с null свойствами
-                    var validPatients = patients.Where(p => p != null).ToList();
-                    if (!validPatients.Any())
-                    {
-                        _logger.LogInformation("📭 Нет валидных пациентов");
-                        return Json(new
-                        {
-                            draw = input.Draw,
-                            recordsTotal = 0,
-                            recordsFiltered = 0,
-                            data = new List<object>()
-                        });
-                    }
-                    query = validPatients.AsQueryable();
-                }
+                    id = x.Id,
+                    hospitalizationType = x.HospitalizationType,
+                    resolution = x.CourtDecision,
+                    medicalHistoryNumber = x.NumberDocument,
+                    dateOfReceipt = x.DateOfReceipt != DateTime.MinValue ? x.DateOfReceipt.ToString("dd.MM.yyyy") : null,
+                    department = x.Department,
+                    fullName = x.FullName,
+                    birthday = x.Birthday.ToString("dd.MM.yyyy"),
+                    isChildren = x.IsChildren,
+                    citizenship = x.Citizenship,
+                    country = x.Country,
+                    registration = x.Registration,
+                    notRegistered = x.IsHomeless,
+                    earlyRegistration = x.EarlyRegistration,
+                    placeOfBirth = x.PlaceOfBirth,
+                    IsCapable = x.IsCapable,
+                    ReceivesPension = x.ReceivesPension,
+                    DisabilityGroup = x.DisabilityGroup,
+                    Note = x.Note
+                });
 
-                // Сортировка
-                if (!string.IsNullOrEmpty(input.SortColumn))
-                {
-                    switch (input.SortColumn.ToLower())
-                    {
-                        case "fullname":
-                            query = input.SortColumnDirection == "asc" ? query.OrderBy(p => p.FullName ?? "") : query.OrderByDescending(p => p.FullName ?? "");
-                            break;
-                        case "birthday":
-                            query = input.SortColumnDirection == "asc" ? query.OrderBy(p => p.Birthday) : query.OrderByDescending(p => p.Birthday);
-                            break;
-                        case "citizenship":
-                            query = input.SortColumnDirection == "asc" ? query.OrderBy(p => p.CitizenshipInfo != null ? p.CitizenshipInfo.Citizenship.ToString() : "") : query.OrderByDescending(p => p.CitizenshipInfo != null ? p.CitizenshipInfo.Citizenship.ToString() : "");
-                            break;
-                        default:
-                            query = query.OrderBy(p => p.FullName ?? "");
-                            break;
-                    }
-                }
-                else
-                {
-                    query = query.OrderBy(p => p.FullName ?? "");
-                }
-
-                // Проверяем, что query не null
-                if (query == null)
-                {
-                    _logger.LogWarning("⚠️ Query равен null, возвращаем пустой результат");
-                    return Json(new
-                    {
-                        draw = input.Draw,
-                        recordsTotal = 0,
-                        recordsFiltered = 0,
-                        data = new List<object>()
-                    });
-                }
-
-                _logger.LogInformation("🔍 Выполняем подсчет записей...");
-                
-                int totalCount;
-                List<Patient> queryList;
-                try
-                {
-                    // Проверяем, есть ли данные в query
-                    queryList = query.ToList();
-                    totalCount = queryList.Count;
-                    _logger.LogInformation("✅ Подсчет записей завершен: {TotalCount}", totalCount);
-                    
-                    // Если нет данных, возвращаем пустой результат
-                    if (totalCount == 0)
-                    {
-                        _logger.LogInformation("📭 Нет данных для отображения");
-                        return Json(new
-                        {
-                            draw = input.Draw,
-                            recordsTotal = 0,
-                            recordsFiltered = 0,
-                            data = new List<object>()
-                        });
-                    }
-                }
-                catch (Exception countEx)
-                {
-                    _logger.LogError(countEx, "❌ Ошибка при подсчете записей");
-                    totalCount = 0;
-                    queryList = new List<Patient>();
-                }
-
-                _logger.LogInformation("📄 Выполняем пагинацию...");
-                List<Patient> pagedData;
-                try
-                {
-                    // Используем уже полученный список для пагинации
-                    pagedData = queryList.Skip(input.Skip).Take(input.PageSize).ToList();
-                    _logger.LogInformation("✅ Пагинация завершена: {PagedCount} записей", pagedData.Count);
-                }
-                catch (Exception pagingEx)
-                {
-                    _logger.LogError(pagingEx, "❌ Ошибка при выполнении пагинации");
-                    pagedData = new List<Patient>();
-                }
-
-                _logger.LogInformation("📊 Результаты поиска: Всего записей: {TotalCount}, Показано: {PagedCount}", totalCount, pagedData.Count);
-
-                // Проверяем, есть ли данные
-                if (pagedData == null || !pagedData.Any())
-                {
-                    _logger.LogInformation("📭 Поиск не дал результатов, возвращаем пустой список");
-                    return Json(new
-                    {
-                        draw = input.Draw,
-                        recordsTotal = 0,
-                        recordsFiltered = 0,
-                        data = new List<object>()
-                    });
-                }
-
-                _logger.LogInformation("🔧 Создаем данные для ответа...");
-                List<object> data;
-                try
-                {
-                    data = pagedData.Select(p => new
-                    {
-                        id = p.Id,
-                        hospitalizationType = p.ActiveHistory?.HospitalizationType.ToString() ?? "",
-                        resolution = p.Capable?.CourtDecision ?? "",
-                        medicalHistoryNumber = p.ActiveHistory?.NumberDocument ?? "",
-                        dateOfReceipt = p.ActiveHistory?.DateOfReceipt.ToString("dd.MM.yyyy"),
-                        department = p.ActiveHistory?.NumberDepartment.ToString() ?? "",
-                        fullName = p.FullName,
-                        birthday = p.Birthday.ToString("dd.MM.yyyy"),
-                        isChildren = p.IsChildren,
-                        citizenship = p.CitizenshipInfo?.Citizenship.ToString() ?? "",
-                        country = p.CitizenshipInfo?.Country ?? "",
-                        registration = p.CitizenshipInfo?.Registration ?? "",
-                        notRegistered = p.CitizenshipInfo?.NotRegistered ?? false,
-                        earlyRegistration = p.CitizenshipInfo?.EarlyRegistration?.DisplayName ?? "",
-                        placeOfBirth = p.CitizenshipInfo?.PlaceOfBirth ?? "",
-                        IsCapable = p.IsCapable,
-                        ReceivesPension = p.ReceivesPension,
-                        DisabilityGroup = p.Pension?.DisabilityGroup?.ToString() ?? "",
-                        Note = p.Note ?? ""
-                    }).Cast<object>().ToList();
-
-                    _logger.LogInformation("✅ Данные успешно созданы: {DataCount} записей", data.Count);
-                }
-                catch (Exception dataEx)
-                {
-                    _logger.LogError(dataEx, "❌ Ошибка при создании данных");
-                    data = new List<object>();
-                }
-
-                var result = new
+                _logger.LogInformation("✅ Возвращаем данные: {TotalCount} записей", result.TotalRecords);
+                return Json(new
                 {
                     draw = input.Draw,
-                    recordsTotal = totalCount,
-                    recordsFiltered = totalCount,
-                    data = data
-                };
-                
-                _logger.LogInformation("✅ Возвращаем данные: {TotalCount} записей", totalCount);
-                return Json(result);
+                    recordsTotal = result.TotalRecords,
+                    recordsFiltered = result.FilteredRecords,
+                    data = dataResult
+                });
             }
             catch (Exception ex)
             {
@@ -463,7 +307,7 @@ namespace CRM.SocialDepartment.Site.Controllers
                 // Возвращаем пустой результат вместо ошибки
                 return Json(new
                 {
-                    draw = input?.Draw ?? "1",
+                    draw = "1",
                     recordsTotal = 0,
                     recordsFiltered = 0,
                     data = new List<object>(),
@@ -631,7 +475,17 @@ namespace CRM.SocialDepartment.Site.Controllers
 
             try
             {
+                _logger.LogInformation("📄 [PatientController] Documents count: {Count}", input.Documents?.Count ?? 0);
+                if (input.Documents != null)
+                {
+                    foreach (var doc in input.Documents)
+                    {
+                        _logger.LogInformation("📄 [PatientController] Документ: {Type} = {Number}", doc.Key.DisplayName, doc.Value.Number);
+                    }
+                }
+                
                 var dto = _mapper.Map<CreatePatientDTO>(input);
+                _logger.LogInformation("📄 [PatientController] DTO Documents count: {Count}", dto.Documents?.Count ?? 0);
                 
                 _logger.LogInformation("💾 [PatientController] Сохранение пациента в базу данных");
                 var result = await _patientAppService.AddPatientAsync(dto, cancellationToken);
@@ -706,19 +560,126 @@ namespace CRM.SocialDepartment.Site.Controllers
         }
 
         //5. Редактировать пользователя
-        [HttpPost]
+        [HttpPut]
         [Route("api/patients/{id:guid}")]
         [ValidateAntiForgeryToken]
         [LogUpdate("Patient", "Редактирование пациента", "Пользователь отредактировал данные пациента")]
         public async Task<JsonResult> EditPatientAsync([FromRoute] Guid id, EditPatientViewModel input, CancellationToken cancellationToken)
         {
+            // Исключаем поля с [BindNever] из валидации
+            var fieldsToExclude = new[]
+            {
+                nameof(EditPatientViewModel.NoRegistrationIsEnable),
+                nameof(EditPatientViewModel.CountryIsEnable),
+                nameof(EditPatientViewModel.RegistrationIsEnable),
+                nameof(EditPatientViewModel.EarlyRegistrationIsEnable),
+                nameof(EditPatientViewModel.LbgIsEnable),
+                nameof(EditPatientViewModel.DocumentIsEnable),
+                nameof(EditPatientViewModel.CapableIsEnable),
+                nameof(EditPatientViewModel.PensionFieldsetIsEnable),
+                nameof(EditPatientViewModel.PensionStartDateTimeIsEnable)
+            };
+
+            foreach (var field in fieldsToExclude)
+            {
+                ModelState.Remove(field);
+            }
+
+            // Условная валидация для Capable - только если IsCapable = false
+            if (input.IsCapable && input.Capable != null)
+            {
+                ModelState.Remove("Capable.CourtDecision");
+                ModelState.Remove("Capable.TrialDate");
+                ModelState.Remove("Capable.Guardian");
+                ModelState.Remove("Capable.GuardianOrderAppointment");
+            }
+
+            // Условная валидация для Pension - только если ReceivesPension = true
+            if (!input.ReceivesPension && input.Pension != null)
+            {
+                ModelState.Remove("Pension.DisabilityGroup");
+                ModelState.Remove("Pension.PensionStartDateTime");
+                ModelState.Remove("Pension.PensionAddress");
+                ModelState.Remove("Pension.SfrBranch");
+                ModelState.Remove("Pension.SfrDepartment");
+                ModelState.Remove("Pension.Rsd");
+            }
+
+            // Удаляем ошибки валидации для пустых документов
+            foreach (var document in input.Documents)
+            {
+                if (string.IsNullOrWhiteSpace(document.Value.Number))
+                {
+                    ModelState.Remove($"Documents[{document.Key}].Number");
+                    ModelState.Remove($"Documents[{document.Key}]");
+                }
+            }
+            
+            // Удаляем общие ошибки валидации для Documents если все документы пустые
+            if (input.Documents.All(d => string.IsNullOrWhiteSpace(d.Value.Number)))
+            {
+                ModelState.Remove("Documents");
+            }
+
+            // Удаляем ошибки валидации для DocumentAttached если он пустой
+            if (string.IsNullOrWhiteSpace(input.CitizenshipInfo.DocumentAttached))
+            {
+                ModelState.Remove("CitizenshipInfo.DocumentAttached");
+            }
+
+            // Удаляем ошибки валидации для даты поступления если она не задана
+            if (input.MedicalHistory.DateOfReceipt == DateTime.MinValue || input.MedicalHistory.DateOfReceipt == default(DateTime))
+            {
+                ModelState.Remove("MedicalHistory.DateOfReceipt");
+            }
+
+            // Логируем данные для диагностики
+            _logger.LogInformation("🔍 [PatientController] Данные для редактирования:");
+            _logger.LogInformation("📅 [PatientController] DateOfReceipt: {DateOfReceipt}", input.MedicalHistory.DateOfReceipt);
+            _logger.LogInformation("📄 [PatientController] Documents count: {Count}", input.Documents?.Count ?? 0);
+            if (input.Documents != null)
+            {
+                foreach (var doc in input.Documents)
+                {
+                    _logger.LogInformation("📄 [PatientController] Документ {Type}: '{Number}'", doc.Key.DisplayName, doc.Value.Number);
+                }
+            }
+
+            // Логируем все ошибки валидации для диагностики
+            _logger.LogInformation("🔍 [PatientController] Проверяем ModelState после очистки...");
+            foreach (var modelState in ModelState)
+            {
+                if (modelState.Value.Errors.Any())
+                {
+                    _logger.LogWarning("⚠️ [PatientController] Поле '{FieldName}' имеет ошибки: {Errors}", 
+                        modelState.Key, 
+                        string.Join(", ", modelState.Value.Errors.Select(e => e.ErrorMessage ?? "Пустое сообщение")));
+                }
+            }
+
             if (!ModelState.IsValid)
             {
+                // Собираем подробные ошибки валидации
+                var detailedErrors = new List<string>();
+                foreach (var modelState in ModelState)
+                {
+                    var fieldName = modelState.Key;
+                    var errors = modelState.Value.Errors;
+                    
+                    foreach (var error in errors)
+                    {
+                        var errorMessage = string.IsNullOrEmpty(error.ErrorMessage) 
+                            ? $"Поле '{fieldName}' имеет недопустимое значение" 
+                            : error.ErrorMessage;
+                        detailedErrors.Add($"{fieldName}: {errorMessage}");
+                        _logger.LogWarning("❌ [PatientController] Ошибка валидации: {FieldName} - {ErrorMessage}", fieldName, errorMessage);
+                    }
+                }
+
+                _logger.LogWarning("❌ [PatientController] Возвращаем ошибки валидации: {Errors}", string.Join(", ", detailedErrors));
                 return new JsonResult(ApiResponse<object>.Error("Неверные данные", new
                 {
-                    Errors = ModelState.Values
-                        .SelectMany(v => v.Errors)
-                        .Select(e => e.ErrorMessage)
+                    Errors = detailedErrors
                 }))
                 {
                     StatusCode = StatusCodes.Status400BadRequest

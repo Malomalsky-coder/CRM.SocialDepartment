@@ -134,7 +134,7 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
             // Получаем всех пациентов и проверяем документы в памяти
             var patients = await GetAllAsync(p => !p.SoftDeleted, cancellationToken);
             
-            return patients.Any(p => p.Documents.Values.Any(doc => 
+            return patients.Any(p => p.Documents != null && p.Documents.Values.Any(doc => 
             {
                 if (doc is PassportDocument passport) return passport.Number == documentNumber;
                 if (doc is MedicalPolicyDocument policy) return policy.Number == documentNumber;
@@ -186,6 +186,19 @@ namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories
                         .Skip(parameters.Skip)
                         .Limit(parameters.PageSize)
                         .ToListAsync(cancellationToken);
+
+                // Логируем данные для отладки
+                Console.WriteLine($"🔍 [MongoPatientRepository] Загружено {patients.Count} пациентов из MongoDB");
+                foreach (var patient in patients)
+                {
+                    Console.WriteLine($"👤 [MongoPatientRepository] Пациент: {patient.FullName}");
+                    Console.WriteLine($"📚 [MongoPatientRepository] MedicalHistories count: {patient.MedicalHistories.Count}");
+                    Console.WriteLine($"🏛️ [MongoPatientRepository] CitizenshipInfo: {patient.CitizenshipInfo != null}");
+                    if (patient.CitizenshipInfo != null)
+                    {
+                        Console.WriteLine($"🏛️ [MongoPatientRepository] Citizenship: {patient.CitizenshipInfo.Citizenship?.DisplayName ?? "null"}");
+                    }
+                }
 
                 // Применить сортировку если указана
                 if (!string.IsNullOrEmpty(parameters.SortColumn) && !string.IsNullOrEmpty(parameters.SortDirection))

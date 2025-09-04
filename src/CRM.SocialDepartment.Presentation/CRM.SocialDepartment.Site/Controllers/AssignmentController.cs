@@ -177,6 +177,10 @@ public class AssignmentController(
     [ValidateAntiForgeryToken]
     public async Task<JsonResult> CreateAsync(CreateAssignmentViewModel input, CancellationToken cancellationToken)
     {
+        // Логируем начало создания задачи
+        var requestId = Request.Headers["X-Request-ID"].FirstOrDefault() ?? "unknown";
+        logger.LogInformation("🚀 [AssignmentController] Начинаем создание задачи (Request ID: {RequestId})", requestId);
+        
         var modelStateErrorsToRemove = ModelState.Select(modelError => modelError.Key).Where(fieldName =>
                 fieldName.StartsWith("Name.") || fieldName.StartsWith("Description.") ||
                 fieldName.StartsWith("Assignee.") || fieldName.StartsWith("DepartmentNumber.") ||
@@ -244,7 +248,33 @@ public class AssignmentController(
         {
             var dto = mapper.Map<CreateOrEditAssignmentDto>(input);
 
-            logger.LogInformation("💾 [AssignmentController] Сохранение задачи в базу данных");
+            // Проверяем на дублирование: ищем похожие задания для того же пациента
+            var existingAssignments = await assignmentService.GetAllAssignmentsAsync(
+                a => a.PatientId == dto.PatientId && 
+                     a.Name == dto.Name && 
+                     a.Description == dto.Description,
+                cancellationToken);
+
+            // Фильтруем по времени в памяти (избегаем сложных вычислений в LINQ)
+            var recentDuplicates = existingAssignments
+                .Where(a => Math.Abs((a.CreationDate - DateTime.Now).TotalMinutes) < 5)
+                .ToList();
+
+            if (recentDuplicates.Any())
+            {
+                logger.LogWarning("⚠️ [AssignmentController] Попытка создать дублирующую задачу для пациента {PatientId}", dto.PatientId);
+                return new JsonResult(ApiResponse<object>.Error("Похожая задача уже была создана недавно", new
+                {
+                    Duplicate = true,
+                    ExistingId = recentDuplicates.First().Id
+                }))
+                {
+                    StatusCode = StatusCodes.Status409Conflict
+                };
+            }
+
+            logger.LogInformation("💾 [AssignmentController] Сохранение задачи в базу данных. Название: {Name}, Пациент: {PatientId}", 
+                dto.Name, dto.PatientId);
             var result = await assignmentService.CreateAssignmentAsync(dto, cancellationToken);
 
             logger.LogInformation("✅ [AssignmentController] Задача успешно создана с ID: {AssignmentId}", result);

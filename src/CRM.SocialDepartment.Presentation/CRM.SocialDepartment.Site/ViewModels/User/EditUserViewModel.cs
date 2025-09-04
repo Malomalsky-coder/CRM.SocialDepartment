@@ -7,8 +7,8 @@ namespace CRM.SocialDepartment.Site.ViewModels.User
 {
     public class EditUserViewModel : ValidationBase, IValidatableObject
     {
-        [Required(ErrorMessage = "Код пользователя обязателен для заполнения")]
-        [Display(Name = "Код пользователя")]
+        [Required(ErrorMessage = "Логин пользователя обязателен для заполнения")]
+        [Display(Name = "Логин пользователя")]
         public string UserName { get; set; }
 
         [Required(ErrorMessage = "Имя обязательно для заполнения")]

@@ -17,7 +17,7 @@ namespace CRM.SocialDepartment.Site.Models.Patient
         /// Гражданство
         /// </summary>
         [DisplayName("Гражданство")]
-        public CitizenshipType? Citizenship { get; init; }
+        public CitizenshipType? Citizenship { get; init; } = CitizenshipType.RussianFederation;
 
         /// <summary>
         /// Страна
@@ -53,6 +53,6 @@ namespace CRM.SocialDepartment.Site.Models.Patient
         /// Имеющиеся документы
         /// </summary>
         [DisplayName("Имеющиеся документы")]
-        public string DocumentAttached { get; init; }
+        public string DocumentAttached { get; init; } = string.Empty;
     }
 }

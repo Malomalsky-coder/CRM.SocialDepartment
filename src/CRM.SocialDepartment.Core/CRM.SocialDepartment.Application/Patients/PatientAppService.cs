@@ -31,22 +31,41 @@ namespace CRM.SocialDepartment.Application.Patients
             if (patient == null)
                 return null;
 
+            Console.WriteLine($"🔍 [PatientAppService] Получен пациент: {patient.FullName}");
+            Console.WriteLine($"📄 [PatientAppService] Documents: {patient.Documents?.Count ?? 0} документов");
+            if (patient.Documents != null)
+            {
+                foreach (var doc in patient.Documents)
+                {
+                    Console.WriteLine($"📄 [PatientAppService] Документ: {doc.Key.DisplayName} = {doc.Value?.GetType().Name}");
+                }
+            }
+
+            Console.WriteLine($"🔍 [PatientAppService] Извлекаем документы...");
+            var passportDoc = patient.Documents?.TryGetValue(DocumentType.FromValue(0), out var passport) == true ? passport : null;
+            var snilsDoc = patient.Documents?.TryGetValue(DocumentType.FromValue(2), out var snils) == true ? snils : null;
+            var medicalPolicyDoc = patient.Documents?.TryGetValue(DocumentType.FromValue(1), out var medicalPolicy) == true ? medicalPolicy : null;
+            
+            Console.WriteLine($"📄 [PatientAppService] Passport: {passportDoc?.GetType().Name ?? "null"}");
+            Console.WriteLine($"📄 [PatientAppService] Snils: {snilsDoc?.GetType().Name ?? "null"}");
+            Console.WriteLine($"📄 [PatientAppService] MedicalPolicy: {medicalPolicyDoc?.GetType().Name ?? "null"}");
+
             var viewModel = new PatientCardViewModel
             {
                 PatientId = patient.Id,
                 FullName = patient.FullName,
                 Birthday = patient.Birthday,
-                Citizenship = patient.CitizenshipInfo.Citizenship.ToString(),
+                Citizenship = patient.CitizenshipInfo.Citizenship?.ToString() ?? "—",
                 Country = patient.CitizenshipInfo.Country ?? string.Empty,
-                NumberDepartment = patient.ActiveHistory?.NumberDepartment.ToString() ?? string.Empty,
+                NumberDepartment = patient.ActiveHistory?.NumberDepartment?.ToString() ?? string.Empty,
                 Note = patient.Note,
                 NoRegistration = patient.CitizenshipInfo.NotRegistered,
                 EarlyRegistration = patient.CitizenshipInfo.EarlyRegistration?.Value ?? 0,
                 Registration = patient.CitizenshipInfo.Registration,
                 DocumentAttached = patient.CitizenshipInfo.DocumentAttached,
-                Passport = patient.Documents.TryGetValue(DocumentType.FromValue(0), out var passport) ? GetDocumentNumber(passport as PassportDocument) : null,
-                Snils = patient.Documents.TryGetValue(DocumentType.FromValue(2), out var snils) ? GetDocumentNumber(snils as SnilsDocument) : null,
-                MedicalPolicy = patient.Documents.TryGetValue(DocumentType.FromValue(1), out var medicalPolicy) ? GetDocumentNumber(medicalPolicy as MedicalPolicyDocument) : null,
+                Passport = GetDocumentNumber(passportDoc),
+                Snils = GetDocumentNumber(snilsDoc),
+                MedicalPolicy = GetDocumentNumber(medicalPolicyDoc),
                 IsCapable = patient.IsCapable,
                 CourtDecision = patient.Capable?.CourtDecision,
                 TrialDate = patient.Capable?.TrialDate,
@@ -158,12 +177,21 @@ namespace CRM.SocialDepartment.Application.Patients
             Console.WriteLine($"🏛️ [PatientAppService] CitizenshipInfo: {patient.CitizenshipInfo.Citizenship}");
             Console.WriteLine($"🧠 [PatientAppService] Capable: {patient.Capable != null}");
             Console.WriteLine($"💰 [PatientAppService] Pension: {patient.Pension != null}");
+            Console.WriteLine($"📄 [PatientAppService] Documents count: {input.Documents?.Count ?? 0}");
 
-            foreach (var documentDto in input.Documents)
+            if (input.Documents != null && input.Documents.Any())
             {
-                var document = DocumentFactory.Create(documentDto.Key, documentDto.Value.Number);
-                patient.AddDocument(document);
-                Console.WriteLine($"📄 [PatientAppService] Добавлен документ: {documentDto.Key} = {documentDto.Value.Number}");
+                foreach (var documentDto in input.Documents)
+                {
+                    Console.WriteLine($"📄 [PatientAppService] Обрабатываем документ: {documentDto.Key.DisplayName} = {documentDto.Value.Number}");
+                    var document = DocumentFactory.Create(documentDto.Key, documentDto.Value.Number);
+                    patient.AddDocument(document);
+                    Console.WriteLine($"📄 [PatientAppService] Добавлен документ: {documentDto.Key} = {documentDto.Value.Number}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"⚠️ [PatientAppService] Документы не найдены или пусты");
             }
 
             await _unitOfWork.Patients.InsertAsync(patient, cancellationToken);
@@ -256,28 +284,50 @@ namespace CRM.SocialDepartment.Application.Patients
         {
             var patients = await _unitOfWork.Patients.GetActivePatientsForDataTableAsync(parameters, cancellationToken);
             
-            var dtos = patients.Data.Select(patient => new ActivePatientDTO
+            Console.WriteLine($"🔍 [PatientAppService] Получено {patients.Data.Count()} пациентов из репозитория");
+            
+            var dtos = new List<ActivePatientDTO>();
+            foreach (var patient in patients.Data)
             {
-                Id = patient.Id,
-                HospitalizationType = patient.ActiveHistory?.HospitalizationType.ToString() ?? string.Empty,
-                CourtDecision = patient.Capable?.CourtDecision,
-                NumberDocument = patient.ActiveHistory?.NumberDocument ?? string.Empty,
-                DateOfReceipt = patient.ActiveHistory?.DateOfReceipt ?? DateTime.MinValue,
-                Department = patient.ActiveHistory?.NumberDepartment.ToString() ?? string.Empty,
-                FullName = patient.FullName,
-                Birthday = patient.Birthday,
-                IsChildren = patient.IsChildren,
-                Citizenship = patient.CitizenshipInfo.Citizenship.ToString(),
-                Country = patient.CitizenshipInfo.Country,
-                Registration = patient.CitizenshipInfo.Registration,
-                IsHomeless = patient.CitizenshipInfo.NotRegistered,
-                EarlyRegistration = patient.CitizenshipInfo.EarlyRegistration?.DisplayName,
-                PlaceOfBirth = patient.CitizenshipInfo.PlaceOfBirth,
-                IsCapable = patient.IsCapable,
-                ReceivesPension = patient.ReceivesPension,
-                DisabilityGroup = patient.Pension?.DisabilityGroup != null && patient.Pension.DisabilityGroup.Value > 0 ? patient.Pension.DisabilityGroup.Value.ToString() : null,
-                Note = patient.Note
-            }).ToList();
+                Console.WriteLine($"👤 [PatientAppService] Пациент: {patient.FullName}");
+                Console.WriteLine($"📚 [PatientAppService] MedicalHistories count: {patient.MedicalHistories.Count}");
+                
+                // Проверяем все истории болезни
+                for (int i = 0; i < patient.MedicalHistories.Count; i++)
+                {
+                    var history = patient.MedicalHistories[i];
+                    Console.WriteLine($"📋 [PatientAppService] History {i}: DateOfDischarge={history.DateOfDischarge?.ToString("dd.MM.yyyy") ?? "null"}, IsActive={history.IsActive}");
+                    Console.WriteLine($"📋 [PatientAppService] History {i}: HospitalizationType={history.HospitalizationType?.DisplayName ?? "null"}");
+                    Console.WriteLine($"📋 [PatientAppService] History {i}: NumberDocument={history.NumberDocument ?? "null"}");
+                    Console.WriteLine($"📋 [PatientAppService] History {i}: NumberDepartment={history.NumberDepartment?.ToString() ?? "null"}");
+                    Console.WriteLine($"📋 [PatientAppService] History {i}: DateOfReceipt={history.DateOfReceipt:dd.MM.yyyy}");
+                }
+                
+                Console.WriteLine($"🏥 [PatientAppService] ActiveHistory: {patient.ActiveHistory != null}");
+                if (patient.ActiveHistory != null)
+                {
+                    Console.WriteLine($"📋 [PatientAppService] ActiveHistory HospitalizationType: {patient.ActiveHistory.HospitalizationType?.DisplayName ?? "null"}");
+                    Console.WriteLine($"📋 [PatientAppService] ActiveHistory NumberDocument: {patient.ActiveHistory.NumberDocument ?? "null"}");
+                    Console.WriteLine($"📋 [PatientAppService] ActiveHistory NumberDepartment: {patient.ActiveHistory.NumberDepartment?.ToString() ?? "null"}");
+                    Console.WriteLine($"📋 [PatientAppService] ActiveHistory DateOfReceipt: {patient.ActiveHistory.DateOfReceipt:dd.MM.yyyy}");
+                }
+                Console.WriteLine($"🏛️ [PatientAppService] CitizenshipInfo: {patient.CitizenshipInfo != null}");
+                if (patient.CitizenshipInfo != null)
+                {
+                    Console.WriteLine($"🏛️ [PatientAppService] Citizenship: {patient.CitizenshipInfo.Citizenship?.DisplayName ?? "null"}");
+                    Console.WriteLine($"🏛️ [PatientAppService] Country: {patient.CitizenshipInfo.Country ?? "null"}");
+                    Console.WriteLine($"🏛️ [PatientAppService] Registration: {patient.CitizenshipInfo.Registration ?? "null"}");
+                }
+                
+                var dto = _mapper.Map<ActivePatientDTO>(patient);
+                Console.WriteLine($"📊 [PatientAppService] DTO HospitalizationType: {dto.HospitalizationType}");
+                Console.WriteLine($"📊 [PatientAppService] DTO Citizenship: {dto.Citizenship}");
+                Console.WriteLine($"📊 [PatientAppService] DTO Department: {dto.Department}");
+                Console.WriteLine($"📊 [PatientAppService] DTO NumberDocument: {dto.NumberDocument}");
+                Console.WriteLine($"📊 [PatientAppService] DTO DateOfReceipt: {dto.DateOfReceipt}");
+                
+                dtos.Add(dto);
+            }
 
             return new DataTableResult<ActivePatientDTO>
             {
@@ -295,17 +345,24 @@ namespace CRM.SocialDepartment.Application.Patients
             return await _unitOfWork.Patients.GetArchivedPatientsForDataTableAsync(parameters, cancellationToken);
         }
 
-        private static string GetDocumentNumber(DocumentType? document)
+        private static string GetDocumentNumber(object? document)
         {
-            if (document == null) return string.Empty;
+            if (document == null) 
+            {
+                Console.WriteLine($"⚠️ [GetDocumentNumber] Документ null");
+                return string.Empty;
+            }
             
-            return document switch
+            var result = document switch
             {
                 PassportDocument passport => passport.Number ?? string.Empty,
                 MedicalPolicyDocument policy => policy.Number ?? string.Empty,
                 SnilsDocument snils => snils.Number ?? string.Empty,
                 _ => string.Empty
             };
+            
+            Console.WriteLine($"📄 [GetDocumentNumber] {document.GetType().Name}: '{result}'");
+            return result;
         }
     }
 }
