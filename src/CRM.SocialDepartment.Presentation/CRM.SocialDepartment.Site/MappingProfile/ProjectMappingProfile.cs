@@ -179,6 +179,7 @@ namespace CRM.SocialDepartment.Site.MappingProfile
             CreateMap<IUser, UserDTO>();
             CreateMap<ApplicationUser, UserDTO>();
             CreateMap<CreateAssignmentViewModel, CreateOrEditAssignmentDto>();
+            CreateMap<EditAssignmentViewModel, CreateOrEditAssignmentDto>();
             
             // Маппинг для пользователей
             CreateMap<ApplicationUser, EditUserViewModel>()

@@ -3,7 +3,6 @@
     Версия: 1.0.0
 */
 
-// Проверка наличия необходимых библиотек
 console.log('Проверяем наличие библиотек:');
 console.log('jQuery:', typeof $ !== 'undefined' ? 'Загружен' : 'Не загружен');
 console.log('DataTables:', typeof $.fn.DataTable !== 'undefined' ? 'Загружен' : 'Не загружен');
@@ -11,7 +10,6 @@ if (typeof $.fn.DataTable !== 'undefined') {
     console.log('DataTables версия:', $.fn.dataTable.version);
 }
 
-// Универсальная функция для безопасного отображения сообщений
 function showMessage(type, title, message) {
     if (window.malomalsky?.message?.[type] && typeof window.malomalsky.message[type] === 'function') {
         try {
@@ -42,7 +40,6 @@ function showMessage(type, title, message) {
     }
 }
 
-// Конфигурация API и маппинг колонок DataTables
 const ASSIGNMENT_API = {
     listActive: '/api/assignments/active',   // POST
     createOrUpdate: '/api/assignments',      // POST (Create/Update)
@@ -51,23 +48,7 @@ const ASSIGNMENT_API = {
     modalEdit: (id) => `/Assignment/modal/edit?id=${id}` // GET (PartialView)
 };
 
-// Приведение полей ответа сервера к столбцам, которые видите в Razor-разметке
-// Заголовки (по порядку):
-//  0: ID
-//  1: Дата приема заявки от отделения
-//  2: Номер отделения
-//  3: Описание
-//  4: Дата направления
-//  5: Куда направили документы
-//  6: Что сделано
-//  7: Дата передачи в отделение
-//  8: Исполнитель
-//  9: Примечание
-// 10: Дата создания задачи
-// 11: Пациент
-//
-// Ниже укажите имена полей из JSON, который возвращает сервер.
-// Пример сопоставления на базе ранее предложенного контроллера (+ вероятные поля домена):
+
 const COLUMNS_MAP = {
     id: 'id',
     acceptDate: 'acceptDate',                     // Дата приема заявки от отделения
@@ -107,7 +88,6 @@ function updateRecordsCount(count) {
     $('#records-badge').text(count || 0);
 }
 
-// Управление автообновлением данных
 let assignmentAutoRefreshInterval;
 let assignmentSubmitInProgress = false;
 function startAssignmentAutoRefresh() {
@@ -127,11 +107,9 @@ function stopAssignmentAutoRefresh() {
     }
 }
 
-// Гарантированная инициализация таблицы задач (однократно, с поддержкой динамических вкладок)
 function ensureAssignmentTableInitialized(forceReload = false) {
     const tableExistsInDom = $('#table').length > 0;
 
-    // Уже инициализировано — при необходимости мягко перезагрузим
     if (window.assignmentDataTable && $.fn.DataTable.isDataTable('#table')) {
         if (forceReload) {
             window.assignmentDataTable.ajax.reload(null, false);
@@ -139,7 +117,6 @@ function ensureAssignmentTableInitialized(forceReload = false) {
         return;
     }
 
-    // Если таблицы ещё нет в DOM — инициализируем при показе соответствующей вкладки
     if (!tableExistsInDom) {
         $(document)
             .off('shown.bs.tab.assignment', 'a[data-bs-toggle="tab"]')
@@ -152,12 +129,10 @@ function ensureAssignmentTableInitialized(forceReload = false) {
         return;
     }
 
-    // Инициализация прямо сейчас
     const dt = initializeAssignmentDataTable();
     if (dt) startAssignmentAutoRefresh();
 }
 
-// Гарантированная инициализация таблицы задач (один раз)
 function ensureAssignmentTableInitialized(forceReload = false) {
     const tableExistsInDom = $('#table').length > 0;
 
@@ -169,9 +144,7 @@ function ensureAssignmentTableInitialized(forceReload = false) {
         return;
     }
 
-    // Если таблицы ещё нет в DOM — подождём события показа таба
     if (!tableExistsInDom) {
-        // Подцепимся к событию Bootstrap табов — при первом показе попробуем инициализировать
         $(document).off('shown.assignment.tab', 'a[data-bs-toggle="tab"]').on('shown.assignment.tab', 'a[data-bs-toggle="tab"]', function () {
             if ($('#table').length > 0 && !$.fn.DataTable.isDataTable('#table')) {
                 const dt = initializeAssignmentDataTable();
@@ -181,12 +154,10 @@ function ensureAssignmentTableInitialized(forceReload = false) {
         return;
     }
 
-    // Инициализация прямо сейчас
     const dt = initializeAssignmentDataTable();
     if (dt) startAssignmentAutoRefresh();
 }
 
-// Загрузка сохраненных настроек
 function loadAssignmentSettings() {
     const savedSettings = localStorage.getItem('assignmentTableSettings');
     if (savedSettings) {
@@ -202,7 +173,6 @@ function loadAssignmentSettings() {
     }
 }
 
-// Открытие модалок создания/редактирования
 function openCreateAssignment(patientId) {
     const url = patientId ? (ASSIGNMENT_API.modalCreate + '?patientId=' + encodeURIComponent(patientId))
         : ASSIGNMENT_API.modalCreate;
@@ -256,7 +226,17 @@ function deleteAssignment(assignmentId) {
                     window.assignmentDataTable.ajax.reload();
                 }
             }).fail(function (xhr) {
-                showMessage('error', 'Ошибка', 'Ошибка при удалении задачи.');
+                let msg = 'Ошибка при удалении задачи.';
+                try {
+                    // Пытаемся извлечь сообщение из JSON-ответа API
+                    const json = xhr.responseJSON || JSON.parse(xhr.responseText);
+                    msg = json?.message || json?.Message || json?.error || msg;
+                    // Если ответ в формате ApiResponse<T>
+                    if (json && json.Success === false && json.Message) {
+                        msg = json.Message;
+                    }
+                } catch (_) { /* ignore parse errors */ }
+                showMessage('error', 'Ошибка', msg);
             });
         }
     });
@@ -477,8 +457,84 @@ function injectAssignmentDropdownFixStyles() {
 table.dataTable td .dropdown-menu {
     z-index: 1061; /* выше, чем стандартный 1000 */
 }
+
+/* Класс для меню, портированного в body */
+.assignment-portalized-menu {
+    display: block !important;
+}
     `;
     document.head.appendChild(style);
+}
+
+// Перенос dropdown-меню в body при открытии и возврат при закрытии
+function setupAssignmentDropdownPortal() {
+    // Делегированные обработчики на кнопки дропдауна внутри #table
+    $(document)
+        .off('show.bs.dropdown.assignmentPortal', '#table .dropdown-toggle')
+        .on('show.bs.dropdown.assignmentPortal', '#table .dropdown-toggle', function () {
+            const $toggle = $(this);
+            const $menu = $toggle.siblings('.dropdown-menu');
+            if (!$menu.length) return;
+
+            // Сохраняем исходного родителя и ссылку на меню
+            const $originalParent = $menu.parent();
+            $menu.data('assignment-original-parent', $originalParent);
+            $toggle.data('assignment-portal-menu', $menu);
+
+            // Переносим меню в body
+            $('body').append($menu.detach());
+            $menu.addClass('assignment-portalized-menu');
+
+            // Позиционируем меню фиксированно по кнопке
+            function reposition() {
+                const rect = $toggle[0].getBoundingClientRect();
+                const menuWidth = $menu.outerWidth();
+                const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+
+                let left = rect.left;
+                if (left + menuWidth > viewportWidth - 8) {
+                    left = Math.max(8, viewportWidth - menuWidth - 8);
+                }
+                const top = rect.bottom; // открываем вниз
+
+                $menu.css({
+                    position: 'fixed',
+                    top: Math.round(top) + 'px',
+                    left: Math.round(left) + 'px',
+                    transform: 'none',
+                    zIndex: 1080
+                });
+            }
+
+            $menu.data('assignment-reposition', reposition);
+            reposition();
+
+            // Обновляем позицию при скролле и ресайзе
+            $(window).on('scroll.assignmentPortal resize.assignmentPortal', reposition);
+        })
+        .off('hidden.bs.dropdown.assignmentPortal', '#table .dropdown-toggle')
+        .on('hidden.bs.dropdown.assignmentPortal', '#table .dropdown-toggle', function () {
+            const $toggle = $(this);
+            const $menu = $toggle.data('assignment-portal-menu');
+            $(window).off('scroll.assignmentPortal resize.assignmentPortal');
+
+            if ($menu && $menu.length) {
+                const $originalParent = $menu.data('assignment-original-parent');
+                $menu.removeAttr('style')
+                     .removeClass('assignment-portalized-menu')
+                     .removeData('assignment-original-parent')
+                     .removeData('assignment-reposition');
+
+                if ($originalParent && $originalParent.length) {
+                    $originalParent.append($menu.detach());
+                } else {
+                    // Fallback — вернуть рядом с кнопкой
+                    $toggle.parent().append($menu.detach());
+                }
+
+                $toggle.removeData('assignment-portal-menu');
+            }
+        });
 }
 
 // Обработчики событий
@@ -496,6 +552,9 @@ $(document).ready(function () {
 
     // Инжектим CSS-фикс для dropdown внутри таблицы
     injectAssignmentDropdownFixStyles();
+
+    // Включаем портализацию dropdown-меню действий
+    setupAssignmentDropdownPortal();
 
     // Инициализация окружения
     loadAssignmentSettings();
@@ -593,6 +652,71 @@ $(document).ready(function () {
                 }
 
                 const errorMessage = 'Произошла ошибка при добавлении задачи';
+                showMessage('error', 'Ошибка', errorMessage);
+            }
+        });
+    });
+
+    // Отправка данных из модального окна: Редактировать задачу (PATCH)
+    $(document).off('submit.assignment', '#edit-assignment-form').on('submit.assignment', '#edit-assignment-form', function (e) {
+        e.preventDefault();
+
+        const $form = $(this);
+        const url = $form.attr('action'); // /api/assignments/{id}
+
+        if (window.AddAssignmentFormValidation) {
+            AddAssignmentFormValidation.clearValidationErrors();
+        }
+
+        const formData = new FormData($form[0]);
+        const data = new URLSearchParams();
+        for (const pair of formData.entries()) {
+            data.append(pair[0], pair[1]);
+        }
+
+        const headers = {
+            "CSRF-TOKEN": $form.find('input[name="__RequestVerificationToken"]').val()
+        };
+
+        $.ajax({
+            url: url,
+            type: 'PATCH',
+            data: data.toString(),
+            contentType: 'application/x-www-form-urlencoded',
+            headers: headers,
+            beforeSend: function () {
+                $("#form-modal").find(':submit').attr('disabled', true).html('<div class="spinner-border spinner-border-sm" role="status"></div>');
+            },
+            success: function () {
+                $('#form-modal').modal('hide');
+                showMessage('success', 'Успешно', 'Задача обновлена');
+
+                ensureAssignmentTableInitialized(true);
+                if (window.assignmentDataTable) {
+                    window.assignmentDataTable.ajax.reload(null, false);
+                }
+            },
+            error: function (xhr) {
+                $("#form-modal").find(':submit').html('Сохранить').attr('disabled', false);
+
+                if (xhr.status === 400) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+
+                        if (Array.isArray(response)) {
+                            AddAssignmentFormValidation.showValidationErrors(response);
+                            return;
+                        }
+                        if (response && response.Data && Array.isArray(response.Data.Errors)) {
+                            AddAssignmentFormValidation.showValidationErrors(response.Data.Errors);
+                            return;
+                        }
+                    } catch (parseError) {
+                        console.log('Не удалось распарсить ответ с ошибками:', parseError);
+                    }
+                }
+
+                const errorMessage = 'Произошла ошибка при обновлении задачи';
                 showMessage('error', 'Ошибка', errorMessage);
             }
         });

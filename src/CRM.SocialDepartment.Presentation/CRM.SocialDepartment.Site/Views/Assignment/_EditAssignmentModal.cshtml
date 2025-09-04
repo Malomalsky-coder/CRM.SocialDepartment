@@ -1,9 +1,179 @@
 @model CRM.SocialDepartment.Site.ViewModels.Assignment.EditAssignmentViewModel
 
-<div class="modal-header">
-    <h5 class="modal-title">Редактировать назначение</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
+<form id="edit-assignment-form" method="post" action="/api/assignments/@Model.Id">
+    @Html.AntiForgeryToken()
+    <div class="modal-body">
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="row g-3">
+            <div class="col">
+                <label asp-for="AcceptDate" class="form-label"></label>
+                <input asp-for="AcceptDate" type="date" class="form-control" value="@Model.AcceptDate.ToString("yyyy-MM-dd")" />
+                <span asp-validation-for="AcceptDate" class="text-danger"></span>
+            </div>
+            <div class="col">
+                <label asp-for="DepartmentNumber" class="form-label"></label>
+                <input asp-for="DepartmentNumber" type="number" class="form-control" />
+                <span asp-validation-for="DepartmentNumber" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="mb-3 mt-2">
+            <label asp-for="Description" class="form-label"></label>
+            <textarea asp-for="Description" class="form-control"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+
+        <div class="row g-3">
+            <div class="col">
+                <label asp-for="Assignee" class="form-label"></label>
+                <select id="assignee-select-edit" class="form-select" name="Assignee" required>
+                    <option value="">-- Выберите исполнителя --</option>
+                </select>
+                <span asp-validation-for="Assignee" class="text-danger"></span>
+                <div id="assignee-help-edit" class="form-text">Необходимо выбрать исполнителя из списка.</div>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+            <div class="col">
+                <label asp-for="ForwardDepartment" class="form-label"></label>
+                <input asp-for="ForwardDepartment" type="text" class="form-control" />
+                <span asp-validation-for="ForwardDepartment" class="text-danger"></span>
+            </div>
+            <div class="col">
+                <label asp-for="ForwardDate" class="form-label"></label>
+                <input asp-for="ForwardDate" type="date" class="form-control" />
+                <span asp-validation-for="ForwardDate" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+            <div class="col">
+                <label asp-for="DepartmentForwardDate" class="form-label"></label>
+                <input asp-for="DepartmentForwardDate" type="date" class="form-control" />
+                <span asp-validation-for="DepartmentForwardDate" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="mb-3 mt-2">
+            <label asp-for="PatientId" class="form-label"></label>
+            <select id="patient-select-edit" class="form-select">
+                <option value="">-- Выберите пациента --</option>
+            </select>
+            <span asp-validation-for="PatientId" class="text-danger"></span>
+        </div>
+
+        <input type="hidden" asp-for="PatientId" />
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-3 mt-2">
+            <label asp-for="Note" class="form-label"></label>
+            <textarea asp-for="Note" class="form-control"></textarea>
+            <span asp-validation-for="Note" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+    </div>
+</form>
+
+<script>
+(async function initPatientSelectEdit() {
+    const select = document.getElementById('patient-select-edit');
+    const hidden = document.querySelector('#edit-assignment-form input[name="PatientId"]');
+    const preselectedId = hidden.value && hidden.value !== '00000000-0000-0000-0000-000000000000' ? hidden.value : '';
+
+    async function loadPatients(preselectId) {
+        try {
+            const resp = await fetch('/api/patients', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!resp.ok) return;
+            const patients = await resp.json();
+            select.innerHTML = '<option value="">-- Выберите пациента --</option>';
+
+            const toText = (p) => {
+                const fullName = p.fullName ?? p.FullName ?? '';
+                const birthday = p.birthday ?? p.Birthday;
+                if (fullName && birthday) return `${fullName} (${birthday})`;
+                return fullName || (p.lastName && p.firstName ? `${p.lastName} ${p.firstName}` : `Пациент`);
+            };
+
+            patients.forEach(p => {
+                const id = p.id ?? p.Id;
+                if (!id) return;
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = toText(p);
+                select.appendChild(opt);
+            });
+
+            if (preselectId) {
+                const exists = Array.from(select.options).some(o => o.value === preselectId);
+                if (exists) {
+                    select.value = preselectId;
+                }
+            }
+        } catch (e) {
+            console.error('Не удалось загрузить список пациентов', e);
+        }
+    }
+
+    select.addEventListener('change', function () {
+        hidden.value = this.value || '';
+    });
+
+    await loadPatients(preselectedId);
+    if (select.value && !hidden.value) {
+        hidden.value = select.value;
+    }
+})();
+
+(async function initAssigneeSelectEdit() {
+    const form = document.getElementById('edit-assignment-form');
+    const select = document.getElementById('assignee-select-edit');
+    const help = document.getElementById('assignee-help-edit');
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    if (submitBtn) submitBtn.disabled = true;
+    try {
+        const resp = await fetch('/api/users', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!resp.ok) throw new Error('resp not ok');
+        const users = await resp.json();
+        select.innerHTML = '<option value="">-- Выберите исполнителя --</option>';
+
+        users.forEach(u => {
+            const userName = u.userName ?? u.UserName ?? '';
+            const fullName = u.fullName ?? u.FullName ?? userName;
+            if (!userName) return;
+            const opt = document.createElement('option');
+            opt.value = userName;
+            opt.textContent = fullName && fullName !== userName ? `${fullName} (${userName})` : userName;
+            select.appendChild(opt);
+        });
+
+        // Предвыбор текущего исполнителя
+        const current = '@Model.Assignee';
+        if (current) {
+            const exists = Array.from(select.options).some(o => o.value === current);
+            if (exists) select.value = current;
+        }
+
+        if (submitBtn) submitBtn.disabled = false;
+        if (help) help.textContent = 'Выберите исполнителя из списка.';
+    } catch (e) {
+        console.error('Не удалось загрузить список пользователей', e);
+        if (help) help.textContent = 'Не удалось загрузить список пользователей. Повторите попытку позже.';
+        if (submitBtn) submitBtn.disabled = true;
+        select.innerHTML = '<option value="">— список пользователей недоступен —</option>';
+        select.setAttribute('disabled', 'disabled');
+    }
+})();
+</script>
 <form id="edit-assignment-form" method="post" action="/api/assignments">
     @Html.AntiForgeryToken()
     <div class="modal-body">

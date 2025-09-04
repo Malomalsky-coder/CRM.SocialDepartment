@@ -18,6 +18,17 @@ public class CreateAssignmentViewModel : IValidatableObject
     [DisplayFormat(DataFormatString = "{0:dd.MM.yyyy}", ApplyFormatInEditMode = true)]
     public DateTime AcceptDate { get; set; }
 
+    [DisplayName("Дата направления")]
+    [DisplayFormat(DataFormatString = "{0:dd.MM.yyyy}", ApplyFormatInEditMode = true)]
+    public DateTime? ForwardDate { get; set; }
+
+    [DisplayName("Куда направили документы")]
+    public string? ForwardDepartment { get; set; } = string.Empty;
+
+    [DisplayName("Дата передачи в отделение")]
+    [DisplayFormat(DataFormatString = "{0:dd.MM.yyyy}", ApplyFormatInEditMode = true)]
+    public DateTime? DepartmentForwardDate { get; set; }
+
     [Required(ErrorMessage = "Описание обязательно для заполнения")]
     [DisplayName("Описание")]
     public string Description { get; set; } = string.Empty;

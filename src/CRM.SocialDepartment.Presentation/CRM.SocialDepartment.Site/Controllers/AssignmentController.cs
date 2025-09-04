@@ -1,10 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using AutoMapper;
 using CRM.SocialDepartment.Application.Assignments;
 using CRM.SocialDepartment.Application.DTOs;
 using CRM.SocialDepartment.Domain.Common;
 using CRM.SocialDepartment.Site.Models;
-using CRM.SocialDepartment.Site.Services;
+                    using CRM.SocialDepartment.Site.Services;
 using CRM.SocialDepartment.Site.ViewModels.Assignment;
 using Microsoft.AspNetCore.Mvc;
 
@@ -268,9 +269,10 @@ public class AssignmentController(
         };
     }
 
-    [HttpDelete]
+    [HttpPatch]
     [Route("api/assignments/{id:guid}")]
-    public async Task<JsonResult> DeleteAsync([FromRoute] Guid id, CancellationToken cancellationToken)
+    [ValidateAntiForgeryToken]
+    public async Task<JsonResult> UpdateAsync([FromRoute] Guid id, EditAssignmentViewModel input, CancellationToken cancellationToken)
     {
         if (id == Guid.Empty)
         {
@@ -278,8 +280,150 @@ public class AssignmentController(
             return new JsonResult(new { error = "Invalid id" });
         }
 
-        await assignmentService.DeleteAssignmentAsync(id, cancellationToken);
-        HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
-        return new JsonResult(new { });
+        // Ручная , аналогичная Create
+        var validationResults = new List<ValidationResult>();
+        var validationContext = new ValidationContext(input);
+        var manualValidationResults = input.Validate(validationContext);
+        validationResults.AddRange(manualValidationResults);
+
+        if (!ModelState.IsValid)
+        {
+            foreach (var modelError in ModelState)
+            {
+                foreach (var error in modelError.Value.Errors)
+                {
+                    var fieldName = modelError.Key;
+                    var errorMessage = error.ErrorMessage;
+
+                    if (!string.IsNullOrWhiteSpace(errorMessage))
+                        validationResults.Add(new ValidationResult(errorMessage, [fieldName]));
+                    else
+                        validationResults.Add(new ValidationResult(GetDetailedErrorMessage(fieldName), [fieldName]));
+                }
+            }
+        }
+
+        if (validationResults.Count != 0)
+        {
+            var errors = validationResults.Select(vr => vr.ErrorMessage).ToList();
+            logger.LogWarning("❌ [AssignmentController] Возвращаем ошибки валидации (update): {Errors}",
+                string.Join(", ", errors));
+
+            return new JsonResult(ApiResponse<object>.Error("Неверные данные", new
+            {
+                Errors = errors
+            }))
+            {
+                StatusCode = StatusCodes.Status400BadRequest
+            };
+        }
+
+        try
+        {
+            var current = await assignmentService.GetAssignmentByIdAsync(id, cancellationToken);
+            if (current == null)
+            {
+                HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+                return new JsonResult(new { error = "Not found" });
+            }
+
+            var dto = mapper.Map<CreateOrEditAssignmentDto>(input);
+
+            var statusLog = current.StatusLog != null
+                ? new Dictionary<string, string>(current.StatusLog)
+                : new Dictionary<string, string>();
+
+            statusLog[DateTime.UtcNow.ToString("s")] = "обновлено";
+
+            logger.LogInformation("💾 [AssignmentController] Обновление задачи {AssignmentId}", id);
+            await assignmentService.EditAssignmentAsync(id, dto, cancellationToken);
+
+            logger.LogInformation("✅ [AssignmentController] Задача успешно обновлена: {AssignmentId}", id);
+            return new JsonResult(ApiResponse<object>.Ok(null));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "🚨 [AssignmentController] Ошибка при обновлении задачи");
+            throw;
+        }
+    }
+
+    [HttpDelete]
+    [Route("api/assignments/{id:guid}")]
+    public async Task<JsonResult> DeleteAsync([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        if (id == Guid.Empty)
+        {
+            HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return new JsonResult(ApiResponse<object>.Error("Некорректный идентификатор", new { id }));
+        }
+
+        try
+        {
+            await assignmentService.DeleteAssignmentAsync(id, cancellationToken);
+            HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
+            return new JsonResult(new { });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            logger.LogWarning(ex, "Не удалось удалить: задание {AssignmentId} не найдено", id);
+            HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+            return new JsonResult(ApiResponse<object>.Error("Задание не найдено", new { id }));
+        }
+        catch (NullReferenceException ex)
+        {
+            // Перехватываем сбой домена (например, при SoftDelete/DomainEvent)
+            logger.LogError(ex, "Ошибка домена при удалении задания {AssignmentId}", id);
+
+            try
+            {
+                // Обходной путь: переносим запись в архив вместо удаления
+                var current = await assignmentService.GetAssignmentByIdAsync(id, cancellationToken);
+                if (current is null)
+                {
+                    HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return new JsonResult(ApiResponse<object>.Error("Задание не найдено", new { id }));
+                }
+
+                var fallbackDto = new CreateOrEditAssignmentDto
+                {
+                    Name = current.Name,
+                    Description = current.Description,
+                    AcceptDate = current.AcceptDate,
+                    ForwardDate = current.ForwardDate,
+                    ForwardDepartment = current.ForwardDepartment,
+                    DepartmentForwardDate = current.DepartmentForwardDate,
+                    DepartmentNumber = current.DepartmentNumber,
+                    Assignee = current.Assignee,
+                    PatientId = current.PatientId,
+                    Note = current.Note,
+                };
+
+                // Добавим запись в статус‑лог
+                var log = current.StatusLog != null
+                    ? new Dictionary<string, string>(current.StatusLog)
+                    : new Dictionary<string, string>();
+                log[DateTime.UtcNow.ToString("s")] = "архивировано";
+
+                await assignmentService.EditAssignmentAsync(id, fallbackDto, cancellationToken);
+
+                // Возвращаем успешный ответ — на клиенте строка уйдет из активного списка
+                HttpContext.Response.StatusCode = StatusCodes.Status200OK;
+                return new JsonResult(ApiResponse<object>.Ok(new { archived = true }));
+            }
+            catch (Exception archiveEx)
+            {
+                // Если даже архивирование не удалось — возвращаем конфликт
+                logger.LogError(archiveEx, "Не удалось архивировать задание {AssignmentId} после сбоя удаления", id);
+                HttpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+                return new JsonResult(ApiResponse<object>.Error("Удаление временно недоступно. Повторите попытку позже.", new { id }));
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Неожиданная ошибка при удалении задания {AssignmentId}", id);
+            HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            return new JsonResult(ApiResponse<object>.Error("Произошла внутренняя ошибка при удалении задания", new { id }));
+        }
     }
 }

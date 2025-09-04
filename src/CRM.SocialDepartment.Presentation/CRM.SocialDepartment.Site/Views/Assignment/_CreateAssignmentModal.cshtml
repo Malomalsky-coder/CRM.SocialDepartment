@@ -8,11 +8,25 @@
             <input asp-for="Name" class="form-control" />
             <span asp-validation-for="Name" class="text-danger"></span>
         </div>
-        <div class="mb-3">
+
+        <div class="row g-3">
+            <div class="col">
+                <label asp-for="AcceptDate" class="form-label"></label>
+                <input asp-for="AcceptDate" type="date" class="form-control" value="@Model.AcceptDate.ToString("yyyy-MM-dd")" />
+                <span asp-validation-for="AcceptDate" class="text-danger"></span>
+            </div>
+            <div class="col">
+                <label asp-for="DepartmentNumber" class="form-label"></label>
+                <input asp-for="DepartmentNumber" type="number" class="form-control" />
+            </div>
+        </div>
+
+        <div class="mb-3 mt-2">
             <label asp-for="Description" class="form-label"></label>
             <textarea asp-for="Description" class="form-control"></textarea>
             <span asp-validation-for="Description" class="text-danger"></span>
         </div>
+
         <div class="row g-3">
             <div class="col">
                 <label asp-for="Assignee" class="form-label"></label>
@@ -23,10 +37,25 @@
                 <div id="assignee-help" class="form-text">Необходимо выбрать исполнителя из списка.</div>
             </div>
         </div>
+
         <div class="row g-3 mt-1">
             <div class="col">
-                <label asp-for="DepartmentNumber" class="form-label"></label>
-                <input asp-for="DepartmentNumber" type="number" class="form-control" />
+                <label asp-for="ForwardDepartment" class="form-label"></label>
+                <input asp-for="ForwardDepartment" type="text" class="form-control" />
+                <span asp-validation-for="ForwardDepartment" class="text-danger"></span>
+            </div>
+            <div class="col">
+                <label asp-for="ForwardDate" class="form-label"></label>
+                <input asp-for="ForwardDate" type="date" class="form-control" value="@(Model.ForwardDate.HasValue ? Model.ForwardDate.Value.ToString("yyyy-MM-dd") : "")" />
+                <span asp-validation-for="ForwardDate" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+            <div class="col">
+                <label asp-for="DepartmentForwardDate" class="form-label"></label>
+                <input asp-for="DepartmentForwardDate" type="date" class="form-control" value="@(Model.DepartmentForwardDate.HasValue ? Model.DepartmentForwardDate.Value.ToString("yyyy-MM-dd") : "")" />
+                <span asp-validation-for="DepartmentForwardDate" class="text-danger"></span>
             </div>
         </div>
 
@@ -40,7 +69,7 @@
 
         <input type="hidden" asp-for="PatientId" />
         <input type="hidden" asp-for="Id" value="00000000-0000-0000-0000-000000000000" />
-        <input type="hidden" asp-for="AcceptDate" value="@DateTime.UtcNow.ToString("s")" />
+
         <div class="mb-3 mt-2">
             <label asp-for="Note" class="form-label"></label>
             <textarea asp-for="Note" class="form-control"></textarea>

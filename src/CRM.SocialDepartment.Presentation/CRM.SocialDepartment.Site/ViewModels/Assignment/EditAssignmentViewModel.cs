@@ -1,17 +1,22 @@
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace CRM.SocialDepartment.Site.ViewModels.Assignment
 {
-    public class EditAssignmentViewModel
+    public partial class EditAssignmentViewModel : IValidatableObject
     {
         [Required]
         public Guid Id { get; set; }
 
-        [Required, StringLength(256)]
+        [Required(ErrorMessage = "Название обязательно для заполнения")]
+        [DisplayName("Название")]
+        [StringLength(256)]
         public string Name { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Описание обязательно для заполнения")]
+        [DisplayName("Описание")]
         [StringLength(4000)]
-        public string? Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         [Display(Name = "Создано")]
         public DateTime CreatedDate { get; set; }
