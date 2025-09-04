@@ -1,0 +1,314 @@
+Index: src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Controllers/AssignmentController.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using CRM.SocialDepartment.Application.Assignments;\r\nusing CRM.SocialDepartment.Application.DTOs;\r\nusing CRM.SocialDepartment.Domain.Entities;\r\nusing CRM.SocialDepartment.Site.Services;\r\nusing Microsoft.AspNetCore.Mvc;\r\nusing MongoDB.Driver;\r\n\r\nnamespace CRM.SocialDepartment.Site.Controllers;\r\n\r\n[Route(\"api/assignments\")]\r\npublic class AssignmentController(AssignmentService assignmentService) : Controller\r\n{\r\n    private readonly AssignmentService _assignmentService = assignmentService;\r\n\r\n    public IActionResult Active()\r\n    {\r\n        return View(nameof(Index));\r\n    }\r\n\r\n    public IActionResult Archive()\r\n    {\r\n        return View();\r\n    }\r\n\r\n    [HttpGet]\r\n    public async Task<IActionResult> GetAllAsync(CancellationToken cancellationToken)\r\n    {\r\n        var assignments = await _assignmentService.GetAllAssignmentsAsync(null, cancellationToken);\r\n        return Ok(assignments);\r\n    }\r\n\r\n    [HttpGet]\r\n    [Route(\"{id:guid}\")]\r\n    public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken)\r\n    {\r\n        if (!ModelState.IsValid)\r\n        {\r\n            HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;\r\n            return new JsonResult(ModelState);\r\n        }\r\n\r\n        var assignment = await _assignmentService.GetAssignmentByIdAsync(id, cancellationToken);\r\n\r\n        if (assignment is not null) return Ok(assignment);\r\n\r\n        HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;\r\n        return NotFound(new { message = \"Assignment not found.\" });\r\n    }\r\n\r\n    [HttpPost]\r\n    [Route(\"active\")]\r\n    public async Task<IActionResult> GetActiveAsync([FromServices] DataTableNetService dataTableNetService,\r\n        CancellationToken cancellationToken)\r\n    {\r\n        var input = dataTableNetService.Parse(Request);\r\n\r\n        var filter = Builders<Assignment>.Filter.Or(\r\n            Builders<Assignment>.Filter.Where(i => i.SoftDeleted),\r\n            Builders<Assignment>.Filter.Where(i => !i.IsArchive));\r\n\r\n        if (!string.IsNullOrEmpty(input.SearchTerm))\r\n        {\r\n            var searchTerm = input.SearchTerm.ToLower();\r\n            filter = Builders<Assignment>.Filter.Or(\r\n                Builders<Assignment>.Filter.Where(i =>\r\n                    i.Description.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase)));\r\n        }\r\n\r\n        var totalRecords = await _assignmentService.GetAssignmentCollection()\r\n            .CountDocumentsAsync(Builders<Assignment>.Filter.Empty, cancellationToken: cancellationToken);\r\n\r\n        var filteredRecords = await _assignmentService.GetAssignmentCollection()\r\n            .CountDocumentsAsync(filter, cancellationToken: cancellationToken);\r\n\r\n        var assignments = await _assignmentService.GetAssignmentCollection().Find(filter)\r\n            .Skip(input.Skip)\r\n            .Limit(input.PageSize)\r\n            .ToListAsync(cancellationToken);\r\n\r\n        var result = assignments.Select(x => new RepresentAssignmentDto\r\n            {\r\n                Id = x.Id,\r\n                Description = x.Description,\r\n                CreateDate = x.CreationDate,\r\n            }\r\n        );\r\n\r\n        return new JsonResult(new\r\n        {\r\n            draw = input.Draw,\r\n            recordsTotal = totalRecords,\r\n            recordsFiltered = filteredRecords,\r\n            data = result\r\n        });\r\n    }\r\n\r\n    [HttpPost]\r\n    [Route(\"archive\")]\r\n    public async Task<JsonResult> GetAssignmentForDataTableAsync([FromServices] DataTableNetService dataTableNetService,\r\n        CancellationToken cancellationToken = default)\r\n    {\r\n        var input = dataTableNetService.Parse(Request);\r\n\r\n        var filter = Builders<Assignment>.Filter.Or(\r\n            Builders<Assignment>.Filter.Where(i => !i.SoftDeleted),\r\n            Builders<Assignment>.Filter.Where(i => i.IsArchive));\r\n\r\n        if (!string.IsNullOrEmpty(input.SearchTerm))\r\n        {\r\n            var searchTerm = input.SearchTerm.ToLower();\r\n            filter = Builders<Assignment>.Filter.Or(\r\n                Builders<Assignment>.Filter.Where(i =>\r\n                    i.Description.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase)));\r\n        }\r\n\r\n        var totalRecords = await _assignmentService.GetAssignmentCollection()\r\n            .CountDocumentsAsync(Builders<Assignment>.Filter.Empty, cancellationToken: cancellationToken);\r\n\r\n        var filteredRecords = await _assignmentService.GetAssignmentCollection()\r\n            .CountDocumentsAsync(filter, cancellationToken: cancellationToken);\r\n\r\n        var patients = await _assignmentService.GetAssignmentCollection()\r\n            .Find(filter)\r\n            .Skip(input.Skip)\r\n            .Limit(input.PageSize)\r\n            .ToListAsync(cancellationToken);\r\n\r\n        var result = patients.Select(i =>\r\n            new RepresentAssignmentDto()\r\n            {\r\n                Id = i.Id,\r\n                CreateDate = i.CreationDate,\r\n                Description = i.Description\r\n            }\r\n        );\r\n\r\n        return new(new\r\n        {\r\n            draw = input.Draw,\r\n            recordsTotal = totalRecords,\r\n            recordsFiltered = filteredRecords,\r\n            data = result\r\n        });\r\n    }\r\n\r\n    [HttpPost]\r\n    public async Task<JsonResult> AddAssignmentAsync([FromBody] CreateOrEditAssignmentDto input,\r\n        CancellationToken cancellationToken)\r\n    {\r\n        if (!ModelState.IsValid)\r\n        {\r\n            HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;\r\n            return new(ModelState);\r\n        }\r\n\r\n        var result = await _assignmentService.CreateAssignmentAsync(input, cancellationToken);\r\n\r\n        HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;\r\n        return new(new { });\r\n    }\r\n\r\n    [HttpPatch]\r\n    [Route(\"{id:guid}\")]\r\n    public async Task<JsonResult> EditAssignmentAsync([FromRoute] Guid id, [FromBody] CreateOrEditAssignmentDto input,\r\n        CancellationToken cancellationToken)\r\n    {\r\n        if (!ModelState.IsValid)\r\n        {\r\n            HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;\r\n            return new(ModelState);\r\n        }\r\n\r\n        await _assignmentService.EditAssignmentAsync(id, input, cancellationToken);\r\n\r\n        HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;\r\n        return new(new { });\r\n    }\r\n\r\n    [HttpDelete]\r\n    [Route(\"{id:guid}\")]\r\n    public async Task<JsonResult> DeletePatientAsync([FromRoute] Guid id, CancellationToken cancellationToken)\r\n    {\r\n        if (!ModelState.IsValid)\r\n        {\r\n            HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;\r\n            return new(ModelState);\r\n        }\r\n\r\n        await _assignmentService.DeleteAssignmentAsync(id, cancellationToken);\r\n\r\n        HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;\r\n        return new(new { });\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Controllers/AssignmentController.cs b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Controllers/AssignmentController.cs
+--- a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Controllers/AssignmentController.cs	(revision 18d726bbd153b1949bdc95ce64929f5a00b06e65)
++++ b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Controllers/AssignmentController.cs	(date 1750874542469)
+@@ -10,8 +10,6 @@
+ [Route("api/assignments")]
+ public class AssignmentController(AssignmentService assignmentService) : Controller
+ {
+-    private readonly AssignmentService _assignmentService = assignmentService;
+-
+     public IActionResult Active()
+     {
+         return View(nameof(Index));
+@@ -25,7 +23,7 @@
+     [HttpGet]
+     public async Task<IActionResult> GetAllAsync(CancellationToken cancellationToken)
+     {
+-        var assignments = await _assignmentService.GetAllAssignmentsAsync(null, cancellationToken);
++        var assignments = await assignmentService.GetAllAssignmentsAsync(null, cancellationToken);
+         return Ok(assignments);
+     }
+ 
+@@ -39,7 +37,7 @@
+             return new JsonResult(ModelState);
+         }
+ 
+-        var assignment = await _assignmentService.GetAssignmentByIdAsync(id, cancellationToken);
++        var assignment = await assignmentService.GetAssignmentByIdAsync(id, cancellationToken);
+ 
+         if (assignment is not null) return Ok(assignment);
+ 
+@@ -66,13 +64,13 @@
+                     i.Description.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase)));
+         }
+ 
+-        var totalRecords = await _assignmentService.GetAssignmentCollection()
++        var totalRecords = await assignmentService.GetAssignmentCollection()
+             .CountDocumentsAsync(Builders<Assignment>.Filter.Empty, cancellationToken: cancellationToken);
+ 
+-        var filteredRecords = await _assignmentService.GetAssignmentCollection()
++        var filteredRecords = await assignmentService.GetAssignmentCollection()
+             .CountDocumentsAsync(filter, cancellationToken: cancellationToken);
+ 
+-        var assignments = await _assignmentService.GetAssignmentCollection().Find(filter)
++        var assignments = await assignmentService.GetAssignmentCollection().Find(filter)
+             .Skip(input.Skip)
+             .Limit(input.PageSize)
+             .ToListAsync(cancellationToken);
+@@ -113,13 +111,13 @@
+                     i.Description.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase)));
+         }
+ 
+-        var totalRecords = await _assignmentService.GetAssignmentCollection()
++        var totalRecords = await assignmentService.GetAssignmentCollection()
+             .CountDocumentsAsync(Builders<Assignment>.Filter.Empty, cancellationToken: cancellationToken);
+ 
+-        var filteredRecords = await _assignmentService.GetAssignmentCollection()
++        var filteredRecords = await assignmentService.GetAssignmentCollection()
+             .CountDocumentsAsync(filter, cancellationToken: cancellationToken);
+ 
+-        var patients = await _assignmentService.GetAssignmentCollection()
++        var patients = await assignmentService.GetAssignmentCollection()
+             .Find(filter)
+             .Skip(input.Skip)
+             .Limit(input.PageSize)
+@@ -144,6 +142,7 @@
+     }
+ 
+     [HttpPost]
++    [Route("add")]
+     public async Task<JsonResult> AddAssignmentAsync([FromBody] CreateOrEditAssignmentDto input,
+         CancellationToken cancellationToken)
+     {
+@@ -153,7 +152,7 @@
+             return new(ModelState);
+         }
+ 
+-        var result = await _assignmentService.CreateAssignmentAsync(input, cancellationToken);
++        var result = await assignmentService.CreateAssignmentAsync(input, cancellationToken);
+ 
+         HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
+         return new(new { });
+@@ -170,7 +169,7 @@
+             return new(ModelState);
+         }
+ 
+-        await _assignmentService.EditAssignmentAsync(id, input, cancellationToken);
++        await assignmentService.EditAssignmentAsync(id, input, cancellationToken);
+ 
+         HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
+         return new(new { });
+@@ -186,7 +185,7 @@
+             return new(ModelState);
+         }
+ 
+-        await _assignmentService.DeleteAssignmentAsync(id, cancellationToken);
++        await assignmentService.DeleteAssignmentAsync(id, cancellationToken);
+ 
+         HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
+         return new(new { });
+Index: src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/Index.cshtml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>@{\r\n    ViewData[\"Title\"] = \"Список задач\";\r\n}\r\n\r\n@section Styles\r\n{\r\n    <link href=\"~/lib/datatables.net-bs5/css/jquery.datatables.css\" rel=\"stylesheet\" />\r\n    <link href=\"~/lib/datatables.net-bs5/css/datatables.bootstrap5.min.css\" rel=\"stylesheet\" />\r\n    <link href=\"~/lib/datatables.net-bs5/css/searchpanes.bootstrap5.min.css\" rel=\"stylesheet\" />\r\n    <link href=\"~/lib/datatables.net-bs5/css/fixedheader.bootstrap5.min.css\" rel=\"stylesheet\" />\r\n    <link href=\"~/lib/datatables.net-bs5/css/scroller.bootstrap5.min.css\" rel=\"stylesheet\" />\r\n}\r\n\r\n@section Scripts\r\n{\r\n    <script src=\"~/lib/datatables.net-bs5/js/jquery.datatables.min.js\"></script>\r\n    <script src=\"~/lib/datatables.net-bs5/js/datatables.bootstrap5.min.js\"></script>\r\n    <script src=\"~/lib/datatables.net-bs5/js/searchpanes.bootstrap5.min.js\"></script>\r\n    <script src=\"~/lib/datatables.net-bs5/js/fixedheader.bootstrap5.min.js\"></script>\r\n    <script src=\"~/lib/datatables.net-bs5/js/scroller.bootstrap5.min.js\"></script>\r\n    <script src=\"~/js/patient.js\" asp-append-version=\"true\"></script>\r\n    @await Html.PartialAsync(\"_ValidationScriptsPartial\")\r\n}\r\n\r\n<div id=\"form-modal\" class=\"modal fade\" tabindex=\"-1\" role=\"dialog\" data-backdrop=\"static\" data-keyboard=\"false\">\r\n    <div class=\"modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg\" role=\"document\">\r\n        <div class=\"modal-content\">\r\n            <div class=\"modal-header\">\r\n                <h5 class=\"modal-title\"></h5>\r\n                <button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"modal\" aria-label=\"Close\"></button>\r\n            </div>\r\n            <div class=\"modal-body\">\r\n            </div>\r\n        </div>\r\n    </div>\r\n</div>\r\n\r\n<div class=\"card\" style=\"margin: 10px;\">\r\n    <div class=\"col-sm-12\" style=\"padding:20px\">\r\n        <!-- Меню -->\r\n        <a id=\"add-assignment\" class=\"btn btn-primary\"><i class=\"fa fa-plus\"></i> Задача</a>\r\n        <a id=\"reload\" class=\"btn btn-outline-info\"><i class=\"fa fa-refresh\"></i> список</a>\r\n        <a onclick=\"\" class=\"btn btn-outline-danger\"><i class=\"fa fa-bitbucket\"></i> (2)</a>\r\n        <!-- onclick=\"printModalShow()\" -->\r\n    </div>\r\n    <div class=\"card-body table-responsive\">\r\n        <div style=\"width: 100%; overflow-x: auto;\">\r\n            <table id=\"table\" class=\"table table-custom table-bordered table-hover\">\r\n                <thead>\r\n                    <tr>\r\n                        <th></th>\r\n                        <th>ID</th>\r\n                        <th>Дата приема заявки от отделения</th>\r\n                        <th>Номер отделения</th>\r\n                        <th>Описание</th>\r\n                        <th>Дата направления</th>\r\n                        <th>Куда направили документы</th>\r\n                        <th>Что сделано</th>\r\n                        <th>Дата передачи в отделение</th>\r\n                        <th>Исполнитель</th>\r\n                        <th>Примечание</th>\r\n                        <th>Дата создания задачи</th>\r\n                        <th>Пациент</th>\r\n                        @* <th>Помечен как в архиве (пациент выписан)</th> *@\r\n                        @* <th>Помечен как удаленный</th> *@\r\n                    </tr>\r\n                </thead>\r\n                <tbody id=\"viewAll\"></tbody>\r\n            </table>\r\n        </div>\r\n    </div>\r\n</div>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/Index.cshtml b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/Index.cshtml
+--- a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/Index.cshtml	(revision 18d726bbd153b1949bdc95ce64929f5a00b06e65)
++++ b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/Index.cshtml	(date 1750874218894)
+@@ -1,4 +1,5 @@
+ @{
++    Layout = "_LayoutWithoutContainer";
+     ViewData["Title"] = "Список задач";
+ }
+ 
+@@ -18,7 +19,7 @@
+     <script src="~/lib/datatables.net-bs5/js/searchpanes.bootstrap5.min.js"></script>
+     <script src="~/lib/datatables.net-bs5/js/fixedheader.bootstrap5.min.js"></script>
+     <script src="~/lib/datatables.net-bs5/js/scroller.bootstrap5.min.js"></script>
+-    <script src="~/js/patient.js" asp-append-version="true"></script>
++    <script src="~/js/assignment.js" asp-append-version="true"></script>
+     @await Html.PartialAsync("_ValidationScriptsPartial")
+ }
+ 
+Index: src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/_CreateAssignmentModal.cshtml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/_CreateAssignmentModal.cshtml b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/_CreateAssignmentModal.cshtml
+new file mode 100644
+--- /dev/null	(date 1750873254796)
++++ b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/_CreateAssignmentModal.cshtml	(date 1750873254796)
+@@ -0,0 +1,29 @@
++@model CRM.SocialDepartment.Site.ViewModels.Assignment.CreateAssignmentViewModel
++
++<form id="create-patient" method="post" asp-controller="Patient" asp-action="AddPatients" asp-antiforgery="true">
++    <div class="card mb-3">
++        <div class="card-header">История болезни</div>
++        <div class="card-body">
++            <div class="mb-3">
++                <label asp-for="DepartmentNumber" class="form-label param-title"></label>
++                <select asp-for="DepartmentForwardDate" class="form-select"></select>
++                <span asp-validation-for="ForwardDepartment" class="text-danger"></span>
++            </div>
++
++            <div id="ResolutionIsEnable" class="mb-3">
++                <label asp-for="Description" class="form-label param-title"></label>
++                <input asp-for="Assignee" class="form-control" />
++                <span asp-validation-for="Note" class="text-danger"></span>
++            </div>
++
++            <div class="mb-3">
++                <label asp-for="Patient" class="form-label param-title"></label>
++            </div>
++        </div>
++    </div>
++</form>
++
++@section Scripts {
++    <script src="~/js/documents.js"></script>
++    <partial name="_ValidationScriptsPartial" />
++}
+\ No newline at end of file
+Index: src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/ViewModels/Assignment/CreateAssignmentViewModel.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/ViewModels/Assignment/CreateAssignmentViewModel.cs b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/ViewModels/Assignment/CreateAssignmentViewModel.cs
+new file mode 100644
+--- /dev/null	(date 1750791071655)
++++ b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/ViewModels/Assignment/CreateAssignmentViewModel.cs	(date 1750791071655)
+@@ -0,0 +1,56 @@
++using System.ComponentModel.DataAnnotations;
++using CRM.SocialDepartment.Site.ViewModels.Validation;
++
++namespace CRM.SocialDepartment.Site.ViewModels.Assignment;
++
++public class CreateAssignmentViewModel : ValidationBase, IValidatableObject
++{
++    
++    [Required(ErrorMessage = "Номер отделения обязателен для заполнения")]
++    [Display(Name = "Номер отделения, принявшего заявку")]
++    public int DepartmentNumber { get; init; }
++    
++    [Display(Name = "Описание")]
++    public string? Description { get; init; }
++
++    [Required(ErrorMessage = "Дата направления обязательна для заполнения")]
++    [Display(Name = "Дата направления")]
++    public DateTime ForwardDate { get; init; }
++
++    [Required(ErrorMessage = "Конечный орган обязателен для заполнения")]
++    [Display(Name = "Конечный орган, в который были направлены документы")]
++    public string? ForwardDepartment { get; init; }
++
++    [Required(ErrorMessage = "Дата передачи в отделение обязательна для заполнения")]
++    [Display(Name = "Дата передачи в отделение")]
++    public DateTime DepartmentForwardDate { get; init; }
++
++    [Required(ErrorMessage = "Исполнитель обязателен к заполнению")]
++    [Display(Name = "Исполнитель обязателен к заполнению")]
++    public string? Assignee { get; init; }
++    
++    [Display(Name = "Примечание")]
++    public string? Note { get; init; }
++
++    [Required(ErrorMessage = "Пациент обязателен для указания")]
++    [Display(Name = "Пациент")]
++    public Domain.Entities.Patients.Patient Patient { get; init; }
++    
++    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
++    {
++        if (ForwardDate >= DateTime.Now)
++        {
++            yield return new ValidationResult("Дата направления не может быть текущим или будущим днём.");
++        }
++
++        if (DepartmentForwardDate >= DateTime.Now)
++        {
++            yield return new ValidationResult("Дата передачи в отделение не может быть текущим или будущим днём.");
++        }
++
++        if (Patient.IsArchive || Patient.SoftDeleted)
++        {
++            yield return new ValidationResult("Невозможно указать данного пациента.");
++        }
++    }
++}
+\ No newline at end of file
+Index: src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/wwwroot/js/assignment.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/wwwroot/js/assignment.js b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/wwwroot/js/assignment.js
+new file mode 100644
+--- /dev/null	(date 1750875976571)
++++ b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/wwwroot/js/assignment.js	(date 1750875976571)
+@@ -0,0 +1,65 @@
++$(document).ready(function () {
++    var datatable = $('#table').DataTable({
++        "bAutoWidth": false,
++        "processing": true,
++        "serverSide": true,
++        "filter": true,
++        "language": {
++            "processing": "Загрузка данных...",
++            "lengthMenu": "Показать _MENU_ записей на странице",
++            "zeroRecords": "Ничего не найдено",
++            "info": "Страница _PAGE_ из _PAGES_",
++            "infoEmpty": "Нет записей",
++            "infoFiltered": "(отфильтровано из _MAX_ записей)",
++            "search": "Поиск:",
++            "paginate": {
++                "first": "В начало",
++                "next": "Следующая",
++                "previous": "Предыдущая",
++                "last": "В конец"
++            }
++        },
++        "lengthMenu": [50, 100, 250],
++        "pageLength": 50,
++        "pagingType": "full_numbers",
++        "responsive": true,
++        "ajax": {
++            "url": "/api/assignments/active",
++            "type": "POST",
++            "datatype": "json"
++        },
++        "columns": [
++            { data: "Id", name: "Id" },
++            { data: "Description", name: "Description" },
++        ]
++    });
++    
++    $('#add-assignment').on('click', function () {
++        GetFormModal(window.location.origin + '/api/assignments/add', 'Создать задачу')
++    });
++    
++    $('#reload').on('click', function () {
++        datatable.ajax.reload();
++    });
++    
++    $('#table').on('click', '#edit-assignment-link', function (event) {
++        const assignmentId = event.target.dataset.assignmentId;
++        GetFormModal(window.location.origin + '/api/assignments/?id=' + assignmentId, 'Редактировать задачу')
++    });
++    
++    $('#form-model').on('submit', '#create-assignment', function (event) {
++        e.preventDefault();
++        
++        $this = $(this);
++        const url = $this.attr('action');
++        const data = $this.serialize();
++        const headers = {
++            "CSRF-TOKEN": $this.find('input[name="__RequestVerificationToken"]').val(),
++        };
++        if (PostFormModal(url, data, headers)) {
++            dataTable.ajax.reload();
++        }
++    });
++    
++    
++})
+\ No newline at end of file

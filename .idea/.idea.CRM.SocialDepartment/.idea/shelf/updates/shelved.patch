@@ -1,0 +1,914 @@
+Index: src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/ViewModels/Assignment/CreateAssignmentViewModel.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/ViewModels/Assignment/CreateAssignmentViewModel.cs b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/ViewModels/Assignment/CreateAssignmentViewModel.cs
+new file mode 100644
+--- /dev/null	(date 1756839163703)
++++ b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/ViewModels/Assignment/CreateAssignmentViewModel.cs	(date 1756839163703)
+@@ -0,0 +1,42 @@
++using System.ComponentModel;
++using System.ComponentModel.DataAnnotations;
++
++namespace CRM.SocialDepartment.Site.ViewModels.Assignment;
++
++public class CreateAssignmentViewModel : IValidatableObject
++{
++    [Required(ErrorMessage = "Название обязательно для заполнения")]
++    [DisplayName("Название")]
++    public string Name { get; init; } = string.Empty;
++
++    [Required(ErrorMessage = "Дата принятия обязательна для заполнения")]
++    [DisplayName("Дата принятия задания")]
++    [DisplayFormat(DataFormatString = "{0:dd.MM.yyyy}", ApplyFormatInEditMode = true)]
++    public DateTime AcceptDate { get; init; }
++
++    [Required(ErrorMessage = "Описание обязательно для заполнения")]
++    [DisplayName("Описание")]
++    public string Description { get; init; } = string.Empty;
++
++    [Required(ErrorMessage = "Исполнитель обязателен для заполнения")]
++    [DisplayName("Исполнитель")]
++    public string Assignee { get; set; } = string.Empty;
++
++    [Required(ErrorMessage = "Пациент обязателен для заполнения")]
++    [DisplayName("Пациент")]
++    public Domain.Entities.Patients.Patient Patient { get; set; }
++
++    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
++    {
++        var resultList = new List<ValidationResult>();
++
++        if (string.IsNullOrEmpty(Name))
++            resultList.Add(new("Название задачи не может быть пустым", [nameof(Name)]));
++        if (string.IsNullOrEmpty(Description))
++            resultList.Add(new("Описание не может быть пустым", [nameof(Description)]));
++        if (string.IsNullOrEmpty(Assignee))
++            resultList.Add(new("Исполнитель не может отсутствовать", [nameof(Assignee)]));
++
++        return resultList;
++    }
++}
+\ No newline at end of file
+Index: src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Application/Assignments/AssignmentService.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System.Globalization;\r\nusing System.Linq.Expressions;\r\nusing CRM.SocialDepartment.Application.Common;\r\nusing CRM.SocialDepartment.Application.DTOs;\r\nusing CRM.SocialDepartment.Application.Patients;\r\nusing CRM.SocialDepartment.Domain.Common;\r\nusing CRM.SocialDepartment.Domain.Entities;\r\nusing CRM.SocialDepartment.Domain.Exceptions;\r\nusing CRM.SocialDepartment.Domain.Repositories;\r\nusing DDD.Events;\r\nusing Microsoft.Extensions.DependencyInjection;\r\n\r\nnamespace CRM.SocialDepartment.Application.Assignments;\r\n\r\npublic class AssignmentService(IUnitOfWork unitOfWork, IDomainEventDispatcher? domainEventDispatcher = null)\r\n{\r\n    private readonly IUnitOfWork _unitOfWork = unitOfWork;\r\n    private readonly IDomainEventDispatcher? _domainEventDispatcher = domainEventDispatcher;\r\n\r\n    public async Task<Assignment?> GetAssignmentByIdAsync(Guid assignmentId,\r\n        CancellationToken cancellationToken = default)\r\n    {\r\n        return await _unitOfWork.Assignments.GetAsync(e => e.Id == assignmentId, cancellationToken);\r\n    }\r\n\r\n    public async Task<IEnumerable<Assignment>> GetAllAssignmentsAsync(Expression<Func<Assignment, bool>>? predicate,\r\n        CancellationToken cancellationToken = default)\r\n    {\r\n        return await _unitOfWork.Assignments.GetAllAsync(predicate, cancellationToken);\r\n    }\r\n\r\n    /// <summary>\r\n    /// Создать новое назначение (с использованием транзакции)\r\n    /// </summary>\r\n    public async Task<Guid> CreateAssignmentAsync(CreateOrEditAssignmentDto dto,\r\n        CancellationToken cancellationToken = default)\r\n    {\r\n        var patient = await _unitOfWork.Patients.GetAsync(p => p.Id == dto.PatientId, cancellationToken) ??\r\n                      throw new EntityNotFoundException(\"Пациент не найден\");\r\n\r\n        var assignment = new Assignment(\r\n            dto.AcceptDate,\r\n            dto.DepartmentNumber,\r\n            dto.Description,\r\n            dto.ForwardDate,\r\n            dto.ForwardDepartment,\r\n            new()\r\n            {\r\n                { DateTime.Now.ToString(CultureInfo.InvariantCulture), \"Создано\" }\r\n            },\r\n            dto.DepartmentForwardDate,\r\n            dto.Assignee,\r\n            dto.Note,\r\n            DateTime.Now,\r\n            patient\r\n        );\r\n\r\n        await _unitOfWork.Assignments.InsertAsync(assignment, cancellationToken);\r\n\r\n        // Публикуем доменные события\r\n        await DomainEventPublisher.PublishAndClearEventsAsync(assignment, _domainEventDispatcher, cancellationToken);\r\n\r\n        return assignment.Id;\r\n    }\r\n\r\n    /// <summary>\r\n    /// Создать новое назначение с транзакцией (пример)\r\n    /// </summary>\r\n    public async Task<Guid> CreateAssignmentWithTransactionAsync(CreateOrEditAssignmentDto dto,\r\n        CancellationToken cancellationToken = default)\r\n    {\r\n        try\r\n        {\r\n            // Начинаем транзакцию\r\n            await _unitOfWork.BeginTransactionAsync(cancellationToken);\r\n\r\n            var patient = await _unitOfWork.Patients.GetAsync(p => p.Id == dto.PatientId, cancellationToken) ??\r\n                          throw new EntityNotFoundException(\"Пациент не найден\");\r\n\r\n            var assignment = new Assignment(\r\n                dto.AcceptDate,\r\n                dto.DepartmentNumber,\r\n                dto.Description,\r\n                dto.ForwardDate,\r\n                dto.ForwardDepartment,\r\n                new()\r\n                {\r\n                    { DateTime.Now.ToString(CultureInfo.InvariantCulture), \"Создано\" }\r\n                },\r\n                dto.DepartmentForwardDate,\r\n                dto.Assignee,\r\n                dto.Note,\r\n                DateTime.Now,\r\n                patient\r\n            );\r\n\r\n            // Все операции выполняются в рамках одной транзакции\r\n            await _unitOfWork.Assignments.InsertAsync(assignment, cancellationToken);\r\n\r\n            // Публикуем доменные события\r\n            await DomainEventPublisher.PublishAndClearEventsAsync(assignment, _domainEventDispatcher, cancellationToken);\r\n\r\n            // Можем также обновить пациента в рамках той же транзакции\r\n            // patient.SomeProperty = \"Updated\";\r\n            // await _unitOfWork.Patients.UpdateAsync(patient, cancellationToken);\r\n\r\n            // Подтверждаем транзакцию\r\n            await _unitOfWork.CommitTransactionAsync(cancellationToken);\r\n\r\n            return assignment.Id;\r\n        }\r\n        catch\r\n        {\r\n            // В случае ошибки откатываем транзакцию\r\n            if (_unitOfWork.HasActiveTransaction)\r\n            {\r\n                await _unitOfWork.RollbackTransactionAsync(cancellationToken);\r\n            }\r\n            throw;\r\n        }\r\n    }\r\n\r\n    public async Task EditAssignmentAsync(Guid id, CreateOrEditAssignmentDto dto,\r\n        CancellationToken cancellationToken = default)\r\n    {\r\n        var assignment = await GetAssignmentByIdAsync(id, cancellationToken) ?? throw new EntityNotFoundException();\r\n\r\n        assignment.StatusLog.Add(DateTime.Now.ToString(CultureInfo.InvariantCulture), \"Обновлено\");\r\n\r\n        if (!dto.Description.Equals(assignment.Description)) assignment.UpdateDescription(dto.Description);\r\n        if (dto.AcceptDate != assignment.AcceptDate) assignment.UpdateAcceptDate(dto.AcceptDate);\r\n        if (!dto.Assignee.Equals(assignment.Assignee)) assignment.UpdateAssignee(dto.Assignee);\r\n        if (dto.ForwardDate != assignment.ForwardDate) assignment.UpdateForwardDate(dto.ForwardDate);\r\n        if (dto.ForwardDepartment.Equals(assignment.ForwardDepartment))\r\n            assignment.UpdateForwardDepartment(dto.ForwardDepartment);\r\n        if (dto.DepartmentNumber != assignment.DepartmentNumber)\r\n            assignment.UpdateDepartmentNumber(dto.DepartmentNumber);\r\n        if (dto.DepartmentForwardDate != assignment.DepartmentForwardDate)\r\n            assignment.UpdateDepartmentForwardDate(dto.DepartmentForwardDate);\r\n        if (dto.Note != assignment.Note) assignment.UpdateNote(dto.Note ?? string.Empty);\r\n\r\n        await _unitOfWork.Assignments.UpdateAsync(assignment, cancellationToken);\r\n\r\n        // Публикуем доменные события\r\n        await DomainEventPublisher.PublishAndClearEventsAsync(assignment, _domainEventDispatcher, cancellationToken);\r\n    }\r\n\r\n    public async Task DeleteAssignmentAsync(Guid id, CancellationToken cancellationToken = default)\r\n    {\r\n        var assignment = await GetAssignmentByIdAsync(id, cancellationToken) ?? throw new EntityNotFoundException();\r\n        // Вызываем доменный метод для мягкого удаления\r\n        assignment.SoftDelete();\r\n        \r\n        await _unitOfWork.Assignments.UpdateAsync(assignment, cancellationToken);\r\n\r\n        // Публикуем доменные события\r\n        await DomainEventPublisher.PublishAndClearEventsAsync(assignment, _domainEventDispatcher, cancellationToken);\r\n    }\r\n\r\n    /// <summary>\r\n    /// Получить активные назначения для DataTables с поддержкой фильтрации и пагинации\r\n    /// </summary>\r\n    public async Task<DataTableResult<Assignment>> GetActiveAssignmentsForDataTableAsync(DataTableParameters parameters, CancellationToken cancellationToken = default)\r\n    {\r\n        return await _unitOfWork.Assignments.GetActiveAssignmentsForDataTableAsync(parameters, cancellationToken);\r\n    }\r\n\r\n    /// <summary>\r\n    /// Получить архивные назначения для DataTables с поддержкой фильтрации и пагинации\r\n    /// </summary>\r\n    public async Task<DataTableResult<Assignment>> GetArchivedAssignmentsForDataTableAsync(DataTableParameters parameters, CancellationToken cancellationToken = default)\r\n    {\r\n        return await _unitOfWork.Assignments.GetArchivedAssignmentsForDataTableAsync(parameters, cancellationToken);\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Application/Assignments/AssignmentService.cs b/src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Application/Assignments/AssignmentService.cs
+--- a/src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Application/Assignments/AssignmentService.cs	(revision d026a00c98f869bf4ad419ed96c9d8f1e1cd9520)
++++ b/src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Application/Assignments/AssignmentService.cs	(date 1756839163676)
+@@ -39,6 +39,7 @@
+                       throw new EntityNotFoundException("Пациент не найден");
+ 
+         var assignment = new Assignment(
++            dto.Name,
+             dto.AcceptDate,
+             dto.DepartmentNumber,
+             dto.Description,
+@@ -78,6 +79,7 @@
+                           throw new EntityNotFoundException("Пациент не найден");
+ 
+             var assignment = new Assignment(
++                dto.Name,
+                 dto.AcceptDate,
+                 dto.DepartmentNumber,
+                 dto.Description,
+Index: src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Application/DTOs/CreateOrEditAssignmentDto.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>namespace CRM.SocialDepartment.Application.DTOs\r\n{\r\n    public class CreateOrEditAssignmentDto\r\n    {\r\n        public Guid Id { get; init; }\r\n        public string Description { get; init; } = string.Empty;\r\n        public DateTime CreatedDate { get; init; }\r\n        public string ForwardDepartment { get; init; } = string.Empty;\r\n        public DateTime DueDate { get; init; }\r\n        public string Assignee { get; init; } = string.Empty;\r\n        public DateTime AcceptDate { get; init; }\r\n        public DateTime ForwardDate { get; init; }\r\n        public int DepartmentNumber { get; init; }\r\n        public DateTime DepartmentForwardDate { get; init; }\r\n        public string? Note { get; init; }\r\n        public Guid PatientId { get; init; }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Application/DTOs/CreateOrEditAssignmentDto.cs b/src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Application/DTOs/CreateOrEditAssignmentDto.cs
+--- a/src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Application/DTOs/CreateOrEditAssignmentDto.cs	(revision d026a00c98f869bf4ad419ed96c9d8f1e1cd9520)
++++ b/src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Application/DTOs/CreateOrEditAssignmentDto.cs	(date 1756839163684)
+@@ -3,6 +3,7 @@
+     public class CreateOrEditAssignmentDto
+     {
+         public Guid Id { get; init; }
++        public string Name { get; init; }
+         public string Description { get; init; } = string.Empty;
+         public DateTime CreatedDate { get; init; }
+         public string ForwardDepartment { get; init; } = string.Empty;
+Index: src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Domain/Entities/Assignment.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using CRM.SocialDepartment.Domain.Entities.Patients;\r\nusing CRM.SocialDepartment.Domain.Events;\r\nusing CRM.SocialDepartment.Domain.Exceptions;\r\nusing DDD.Entities;\r\n\r\nnamespace CRM.SocialDepartment.Domain.Entities;\r\n\r\npublic class Assignment : AggregateRoot<Guid>, IArchive, ISoftDelete\r\n{\r\n    public Assignment(DateTime acceptDate, int departmentNumber, string description, DateTime forwardDate, string forwardDepartment, Dictionary<string, string> statusLog, DateTime departmentForwardDate, string assignee, string? note, DateTime creationDate, Patient patient)\r\n    {\r\n        AcceptDate = acceptDate;\r\n        DepartmentNumber = departmentNumber;\r\n        Description = description;\r\n        ForwardDate = forwardDate;\r\n        ForwardDepartment = forwardDepartment;\r\n        StatusLog = statusLog;\r\n        DepartmentForwardDate = departmentForwardDate;\r\n        Assignee = assignee;\r\n        Note = note;\r\n        CreationDate = creationDate;\r\n        Patient = patient;\r\n\r\n        // Генерируем событие создания назначения\r\n        AddDomainEvent(new AssignmentCreatedEvent(this));\r\n    }\r\n\r\n    /// <summary>\r\n    /// Дата приема заявки от отделения\r\n    /// </summary>\r\n    public DateTime AcceptDate { get; private set; }\r\n\r\n    /// <summary>\r\n    /// Номер отделения\r\n    /// </summary>\r\n    public int DepartmentNumber { get; private set; }\r\n\r\n    /// <summary>\r\n    /// Описание\r\n    /// </summary>\r\n    public string Description { get; private set; }\r\n\r\n    /// <summary>\r\n    /// Дата направления\r\n    /// </summary>\r\n    public DateTime ForwardDate { get; private set; }\r\n\r\n    /// <summary>\r\n    /// Куда направили документы\r\n    /// </summary>\r\n    public string ForwardDepartment { get; private set; } /* TODO: replace string with Department datatype */\r\n\r\n    /// <summary>\r\n    /// Что сделано\r\n    /// </summary>\r\n    public Dictionary<string, string> StatusLog { get; private set; }\r\n\r\n    /// <summary>\r\n    /// Дата передачи в отделение\r\n    /// </summary>\r\n    public DateTime DepartmentForwardDate { get; private set; }\r\n\r\n    /// <summary>\r\n    /// Исполнитель\r\n    /// </summary>\r\n    public string Assignee { get; private set; } /* TODO: replace string with User datatype or something like that */\r\n\r\n    /// <summary>\r\n    /// Примечание\r\n    /// </summary>\r\n    public string? Note { get; private set; }\r\n\r\n    /// <summary>\r\n    /// Дата создания задачи\r\n    /// </summary>\r\n    public DateTime CreationDate { get; private set; }\r\n    \r\n    /// <summary>\r\n    /// Пациент\r\n    /// </summary>\r\n    public Patient Patient { get; private set; }\r\n\r\n    /// <summary>\r\n    /// Помечен как в архиве (пациент выписан)\r\n    /// </summary>\r\n    public bool IsArchive { get; set; }\r\n\r\n    /// <summary>\r\n    /// Помечен как удаленный\r\n    /// </summary>\r\n    public bool SoftDeleted { get; set; }\r\n\r\n    public void UpdateDescription(string description)\r\n    {\r\n        Description = description;\r\n        AddDomainEvent(new AssignmentUpdatedEvent(this));\r\n    }\r\n\r\n    public void UpdateAcceptDate(DateTime acceptDate)\r\n    {\r\n        AcceptDate = acceptDate;\r\n        AddDomainEvent(new AssignmentUpdatedEvent(this));\r\n    }\r\n\r\n    public void UpdateForwardDate(DateTime forwardDate)\r\n    {\r\n        ForwardDate = forwardDate;\r\n        AddDomainEvent(new AssignmentUpdatedEvent(this));\r\n    }\r\n\r\n    public void UpdateForwardDepartment(string department)\r\n    {\r\n        ForwardDepartment = department;\r\n        AddDomainEvent(new AssignmentUpdatedEvent(this));\r\n    }\r\n\r\n    public void UpdateDepartmentNumber(int departmentNumber)\r\n    {\r\n        var oldDepartmentNumber = DepartmentNumber;\r\n        DepartmentNumber = departmentNumber;\r\n        \r\n        // Генерируем специализированное событие смены отделения\r\n        AddDomainEvent(new AssignmentDepartmentChangedEvent(this, oldDepartmentNumber, departmentNumber));\r\n        AddDomainEvent(new AssignmentUpdatedEvent(this));\r\n    }\r\n\r\n    public void UpdateDepartmentForwardDate(DateTime forwardDate)\r\n    {\r\n        DepartmentForwardDate = forwardDate;\r\n        AddDomainEvent(new AssignmentUpdatedEvent(this));\r\n    }\r\n\r\n    public void UpdateAssignee(string assignee)\r\n    {\r\n        Assignee = assignee;\r\n        \r\n        // Генерируем специализированное событие назначения исполнителя\r\n        AddDomainEvent(new AssignmentAssignedEvent(this, assignee));\r\n        AddDomainEvent(new AssignmentUpdatedEvent(this));\r\n    }\r\n\r\n    public void UpdateNote(string note)\r\n    {\r\n        if (string.IsNullOrEmpty(note)) throw new ArgumentNullException(nameof(note));\r\n        Note = note;\r\n        AddDomainEvent(new AssignmentUpdatedEvent(this));\r\n    }\r\n\r\n    /// <summary>\r\n    /// Архивировать назначение\r\n    /// </summary>\r\n    /// <param name=\"reason\">Причина архивирования</param>\r\n    public void Archive(string? reason = null)\r\n    {\r\n        if (IsArchive)\r\n            throw new DomainException(\"Назначение уже находится в архиве\");\r\n\r\n        IsArchive = true;\r\n        \r\n        // Генерируем событие архивирования назначения\r\n        AddDomainEvent(new AssignmentArchivedEvent(this, reason));\r\n    }\r\n\r\n    /// <summary>\r\n    /// Пометить назначение как удаленное (мягкое удаление)\r\n    /// </summary>\r\n    public void SoftDelete()\r\n    {\r\n        if (SoftDeleted)\r\n            throw new DomainException(\"Назначение уже помечено как удаленное\");\r\n\r\n        SoftDeleted = true;\r\n        \r\n        // Генерируем событие удаления назначения\r\n        AddDomainEvent(new AssignmentDeletedEvent(Id, Description, Patient.Id));\r\n    }\r\n\r\n    /// <summary>\r\n    /// Добавить статус в журнал\r\n    /// </summary>\r\n    /// <param name=\"status\">Новый статус</param>\r\n    public void AddStatus(string status)\r\n    {\r\n        if (string.IsNullOrEmpty(status)) \r\n            throw new ArgumentNullException(nameof(status));\r\n\r\n        var timestamp = DateTime.Now.ToString(\"yyyy-MM-dd HH:mm:ss\");\r\n        StatusLog[timestamp] = status;\r\n        \r\n        // Генерируем событие добавления статуса\r\n        AddDomainEvent(new AssignmentStatusAddedEvent(this, status));\r\n        AddDomainEvent(new AssignmentUpdatedEvent(this));\r\n    }\r\n    \r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Domain/Entities/Assignment.cs b/src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Domain/Entities/Assignment.cs
+--- a/src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Domain/Entities/Assignment.cs	(revision d026a00c98f869bf4ad419ed96c9d8f1e1cd9520)
++++ b/src/CRM.SocialDepartment.Core/CRM.SocialDepartment.Domain/Entities/Assignment.cs	(date 1756839163640)
+@@ -7,7 +7,9 @@
+ 
+ public class Assignment : AggregateRoot<Guid>, IArchive, ISoftDelete
+ {
+-    public Assignment(DateTime acceptDate, int departmentNumber, string description, DateTime forwardDate, string forwardDepartment, Dictionary<string, string> statusLog, DateTime departmentForwardDate, string assignee, string? note, DateTime creationDate, Patient patient)
++    public Assignment(string name, DateTime acceptDate, int departmentNumber, string description, DateTime forwardDate,
++        string forwardDepartment, Dictionary<string, string> statusLog, DateTime departmentForwardDate, string assignee,
++        string? note, DateTime creationDate, Patient patient)
+     {
+         AcceptDate = acceptDate;
+         DepartmentNumber = departmentNumber;
+@@ -20,11 +22,17 @@
+         Note = note;
+         CreationDate = creationDate;
+         Patient = patient;
++        Name = name;
+ 
+         // Генерируем событие создания назначения
+         AddDomainEvent(new AssignmentCreatedEvent(this));
+     }
+ 
++    ///<summary>
++    /// Название
++    /// </summary>
++    public string Name { get; private set; }
++
+     /// <summary>
+     /// Дата приема заявки от отделения
+     /// </summary>
+@@ -74,7 +82,7 @@
+     /// Дата создания задачи
+     /// </summary>
+     public DateTime CreationDate { get; private set; }
+-    
++
+     /// <summary>
+     /// Пациент
+     /// </summary>
+@@ -118,7 +126,7 @@
+     {
+         var oldDepartmentNumber = DepartmentNumber;
+         DepartmentNumber = departmentNumber;
+-        
++
+         // Генерируем специализированное событие смены отделения
+         AddDomainEvent(new AssignmentDepartmentChangedEvent(this, oldDepartmentNumber, departmentNumber));
+         AddDomainEvent(new AssignmentUpdatedEvent(this));
+@@ -133,7 +141,7 @@
+     public void UpdateAssignee(string assignee)
+     {
+         Assignee = assignee;
+-        
++
+         // Генерируем специализированное событие назначения исполнителя
+         AddDomainEvent(new AssignmentAssignedEvent(this, assignee));
+         AddDomainEvent(new AssignmentUpdatedEvent(this));
+@@ -156,7 +164,7 @@
+             throw new DomainException("Назначение уже находится в архиве");
+ 
+         IsArchive = true;
+-        
++
+         // Генерируем событие архивирования назначения
+         AddDomainEvent(new AssignmentArchivedEvent(this, reason));
+     }
+@@ -170,7 +178,7 @@
+             throw new DomainException("Назначение уже помечено как удаленное");
+ 
+         SoftDeleted = true;
+-        
++
+         // Генерируем событие удаления назначения
+         AddDomainEvent(new AssignmentDeletedEvent(Id, Description, Patient.Id));
+     }
+@@ -181,15 +189,14 @@
+     /// <param name="status">Новый статус</param>
+     public void AddStatus(string status)
+     {
+-        if (string.IsNullOrEmpty(status)) 
++        if (string.IsNullOrEmpty(status))
+             throw new ArgumentNullException(nameof(status));
+ 
+         var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+         StatusLog[timestamp] = status;
+-        
++
+         // Генерируем событие добавления статуса
+         AddDomainEvent(new AssignmentStatusAddedEvent(this, status));
+         AddDomainEvent(new AssignmentUpdatedEvent(this));
+     }
+-    
+ }
+\ No newline at end of file
+Index: src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/wwwroot/js/assignment.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/wwwroot/js/assignment.js b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/wwwroot/js/assignment.js
+new file mode 100644
+--- /dev/null	(date 1756839163696)
++++ b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/wwwroot/js/assignment.js	(date 1756839163696)
+@@ -0,0 +1,658 @@
++console.log('🔍 Проверяем наличие библиотек:');
++console.log('jQuery:', typeof $ !== 'undefined' ? '✅ Загружено' : '❌ Не загружено');
++console.log('DataTables:', typeof $.fn.DataTable !== 'undefined' ? '✅ Загружено' : '❌ Не загружено');
++if (typeof $.fn.DataTable !== 'undefined') {
++    console.log('DataTables версия:', $.fn.dataTable.version);
++}
++
++function showMessage(type, title, message) {
++    if (window.malomalsky?.message?.[type] && typeof window.malomalsky.message[type] === 'function') {
++        try {
++            malomalsky.message[type](title, message);
++            return;
++        } catch (error) {
++            console.error('Ошибка в malomalsky.message:', error);
++        }
++    }
++
++    if (window.Swal) {
++        const config = {
++            title: title,
++            text: message,
++            confirmButtonText: 'OK'
++        };
++
++        switch (type) {
++            case 'success': config.icon = 'success'; break;
++            case 'error': config.icon = 'error'; break;
++            case 'warning': config.icon = 'warning'; break;
++            case 'info': config.icon = 'info'; break;
++        }
++
++        Swal.fire(config);
++    } else {
++        console.log(`${title}: ${message}`);
++    }
++}
++
++function addPatient() {
++    GetFormModal('/Assignment/modal/create', 'Добавить задачу');
++}
++
++function editPatient(patientId) {
++    $.get(`/Assignment/Edit/${patientId}`, function (data) {
++        $('#edit-patient-modal .modal-body').html(data);
++        $('#edit-patient-modal').modal('show');
++    }).fail(function () {
++        showMessage('error', 'Ошибка', 'Не удалось загрузить форму редактирования');
++    });
++}
++
++function archivePatient(patientId) {
++    Swal.fire({
++        title: 'Подтверждение',
++        text: 'Вы уверены, что хотите заархивировать эту задачу?',
++        icon: 'warning',
++        showCancelButton: true,
++        confirmButtonColor: '#d33',
++        cancelButtonColor: '#3085d6',
++        confirmButtonText: 'Да, архивировать',
++        cancelButtonText: 'Отмена'
++    }).then((result) => {
++        if (result.isConfirmed) {
++            $.post(`/Patient/Archive/${patientId}`)
++                .done(function (response) {
++                    if (response.success) {
++                        showMessage('success', 'Успешно!', 'Пациент архивирован.');
++                        if (window.patientDataTable) {
++                            window.patientDataTable.ajax.reload();
++                        }
++                    } else {
++                        showMessage('error', 'Ошибка!', response.message || 'Не удалось архивировать пациента.');
++                    }
++                })
++                .fail(function () {
++                    showMessage('error', 'Ошибка!', 'Ошибка сервера при архивировании пациента.');
++                });
++        }
++    });
++}
++
++// Обновляем статус подключения
++function updateConnectionStatus() {
++    const isConnected = true; // В реальном приложении здесь должна быть проверка соединения
++    $('#connection-status').html(
++        isConnected
++            ? '<i class="fa fa-circle text-success"></i><small>Подключено</small>'
++            : '<i class="fa fa-circle text-warning"></i><small>Polling режим</small>'
++    );
++}
++
++// Обновление времени последнего обновления
++function updateLastUpdateTime() {
++    const now = new Date();
++    const timeString = now.toLocaleTimeString('ru-RU', {
++        hour: '2-digit',
++        minute: '2-digit',
++        second: '2-digit'
++    });
++    $('#last-update').text(timeString);
++}
++
++// Обновление счетчика записей
++function updateRecordsCount(count) {
++    $('#records-badge').text(count || 0);
++}
++
++// Управление автообновлением данных
++let autoRefreshInterval;
++function startAutoRefresh() {
++    if ($('#auto-refresh-setting').is(':checked') && window.patientDataTable) {
++        stopAutoRefresh();
++        autoRefreshInterval = setInterval(() => {
++            window.patientDataTable.ajax.reload(null, false);
++            updateLastUpdateTime();
++        }, 30000);
++    }
++}
++
++function stopAutoRefresh() {
++    if (autoRefreshInterval) {
++        clearInterval(autoRefreshInterval);
++        autoRefreshInterval = null;
++    }
++}
++
++// Загрузка сохраненных настроек
++function loadSettings() {
++    const savedSettings = localStorage.getItem('patientTableSettings');
++    if (savedSettings) {
++        try {
++            const settings = JSON.parse(savedSettings);
++            $('#page-length-setting').val(settings.pageLength || '50');
++            $('#auto-refresh-setting').prop('checked', settings.autoRefresh !== false);
++            $('#compact-mode-setting').prop('checked', settings.compactMode || false);
++            $('#save-state-setting').prop('checked', settings.saveState !== false);
++        } catch (e) {
++            console.error('Ошибка при загрузке настроек:', e);
++        }
++    }
++}
++
++// Инициализация DataTable для пациентов
++function initializePatientDataTable() {
++    console.log('🔧 Начинаем инициализацию DataTable');
++
++    // Проверяем наличие таблицы в DOM
++    const $table = $('#table');
++    console.log('📋 Таблица найдена в DOM:', $table.length > 0);
++    if ($table.length === 0) {
++        console.error('❌ Таблица с id="table" не найдена в DOM');
++        return null;
++    }
++
++    if ($.fn.DataTable.isDataTable('#table')) {
++        console.log('🔄 DataTable уже существует, уничтожаем старую');
++        $('#table').DataTable().destroy();
++        $('#table').empty();
++    }
++
++    // Создаем таблицу, если она не существует
++    const url = '/api/patients/active';
++    console.log('📡 URL для AJAX запроса:', url);
++
++    try {
++        const dataTable = $('#table').DataTable({
++            processing: true,
++            serverSide: true,
++            ajax: {
++                url: url,
++                type: 'POST',
++                dataType: 'json',
++                headers: {
++                    'X-Requested-With': 'XMLHttpRequest'
++                },
++                data: function(d) {
++                    console.log('📤 Отправляемые данные DataTable:', d);
++                    return d;
++                },
++                beforeSend: function(xhr) {
++                    console.log('🚀 Отправляем AJAX запрос на:', url);
++                    console.log('🔍 Параметры запроса:', this.data);
++                },
++                dataSrc: function (json) {
++                    console.log('📦 Получен ответ от сервера:', json);
++
++                    // Проверяем, что json является объектом
++                    if (!json || typeof json !== 'object') {
++                        console.error('❌ Неверный формат ответа от сервера');
++                        return [];
++                    }
++
++                    // Проверяем наличие ошибки в ответе
++                    if (json.error) {
++                        console.error('❌ Сервер вернул ошибку:', json.error);
++                        showMessage('error', 'Ошибка', json.error);
++                        return [];
++                    }
++
++                    // Проверяем, есть ли данные
++                    if (json.data && Array.isArray(json.data)) {
++                        console.log('✅ Получено {Count} записей', json.data.length);
++                        updateRecordsCount(json.recordsTotal || 0);
++                        updateLastUpdateTime();
++                        return json.data;
++                    }
++
++                    console.log('📭 Получен пустой результат от сервера');
++                    updateRecordsCount(0);
++                    updateLastUpdateTime();
++                    return [];
++                },
++                error: function (xhr, status, error) {
++                    console.error('❌ Ошибка AJAX запроса:', {xhr, status, error});
++
++                    // Показываем сообщение об ошибке только если это не поисковый запрос
++                    if (status !== 'abort') {
++                        showMessage('error', 'Ошибка', 'Не удалось загрузить данные пациентов');
++                    }
++
++                    // Возвращаем пустой массив для предотвращения ошибок DataTable
++                    return [];
++                }
++            },
++            columns: [
++                {
++                    data: 'id',
++                    title: 'Действия',
++                    orderable: false,
++                    searchable: false,
++                    render: function (data, type, row) {
++                        return `
++                        <div class="dropdown">
++                            <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
++                                Действие
++                            </button>
++                            <ul class="dropdown-menu">
++                                <li><a class="dropdown-item btn-view-patient" href="#" data-patient-id="${data}">Посмотреть</a></li>
++                                <li><a class="dropdown-item btn-edit-patient" href="#" data-patient-id="${data}">Редактировать</a></li>
++                                <li><a class="dropdown-item btn-archive-patient" href="#" data-patient-id="${data}">Архивировать</a></li>
++                            </ul>
++                        </div>
++                    `;
++                    }
++                },
++                {
++                    data: 'id',
++                    title: 'ID',
++                    visible: false,
++                    searchable: false
++                },
++                { data: 'hospitalizationType', className: 'text-center' },
++                { data: 'resolution', className: 'text-center' },
++                { data: 'medicalHistoryNumber', className: 'text-center' },
++                { data: 'dateOfReceipt', className: 'text-center' },
++                { data: 'department', className: 'text-center' },
++                { data: 'fullName', className: 'fw-medium' },
++                { data: 'birthday', className: 'text-center' },
++                { data: 'isChildren', className: 'text-center' },
++                { data: 'citizenship', className: 'text-center' },
++                { data: 'country', className: 'text-center' },
++                { data: 'registration', className: 'fw-medium' },
++                { data: 'notRegistered', className: 'text-center' },
++                { data: 'earlyRegistration', className: 'fw-medium' },
++                { data: 'placeOfBirth', className: 'text-center' },
++                {
++                    data: 'IsCapable',
++                    className: 'text-center',
++                    render: function (data) {
++                        return data ?
++                            '<span class="badge bg-success">Дееспособен</span>' :
++                            '<span class="badge bg-warning">Недееспособен</span>';
++                    }
++                },
++                { data: 'ReceivesPension', className: 'text-center' },
++                { data: 'DisabilityGroup', className: 'text-center' },
++                { data: 'Note', className: 'fw-medium' }
++            ],
++            order: [[7, 'asc']],
++            pageLength: 100,
++            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'Все']],
++            language: {
++                url: '/lib/datatables.net-bs5/language/ru.json'
++            },
++            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
++                '<"row"<"col-sm-12"tr>>' +
++                '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
++            responsive: true,
++            initComplete: function () {
++                console.log('✅ DataTable инициализирована');
++
++                // Добавляем обработчик для поиска
++                this.api().on('search.dt', function () {
++                    console.log('🔍 Выполняется поиск в таблице');
++                });
++
++                // Добавляем обработчик для обработки пустых результатов
++                this.api().on('xhr.dt', function () {
++                    console.log('📊 XHR запрос завершен');
++                });
++            }
++        });
++
++        window.patientDataTable = dataTable;
++        console.log('💾 DataTable сохранена в window.patientDataTable');
++        console.log('🔍 DataTable объект:', dataTable);
++        return dataTable;
++    } catch (error) {
++        console.error('❌ Ошибка при инициализации DataTable:', error);
++        showMessage('error', 'Ошибка', 'Не удалось инициализировать таблицу данных пациентов.');
++        return null;
++    }
++}
++
++// Функция для форматирования даты в формат dd.MM.yyyy
++function formatDate(date) {
++    if (!date) return '';
++
++    const d = new Date(date);
++    if (isNaN(d.getTime())) return '';
++
++    const day = String(d.getDate()).padStart(2, '0');
++    const month = String(d.getMonth() + 1).padStart(2, '0');
++    const year = d.getFullYear();
++
++    return `${day}.${month}.${year}`;
++}
++
++// Функция для преобразования даты из формата dd.MM.yyyy в ISO формат для input type="date"
++function formatDateForInput(dateString) {
++    if (!dateString) return '';
++
++    const parts = dateString.split('.');
++    if (parts.length !== 3) return '';
++
++    const day = parts[0];
++    const month = parts[1];
++    const year = parts[2];
++
++    return `${year}-${month}-${day}`;
++}
++
++// Обработчики событий
++$(document).ready(function () {
++    console.log('🚀 Document ready, начинаем инициализацию');
++
++    // Проверяем загрузку всех необходимых библиотек
++    if (typeof $ === 'undefined') {
++        console.error('❌ jQuery не загружен');
++        return;
++    }
++
++    if (typeof $.fn.DataTable === 'undefined') {
++        console.error('❌ DataTables не загружен');
++        return;
++    }
++
++    console.log('✅ Все необходимые библиотеки загружены');
++
++    // Инициализация
++    loadSettings();
++    updateConnectionStatus();
++    updateLastUpdateTime();
++
++    // Инициализация DataTable
++    console.log('📊 Инициализируем DataTable');
++    const dataTableResult = initializePatientDataTable();
++    if (dataTableResult) {
++        console.log('✅ DataTable успешно инициализирована');
++        startAutoRefresh();
++    } else {
++        console.error('❌ Не удалось инициализировать DataTable');
++    }
++
++    // Обработчик кнопки "Добавить пациента"
++    $(document).on('click', '#add-patient', function (e) {
++        e.preventDefault();
++        addPatient();
++    });
++
++    //Отправить данные из модального окна: Добавить пациента
++    $('#form-modal').on('submit', '#create-patient', function (e) {
++        e.preventDefault();
++
++        $this = $(this);
++        var url = $this.attr('action');
++
++        // Обработка дат перед отправкой
++        var formData = new FormData($this[0]);
++        var data = new URLSearchParams();
++
++        // Преобразуем FormData в URLSearchParams с правильной обработкой дат
++        for (var pair of formData.entries()) {
++            var key = pair[0];
++            var value = pair[1];
++
++            // Обрабатываем поля с датами
++            if (key === 'Birthday' || key === 'MedicalHistory.DateOfReceipt' ||
++                key === 'CitizenshipInfo.PlaceOfBirth' || key === 'Capable.TrialDate') {
++                if (value) {
++                    // Преобразуем дату в правильный формат для сервера
++                    var date = new Date(value);
++                    if (!isNaN(date.getTime())) {
++                        // Форматируем дату в ISO формат для сервера
++                        var year = date.getFullYear();
++                        var month = String(date.getMonth() + 1).padStart(2, '0');
++                        var day = String(date.getDate()).padStart(2, '0');
++                        value = `${year}-${month}-${day}`;
++                    }
++                }
++            }
++
++            data.append(key, value);
++        }
++
++        var headers = {
++            "CSRF-TOKEN": $this.find('input[name="__RequestVerificationToken"]').val()
++        };
++
++        // Очищаем предыдущие ошибки
++        window.AddPatientFormValidation.clearValidationErrors();
++
++        // Отправляем данные
++        $.ajax({
++            url: url,
++            type: 'POST',
++            data: data.toString(),
++            contentType: 'application/x-www-form-urlencoded',
++            headers: headers,
++            beforeSend: function () {
++                $("#form-modal").find(':submit').attr('disabled', true);
++                $("#form-modal").find(':submit').html('<div class="spinner-border spinner-border-sm" role="status"></div>');
++            },
++            success: function (response) {
++                $('#form-modal').modal('hide');
++
++                // Показываем сообщение об успехе
++                if (typeof malomalsky !== 'undefined' && malomalsky.message && malomalsky.message.success) {
++                    malomalsky.message.success('Успешно!', 'Пациент добавлен');
++                } else {
++                    showMessage('success', 'Успешно!', 'Пациент добавлен');
++                }
++
++                // Обновляем таблицу
++                if (window.patientDataTable) {
++                    window.patientDataTable.ajax.reload();
++                }
++            },
++            error: function (xhr) {
++                $("#form-modal").find(':submit').html('Сохранить');
++                $("#form-modal").find(':submit').attr('disabled', false);
++
++                // Обработка ошибок валидации (400)
++                if (xhr.status === 400) {
++                    try {
++                        var response = JSON.parse(xhr.responseText);
++                        console.log('📋 Получен ответ с ошибками валидации:', response);
++
++                        if (response && response.Data && response.Data.Errors && Array.isArray(response.Data.Errors)) {
++                            console.log('🔍 Ошибки валидации:', response.Data.Errors);
++
++                            // Тестируем все поля формы для отладки
++                            AddPatientFormValidation.testAllFormFields();
++
++                            AddPatientFormValidation.showValidationErrors(response.Data.Errors);
++                            return;
++                        }
++                    } catch (parseError) {
++                        console.log('❌ Не удалось распарсить ответ с ошибками:', parseError);
++                    }
++                }
++
++                // Общая обработка ошибок
++                var errorMessage = 'Произошла ошибка при добавлении пациента';
++                if (xhr.responseText) {
++                    try {
++                        var response = JSON.parse(xhr.responseText);
++                        if (response && response.ErrorMessage) {
++                            errorMessage = response.ErrorMessage;
++                        }
++                    } catch (e) {
++                        // Игнорируем ошибки парсинга
++                    }
++                }
++
++                if (typeof malomalsky !== 'undefined' && malomalsky.message && malomalsky.message.error) {
++                    malomalsky.message.error('Ошибка!', errorMessage);
++                } else {
++                    showMessage('error', 'Ошибка!', errorMessage);
++                }
++            }
++        });
++    });
++
++    // Очистка ошибок при вводе в поля
++    $(document).on('input focus', '.form-control.is-invalid, .form-select.is-invalid', function() {
++        $(this).removeClass('is-invalid');
++        $(this).siblings('.invalid-feedback, .text-danger.field-validation-error').remove();
++    });
++
++    // Очистка ошибок при изменении значения select
++    $(document).on('change', '.form-select.is-invalid', function() {
++        $(this).removeClass('is-invalid');
++        $(this).siblings('.invalid-feedback, .text-danger.field-validation-error').remove();
++    });
++
++    // Обработчик кнопки "Обновить данные"
++    $(document).on('click', '#reload-data', function (e) {
++        e.preventDefault();
++        if (window.patientDataTable) {
++            window.patientDataTable.ajax.reload(function () {
++                updateLastUpdateTime();
++            }, false); // false - чтобы сохранить текущую страницу и сортировку
++        }
++    });
++
++    // Обработчик кнопки "Полноэкранный режим"
++    $(document).on('click', '#fullscreen-toggle', function (e) {
++        e.preventDefault();
++        e.stopPropagation();
++
++        const $container = $('.modern-datatable-container');
++        const $icon = $(this).find('i');
++
++        if (!$container.hasClass('fullscreen-mode')) {
++            $container.addClass('fullscreen-mode');
++            $('body').addClass('datatable-fullscreen');
++            $icon.removeClass('fa-expand').addClass('fa-compress');
++
++            // Фиксируем позиционирование
++            $container.css({
++                'position': 'fixed',
++                'top': '0',
++                'left': '0',
++                'right': '0',
++                'bottom': '0',
++                'z-index': '1040',
++                'background': '#fff'
++            });
++
++            // Перерисовываем таблицу
++            if (window.patientDataTable) {
++                setTimeout(function () {
++                    window.patientDataTable.columns.adjust().draw();
++                }, 200);
++            }
++        } else {
++            $container.removeClass('fullscreen-mode');
++            $('body').removeClass('datatable-fullscreen');
++            $icon.removeClass('fa-compress').addClass('fa-expand');
++
++            // Восстанавливаем позиционирование
++            $container.css({
++                'position': '',
++                'top': '',
++                'left': '',
++                'right': '',
++                'bottom': '',
++                'z-index': '',
++                'background': ''
++            });
++
++            // Перерисовываем таблицу
++            if (window.patientDataTable) {
++                setTimeout(function () {
++                    window.patientDataTable.columns.adjust();
++                    window.patientDataTable.draw();
++                }, 300);
++            }
++        }
++    });
++
++    // Обработчик кнопки "Действие"
++    $(document).on('click', '.dropdown-toggle', function (e) {
++        e.preventDefault();
++        e.stopPropagation();
++
++        // Закрываем все открытые dropdown
++        $('.dropdown-menu').not($(this).next('.dropdown-menu')).hide();
++
++        // Открываем/закрываем текущий dropdown
++        $(this).next('.dropdown-menu').toggle();
++    });
++
++    // Закрытие dropdown при клике вне его
++    $(document).on('click', function (e) {
++        if (!$(e.target).closest('.dropdown').length) {
++            $('.dropdown-menu').hide();
++        }
++    });
++
++    // Обработчики кнопок действий в таблице (делегирование событий)
++    $(document).on('click', '.btn-view-patient', function () {
++        const patientId = $(this).data('patient-id');
++        window.location.href = `/Patient/Card/${patientId}`;
++    });
++
++    $(document).on('click', '.btn-edit-patient', function () {
++        const patientId = $(this).data('patient-id');
++        editPatient(patientId);
++    });
++
++    $(document).on('click', '.btn-archive-patient', function () {
++        const patientId = $(this).data('patient-id');
++        archivePatient(patientId);
++    });
++
++    // Настройки таблицы
++    $('#apply-settings').on('click', function () {
++        const pageLength = $('#page-length-setting').val();
++        const autoRefresh = $('#auto-refresh-setting').is(':checked');
++        const compactMode = $('#compact-mode-setting').is(':checked');
++
++        if (window.patientDataTable) {
++            $('#table').toggleClass('table-sm', compactMode);
++
++            const settings = {
++                pageLength: pageLength,
++                autoRefresh: autoRefresh,
++                compactMode: compactMode
++            };
++            localStorage.setItem('patientTableSettings', JSON.stringify(settings));
++
++            window.patientDataTable.page.len(pageLength === '-1' ? -1 : parseInt(pageLength)).draw();
++
++            if (autoRefresh) {
++                startAutoRefresh();
++            } else {
++                stopAutoRefresh();
++            }
++        }
++
++        $('#table-settings-modal').modal('hide');
++    });
++
++    // Горячие клавиши
++    $(document).on('keydown', function (e) {
++        if (!$(e.target).is('input, textarea, select')) {
++            if (e.ctrlKey && e.key === 'n') {
++                e.preventDefault();
++                $('#add-patient').click();
++            } else if (e.key === 'F5') {
++                e.preventDefault();
++                $('#reload-data').click();
++            } else if (e.key === 'F11') {
++                e.preventDefault();
++                $('#fullscreen-toggle').click();
++            } else if (e.key === 'Escape' && $('.modern-datatable-container').hasClass('fullscreen-mode')) {
++                e.preventDefault();
++                $('#fullscreen-toggle').click();
++            }
++        }
++    });
++
++    console.log('Инициализация завершена');
++    console.log('DataTable instance:', window.patientDataTable);
++    console.log('AJAX URL:', window.patientDataTable?.ajax?.url());
++
++});
+\ No newline at end of file
+Index: src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/Index.cshtml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>@{\r\n    ViewData[\"Title\"] = \"Список задач\";\r\n}\r\n\r\n@section Styles\r\n{\r\n    <link href=\"~/lib/datatables.net-bs5/css/jquery.datatables.css\" rel=\"stylesheet\" />\r\n    <link href=\"~/lib/datatables.net-bs5/css/datatables.bootstrap5.min.css\" rel=\"stylesheet\" />\r\n    <link href=\"~/lib/datatables.net-bs5/css/searchpanes.bootstrap5.min.css\" rel=\"stylesheet\" />\r\n    <link href=\"~/lib/datatables.net-bs5/css/fixedheader.bootstrap5.min.css\" rel=\"stylesheet\" />\r\n    <link href=\"~/lib/datatables.net-bs5/css/scroller.bootstrap5.min.css\" rel=\"stylesheet\" />\r\n}\r\n\r\n@section Scripts\r\n{\r\n    <script src=\"~/lib/datatables.net-bs5/js/jquery.datatables.min.js\"></script>\r\n    <script src=\"~/lib/datatables.net-bs5/js/datatables.bootstrap5.min.js\"></script>\r\n    <script src=\"~/lib/datatables.net-bs5/js/searchpanes.bootstrap5.min.js\"></script>\r\n    <script src=\"~/lib/datatables.net-bs5/js/fixedheader.bootstrap5.min.js\"></script>\r\n    <script src=\"~/lib/datatables.net-bs5/js/scroller.bootstrap5.min.js\"></script>\r\n    <script src=\"~/js/patient.js\" asp-append-version=\"true\"></script>\r\n    @await Html.PartialAsync(\"_ValidationScriptsPartial\")\r\n}\r\n\r\n<div id=\"form-modal\" class=\"modal fade\" tabindex=\"-1\" role=\"dialog\" data-backdrop=\"static\" data-keyboard=\"false\">\r\n    <div class=\"modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg\" role=\"document\">\r\n        <div class=\"modal-content\">\r\n            <div class=\"modal-header\">\r\n                <h5 class=\"modal-title\"></h5>\r\n                <button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"modal\" aria-label=\"Close\"></button>\r\n            </div>\r\n            <div class=\"modal-body\">\r\n            </div>\r\n        </div>\r\n    </div>\r\n</div>\r\n\r\n<div class=\"card\" style=\"margin: 10px;\">\r\n    <div class=\"col-sm-12\" style=\"padding:20px\">\r\n        <!-- Меню -->\r\n        <a id=\"add-assignment\" class=\"btn btn-primary\"><i class=\"fa fa-plus\"></i> Задача</a>\r\n        <a id=\"reload\" class=\"btn btn-outline-info\"><i class=\"fa fa-refresh\"></i> список</a>\r\n        <a onclick=\"\" class=\"btn btn-outline-danger\"><i class=\"fa fa-bitbucket\"></i> (2)</a>\r\n        <!-- onclick=\"printModalShow()\" -->\r\n    </div>\r\n    <div class=\"card-body table-responsive\">\r\n        <div style=\"width: 100%; overflow-x: auto;\">\r\n            <table id=\"table\" class=\"table table-custom table-bordered table-hover\">\r\n                <thead>\r\n                    <tr>\r\n                        <th></th>\r\n                        <th>ID</th>\r\n                        <th>Дата приема заявки от отделения</th>\r\n                        <th>Номер отделения</th>\r\n                        <th>Описание</th>\r\n                        <th>Дата направления</th>\r\n                        <th>Куда направили документы</th>\r\n                        <th>Что сделано</th>\r\n                        <th>Дата передачи в отделение</th>\r\n                        <th>Исполнитель</th>\r\n                        <th>Примечание</th>\r\n                        <th>Дата создания задачи</th>\r\n                        <th>Пациент</th>\r\n                        @* <th>Помечен как в архиве (пациент выписан)</th> *@\r\n                        @* <th>Помечен как удаленный</th> *@\r\n                    </tr>\r\n                </thead>\r\n                <tbody id=\"viewAll\"></tbody>\r\n            </table>\r\n        </div>\r\n    </div>\r\n</div>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/Index.cshtml b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/Index.cshtml
+--- a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/Index.cshtml	(revision d026a00c98f869bf4ad419ed96c9d8f1e1cd9520)
++++ b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/Views/Assignment/Index.cshtml	(date 1756839163667)
+@@ -18,7 +18,7 @@
+     <script src="~/lib/datatables.net-bs5/js/searchpanes.bootstrap5.min.js"></script>
+     <script src="~/lib/datatables.net-bs5/js/fixedheader.bootstrap5.min.js"></script>
+     <script src="~/lib/datatables.net-bs5/js/scroller.bootstrap5.min.js"></script>
+-    <script src="~/js/patient.js" asp-append-version="true"></script>
++    <script src="~/js/assignment.js" asp-append-version="true"></script>
+     @await Html.PartialAsync("_ValidationScriptsPartial")
+ }
+ 
+Index: src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/MappingProfile/ProjectMappingProfile.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using AutoMapper;\r\nusing CRM.SocialDepartment.Application.DTOs;\r\nusing CRM.SocialDepartment.Domain.Entities;\r\nusing CRM.SocialDepartment.Domain.Entities.Patients;\r\nusing CRM.SocialDepartment.Domain.Entities.Patients.Documents;\r\nusing CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;\r\nusing CRM.SocialDepartment.Site.Models.Patient;\r\nusing CRM.SocialDepartment.Site.ViewModels.Patient;\r\nusing CRM.SocialDepartment.Site.ViewModels.User;\r\n\r\nnamespace CRM.SocialDepartment.Site.MappingProfile\r\n{\r\n    public class ProjectMappingProfile : Profile\r\n    {\r\n        public ProjectMappingProfile()\r\n        {\r\n            // Patient //////////////////////////////////////////////////////////////////////////////////////////////////////////////////\r\n            CreateMap<CreatePatientViewModel, CreatePatientDTO>()\r\n                .ForMember(dest => dest.Birthday, opt => opt.MapFrom(src => \r\n                    DateTime.SpecifyKind(src.Birthday, DateTimeKind.Utc)))\r\n                .ForMember(dest => dest.Documents, opt => opt.MapFrom(src =>\r\n                    src.Documents.ToDictionary(\r\n                        kvp => kvp.Key,\r\n                        kvp => new DocumentDTO\r\n                        {\r\n                            Type = kvp.Key,\r\n                            // Селективная обработка форматов документов\r\n                            Number = FormatDocumentNumber(kvp.Key, kvp.Value.Number)\r\n                        }\r\n                    )))\r\n                // ВАЖНО: Если пациент НЕ получает пенсию, то данные о пенсии должны быть null\r\n                .ForMember(dest => dest.Pension, opt => opt.MapFrom(src => \r\n                    src.ReceivesPension ? src.Pension : null))\r\n                // ВАЖНО: Если пациент дееспособен, то Capable должен быть null\r\n                .ForMember(dest => dest.Capable, opt => opt.MapFrom(src => \r\n                    src.IsCapable ? null : src.Capable))\r\n                // ВАЖНО: Передаем ReceivesPension для корректной обработки\r\n                .ForMember(dest => dest.ReceivesPension, opt => opt.MapFrom(src => src.ReceivesPension));\r\n\r\n            CreateMap<EditPatientViewModel, EditPatientDTO>()\r\n                //.ForMember(dest => dest.Birthday, opt => opt.MapFrom(src => \r\n                //    DateTime.SpecifyKind(src.Birthday, DateTimeKind.Utc)))\r\n                .ForMember(dest => dest.Documents, opt => opt.MapFrom(src =>\r\n                    src.Documents.ToDictionary(\r\n                        kvp => kvp.Key,\r\n                        kvp => new DocumentDTO\r\n                        {\r\n                            Type = kvp.Key,\r\n                            // Селективная обработка форматов документов\r\n                            Number = FormatDocumentNumber(kvp.Key, kvp.Value.Number)\r\n                        }\r\n                    )));\r\n\r\n            CreateMap<Patient, EditPatientDTO>()\r\n                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))\r\n                //.ForMember(dest => dest.Birthday, opt => opt.MapFrom(src => \r\n                //    DateTime.SpecifyKind(src.Birthday, DateTimeKind.Utc)))\r\n                .ForMember(dest => dest.ActiveMedicalHistory, opt => opt.MapFrom(src => new MedicalHistoryDTO\r\n                {\r\n                    NumberDepartment = (sbyte)(src.ActiveHistory != null ? src.ActiveHistory.NumberDepartment : 0),\r\n                    HospitalizationType = new HospitalizationTypeDTO\r\n                    {\r\n                        Value = (byte)(src.ActiveHistory != null && src.ActiveHistory.HospitalizationType != null ? src.ActiveHistory.HospitalizationType.Value : 0),\r\n                        DisplayName = src.ActiveHistory != null && src.ActiveHistory.HospitalizationType != null ? src.ActiveHistory.HospitalizationType.DisplayName : string.Empty\r\n                    },\r\n                    Resolution = src.ActiveHistory != null ? src.ActiveHistory.Resolution : string.Empty,\r\n                    NumberDocument = src.ActiveHistory != null ? src.ActiveHistory.NumberDocument : string.Empty,\r\n                    DateOfReceipt = src.ActiveHistory != null ? DateTime.SpecifyKind(src.ActiveHistory.DateOfReceipt, DateTimeKind.Utc) : DateTime.MinValue,\r\n                    DateOfDischarge = src.ActiveHistory != null && src.ActiveHistory.DateOfDischarge.HasValue ? DateTime.SpecifyKind(src.ActiveHistory.DateOfDischarge.Value, DateTimeKind.Utc) : null,\r\n                    Note = src.ActiveHistory != null ? src.ActiveHistory.Note : null\r\n                }))\r\n                .ForMember(dest => dest.CitizenshipInfo, opt => opt.MapFrom(src => new CitizenshipInfoDTO\r\n                {\r\n                    Citizenship = src.CitizenshipInfo != null ? src.CitizenshipInfo.Citizenship : CitizenshipType.RussianFederation,\r\n                    Country = src.CitizenshipInfo != null ? src.CitizenshipInfo.Country : string.Empty,\r\n                    Registration = src.CitizenshipInfo != null ? src.CitizenshipInfo.Registration : string.Empty,\r\n                    EarlyRegistration = src.CitizenshipInfo != null ? src.CitizenshipInfo.EarlyRegistration : null,\r\n                    PlaceOfBirth = src.CitizenshipInfo != null ? src.CitizenshipInfo.PlaceOfBirth : null,\r\n                    DocumentAttached = src.CitizenshipInfo != null ? src.CitizenshipInfo.DocumentAttached : null\r\n                }))\r\n                .ForMember(dest => dest.Documents, opt => opt.MapFrom(src => \r\n                    src.Documents.ToDictionary(\r\n                        kvp => kvp.Key,\r\n                        kvp => new DocumentDTO\r\n                        {\r\n                            Type = kvp.Key,\r\n                            Number = ExtractDocumentNumber(kvp.Value)\r\n                        }\r\n                    )))\r\n                .ForMember(dest => dest.Capable, opt => opt.MapFrom(src => src.Capable != null ? new EditCapableDTO\r\n                {\r\n                    Guardian = src.Capable.Guardian != null ? src.Capable.Guardian : string.Empty,\r\n                    GuardianOrderAppointment = src.Capable.GuardianOrderAppointment != null ? src.Capable.GuardianOrderAppointment : string.Empty\r\n                } : null))\r\n                .ForMember(dest => dest.Pension, opt => opt.MapFrom(src => src.Pension != null ? new PensionDTO\r\n                {\r\n                    DisabilityGroup = src.Pension.DisabilityGroup,\r\n                    PensionStartDateTime = src.Pension.PensionStartDateTime.HasValue ? DateTime.SpecifyKind(src.Pension.PensionStartDateTime.Value, DateTimeKind.Utc) : null,\r\n                    PensionAddress = src.Pension.PensionAddress,\r\n                    SfrBranch = src.Pension.SfrBranch,\r\n                    SfrDepartment = src.Pension.SfrDepartment,\r\n                    Rsd = src.Pension.Rsd\r\n                } : null))\r\n                .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.Note));\r\n\r\n            CreateMap<Patient, CreatePatientDTO>()\r\n                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))\r\n                .ForMember(dest => dest.Birthday, opt => opt.MapFrom(src => \r\n                    DateTime.SpecifyKind(src.Birthday, DateTimeKind.Utc)))\r\n                .ForMember(dest => dest.MedicalHistory, opt => opt.MapFrom(src => new MedicalHistoryDTO\r\n                {\r\n                    NumberDepartment = (sbyte)(src.ActiveHistory != null ? src.ActiveHistory.NumberDepartment : 0),\r\n                    HospitalizationType = new HospitalizationTypeDTO\r\n                    {\r\n                        Value = (byte)(src.ActiveHistory != null && src.ActiveHistory.HospitalizationType != null ? src.ActiveHistory.HospitalizationType.Value : 0),\r\n                        DisplayName = src.ActiveHistory != null && src.ActiveHistory.HospitalizationType != null ? src.ActiveHistory.HospitalizationType.DisplayName : string.Empty\r\n                    },\r\n                    Resolution = src.ActiveHistory != null ? src.ActiveHistory.Resolution : string.Empty,\r\n                    NumberDocument = src.ActiveHistory != null ? src.ActiveHistory.NumberDocument : string.Empty,\r\n                    DateOfReceipt = src.ActiveHistory != null ? DateTime.SpecifyKind(src.ActiveHistory.DateOfReceipt, DateTimeKind.Utc) : DateTime.MinValue,\r\n                    DateOfDischarge = src.ActiveHistory != null && src.ActiveHistory.DateOfDischarge.HasValue ? DateTime.SpecifyKind(src.ActiveHistory.DateOfDischarge.Value, DateTimeKind.Utc) : null,\r\n                    Note = src.ActiveHistory != null ? src.ActiveHistory.Note : null\r\n                }))\r\n                .ForMember(dest => dest.CitizenshipInfo, opt => opt.MapFrom(src => new CitizenshipInfoDTO\r\n                {\r\n                    Citizenship = src.CitizenshipInfo != null ? src.CitizenshipInfo.Citizenship : CitizenshipType.RussianFederation,\r\n                    Country = src.CitizenshipInfo != null ? src.CitizenshipInfo.Country : string.Empty,\r\n                    Registration = src.CitizenshipInfo != null ? src.CitizenshipInfo.Registration : string.Empty,\r\n                    EarlyRegistration = src.CitizenshipInfo != null ? src.CitizenshipInfo.EarlyRegistration : null,\r\n                    PlaceOfBirth = src.CitizenshipInfo != null ? src.CitizenshipInfo.PlaceOfBirth : null,\r\n                    DocumentAttached = src.CitizenshipInfo != null ? src.CitizenshipInfo.DocumentAttached : null\r\n                }))\r\n                .ForMember(dest => dest.Documents, opt => opt.MapFrom(src => \r\n                    src.Documents.ToDictionary(\r\n                        kvp => kvp.Key,\r\n                        kvp => new DocumentDTO\r\n                        {\r\n                            Type = kvp.Key,\r\n                            Number = ExtractDocumentNumber(kvp.Value)\r\n                        }\r\n                    )))\r\n                .ForMember(dest => dest.IsCapable, opt => opt.MapFrom(src => src.IsCapable))\r\n                .ForMember(dest => dest.Capable, opt => opt.MapFrom(src => src.Capable != null ? new CreateCapableDTO\r\n                {\r\n                    CourtDecision = src.Capable.CourtDecision != null ? src.Capable.CourtDecision : string.Empty,\r\n                    TrialDate = src.Capable.TrialDate.HasValue ? DateTime.SpecifyKind(src.Capable.TrialDate.Value, DateTimeKind.Utc) : null,\r\n                    Guardian = src.Capable.Guardian != null ? src.Capable.Guardian : string.Empty,\r\n                    GuardianOrderAppointment = src.Capable.GuardianOrderAppointment != null ? src.Capable.GuardianOrderAppointment : string.Empty\r\n                } : null))\r\n                .ForMember(dest => dest.ReceivesPension, opt => opt.MapFrom(src => src.ReceivesPension))\r\n                .ForMember(dest => dest.Pension, opt => opt.MapFrom(src => src.Pension != null ? new PensionDTO\r\n                {\r\n                    DisabilityGroup = src.Pension.DisabilityGroup,\r\n                    PensionStartDateTime = src.Pension.PensionStartDateTime.HasValue ? DateTime.SpecifyKind(src.Pension.PensionStartDateTime.Value, DateTimeKind.Utc) : null,\r\n                    PensionAddress = src.Pension.PensionAddress,\r\n                    SfrBranch = src.Pension.SfrBranch,\r\n                    SfrDepartment = src.Pension.SfrDepartment,\r\n                    Rsd = src.Pension.Rsd\r\n                } : null))\r\n                .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.Note));\r\n\r\n            //По лучшим практикам, процесс маппинга из DTO -> Entity, должен осуществляться в ручную.\r\n            //CreateMap<EditPatientDTO, Patient>()\r\n            //.ForMember(dest => dest.Documents, opt => opt.MapFrom(src => \r\n            //    src.Documents.ToDictionary(\r\n            //        kvp => kvp.Key,\r\n            //        kvp => DocumentFactory.Create(\r\n            //            kvp.Value.Type,\r\n            //            kvp.Value.Number\r\n            //        )\r\n            //    )));\r\n\r\n            CreateMap<EditPatientViewModel, EditPatientDTO>();\r\n            CreateMap<CreateUserViewModel, CreateUserDTO>();\r\n            CreateMap<ApplicationUser, UserDTO>();\r\n\r\n            // Маппинг DTO в ViewModels с правильной обработкой дат\r\n            CreateMap<CreatePatientDTO, CreatePatientViewModel>()\r\n                .ForMember(dest => dest.Birthday, opt => opt.MapFrom(src => \r\n                    DateTime.SpecifyKind(src.Birthday, DateTimeKind.Utc)));\r\n\r\n            CreateMap<EditPatientDTO, EditPatientViewModel>();\r\n                //.ForMember(dest => dest.Birthday, opt => opt.MapFrom(src => \r\n                //    DateTime.SpecifyKind(src.Birthday, DateTimeKind.Utc)));\r\n\r\n            // ❗ КРИТИЧЕСКИ ВАЖНЫЕ МАППИНГИ ДЛЯ ViewModel -> DTO ❗ //\r\n            \r\n            // MedicalHistory (ViewModel) -> MedicalHistoryDTO\r\n            CreateMap<MedicalHistoryModel, MedicalHistoryDTO>()\r\n                .ForMember(dest => dest.DateOfReceipt, opt => opt.MapFrom(src => \r\n                    DateTime.SpecifyKind(src.DateOfReceipt, DateTimeKind.Utc)))\r\n                .ForMember(dest => dest.DateOfDischarge, opt => opt.MapFrom(src => \r\n                    src.DateOfDischarge.HasValue ? DateTime.SpecifyKind(src.DateOfDischarge.Value, DateTimeKind.Utc) : (DateTime?)null))\r\n                .ForMember(dest => dest.HospitalizationType, opt => opt.MapFrom(src => \r\n                    src.HospitalizationType != null \r\n                        ? new HospitalizationTypeDTO\r\n                        {\r\n                            Value = src.HospitalizationType.Value,\r\n                            DisplayName = src.HospitalizationType.DisplayName\r\n                        }\r\n                        : new HospitalizationTypeDTO  // Значение по умолчанию\r\n                        {\r\n                            Value = 1,  // Force\r\n                            DisplayName = \"Принудительно\"\r\n                        }));\r\n\r\n            // CitizenshipInfo (ViewModel) -> CitizenshipInfoDTO\r\n            CreateMap<CitizenshipInfoModel, CitizenshipInfoDTO>()\r\n                .ForMember(dest => dest.Citizenship, opt => opt.MapFrom(src => \r\n                    src.Citizenship != null ? src.Citizenship : CitizenshipType.RussianFederation)) // Значение по умолчанию\r\n                .ForMember(dest => dest.Country, opt => opt.MapFrom(src => src.Country))\r\n                .ForMember(dest => dest.Registration, opt => opt.MapFrom(src => src.Registration))\r\n                .ForMember(dest => dest.EarlyRegistration, opt => opt.MapFrom(src => src.EarlyRegistration))\r\n                .ForMember(dest => dest.PlaceOfBirth, opt => opt.MapFrom(src => src.PlaceOfBirth))\r\n                .ForMember(dest => dest.DocumentAttached, opt => opt.MapFrom(src => src.DocumentAttached));\r\n\r\n            // Capable (ViewModel) -> CreateCapableDTO/EditCapableDTO\r\n            CreateMap<CapableModel, CreateCapableDTO>()\r\n                .ForMember(dest => dest.TrialDate, opt => opt.MapFrom(src => \r\n                    src.TrialDate.HasValue ? DateTime.SpecifyKind(src.TrialDate.Value, DateTimeKind.Utc) : (DateTime?)null));\r\n            CreateMap<CapableModel, EditCapableDTO>()\r\n                .ForMember(dest => dest.TrialDate, opt => opt.MapFrom(src => \r\n                    src.TrialDate.HasValue ? DateTime.SpecifyKind(src.TrialDate.Value, DateTimeKind.Utc) : (DateTime?)null));\r\n\r\n            // Pension (ViewModel) -> PensionDTO\r\n            CreateMap<PensionModel, PensionDTO>()\r\n                .ForMember(dest => dest.PensionStartDateTime, opt => opt.MapFrom(src => \r\n                    src.PensionStartDateTime.HasValue ? DateTime.SpecifyKind(src.PensionStartDateTime.Value, DateTimeKind.Utc) : (DateTime?)null));\r\n\r\n            // HospitalizationType //////////////////////////////////////////////////////////////////////////////////////////////////////\r\n            CreateMap<byte, HospitalizationType>().ConvertUsing(value => HospitalizationType.FromValue(value));\r\n            CreateMap<HospitalizationType, byte>().ConvertUsing(hospitalizationType => hospitalizationType.Value);\r\n\r\n            // CitizenshipInfo ///////////////////////////////////////////////////////////////////////////////////////////////////////////\r\n            CreateMap<CitizenshipInfoDTO, CitizenshipInfo>().ReverseMap();\r\n\r\n            // CitizenshipType ///////////////////////////////////////////////////////////////////////////////////////////////////////////\r\n            CreateMap<byte, CitizenshipType>().ConvertUsing(value => CitizenshipType.FromValue(value));\r\n            CreateMap<CitizenshipType, byte>().ConvertUsing(citizenshipType => citizenshipType.Value);\r\n\r\n            // Capable //////////////////////////////////////////////////////////////////////////////////////////////////////////////////\r\n            CreateMap<CreateCapableDTO, Capable>()\r\n                .ConstructUsing(src => new Capable(\r\n                    src.CourtDecision,\r\n                    src.TrialDate.HasValue ? DateTime.SpecifyKind(src.TrialDate.Value, DateTimeKind.Utc) : null,\r\n                    src.Guardian,\r\n                    src.GuardianOrderAppointment));\r\n\r\n            CreateMap<EditCapableDTO, Capable>()\r\n                .ForMember(dest => dest.CourtDecision, opt => opt.Ignore())\r\n                .ForMember(dest => dest.TrialDate, opt => opt.Ignore())\r\n                .ConstructUsing((src, ctx) =>\r\n                {\r\n                    var existingCapable = ctx.Items[\"ExistingCapable\"] as Capable;\r\n                    return new Capable(\r\n                        existingCapable!.CourtDecision,\r\n                        existingCapable!.TrialDate.HasValue ? DateTime.SpecifyKind(existingCapable.TrialDate.Value, DateTimeKind.Utc) : null,\r\n                        src.Guardian,\r\n                        src.GuardianOrderAppointment);\r\n                });\r\n\r\n            // City //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\r\n            CreateMap<byte, CityType>().ConvertUsing(value => CityType.FromValue(value));\r\n            CreateMap<CityType, byte>().ConvertUsing(city => city.Value);\r\n\r\n            // DisabilityGroup ///////////////////////////////////////////////////////////////////////////////////////////////////////////\r\n            CreateMap<byte, DisabilityGroupType>().ConvertUsing(value => DisabilityGroupType.FromValue(value));\r\n            CreateMap<DisabilityGroupType, byte>().ConvertUsing(disabilityGroup => disabilityGroup.Value);\r\n\r\n            // Pension ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////\r\n            CreateMap<PensionDTO, Pension>()\r\n                .ForMember(dest => dest.PensionStartDateTime, opt => opt.MapFrom(src => \r\n                    src.PensionStartDateTime.HasValue ? DateTime.SpecifyKind(src.PensionStartDateTime.Value, DateTimeKind.Utc) : (DateTime?)null));\r\n\r\n            // PensionAddress ////////////////////////////////////////////////////////////////////////////////////////////////////////////\r\n            CreateMap<byte, PensionAddressType>().ConvertUsing(value => PensionAddressType.FromValue(value));\r\n            CreateMap<PensionAddressType, byte>().ConvertUsing(pensionAddress => pensionAddress.Value);\r\n\r\n            // Assignment ////////////////////////////////////////////////////////////////////////////////////////////////////////////////\r\n            CreateMap<Assignment, EditPatientDTO>();\r\n\r\n            CreateMap<Patient, ActivePatientDTO>()\r\n                .ForMember(dest => dest.HospitalizationType, opt => opt.MapFrom(src =>\r\n                    src.ActiveHistory != null && src.ActiveHistory.HospitalizationType != null\r\n                        ? src.ActiveHistory.HospitalizationType.DisplayName\r\n                        : \"—\"))\r\n                .ForMember(dest => dest.CourtDecision, opt => opt.MapFrom(src =>\r\n                    src.Capable != null && !string.IsNullOrEmpty(src.Capable.CourtDecision)\r\n                        ? src.Capable.CourtDecision\r\n                        : \"—\"))\r\n                .ForMember(dest => dest.NumberDocument, opt => opt.MapFrom(src =>\r\n                    src.ActiveHistory != null && !string.IsNullOrEmpty(src.ActiveHistory.NumberDocument)\r\n                        ? src.ActiveHistory.NumberDocument\r\n                        : \"—\"))\r\n                .ForMember(dest => dest.DateOfReceipt, opt => opt.MapFrom(src =>\r\n                    src.ActiveHistory != null ? DateTime.SpecifyKind(src.ActiveHistory.DateOfReceipt, DateTimeKind.Utc) : DateTime.MinValue))\r\n                .ForMember(dest => dest.Department, opt => opt.MapFrom(src =>\r\n                    src.ActiveHistory != null && src.ActiveHistory.NumberDepartment.HasValue\r\n                        ? src.ActiveHistory.NumberDepartment.Value.ToString()\r\n                        : \"—\"))\r\n                .ForMember(dest => dest.IsChildren, opt => opt.MapFrom(src => src.IsChildren))\r\n                .ForMember(dest => dest.Citizenship, opt => opt.MapFrom(src =>\r\n                    src.CitizenshipInfo != null && src.CitizenshipInfo.Citizenship != null\r\n                        ? src.CitizenshipInfo.Citizenship.DisplayName\r\n                        : \"—\"))\r\n                .ForMember(dest => dest.Country, opt => opt.MapFrom(src =>\r\n                    src.CitizenshipInfo != null && !string.IsNullOrEmpty(src.CitizenshipInfo.Country)\r\n                        ? src.CitizenshipInfo.Country\r\n                        : \"—\"))\r\n                .ForMember(dest => dest.Registration, opt => opt.MapFrom(src =>\r\n                    src.CitizenshipInfo != null && !string.IsNullOrEmpty(src.CitizenshipInfo.Registration)\r\n                        ? src.CitizenshipInfo.Registration\r\n                        : \"—\"))\r\n                .ForMember(dest => dest.IsHomeless, opt => opt.MapFrom(src =>\r\n                    src.CitizenshipInfo != null && src.CitizenshipInfo.NotRegistered\r\n                        ? true\r\n                        : false))\r\n                .ForMember(dest => dest.EarlyRegistration, opt => opt.MapFrom(src =>\r\n                    src.CitizenshipInfo != null && src.CitizenshipInfo.EarlyRegistration != null\r\n                        ? src.CitizenshipInfo.EarlyRegistration.DisplayName\r\n                        : \"—\"))\r\n                .ForMember(dest => dest.PlaceOfBirth, opt => opt.MapFrom(src =>\r\n                    src.CitizenshipInfo != null && !string.IsNullOrEmpty(src.CitizenshipInfo.PlaceOfBirth)\r\n                        ? src.CitizenshipInfo.PlaceOfBirth\r\n                        : \"—\"))\r\n                .ForMember(dest => dest.IsCapable, opt => opt.MapFrom(src => src.IsCapable))\r\n                .ForMember(dest => dest.ReceivesPension, opt => opt.MapFrom(src => src.ReceivesPension))\r\n                .ForMember(dest => dest.DisabilityGroup, opt => opt.MapFrom(src =>\r\n                    src.Pension != null && src.Pension.DisabilityGroup != null && src.Pension.DisabilityGroup.Value > 0\r\n                        ? src.Pension.DisabilityGroup.Value.ToString()\r\n                        : \"—\"))\r\n                .ForMember(dest => dest.Note, opt => opt.MapFrom(src =>\r\n                    !string.IsNullOrEmpty(src.Note)\r\n                        ? src.Note\r\n                        : \"—\"));\r\n        }\r\n\r\n        /// <summary>\r\n        /// Извлекает номер документа из object в Dictionary\r\n        /// </summary>\r\n        /// <param name=\"document\">Документ как object</param>\r\n        /// <returns>Номер документа или пустая строка</returns>\r\n        private static string ExtractDocumentNumber(object document)\r\n        {\r\n            if (document == null) return string.Empty;\r\n            \r\n            if (document is PassportDocument passport)\r\n                return passport.Number != null ? passport.Number : string.Empty;\r\n            if (document is MedicalPolicyDocument policy)\r\n                return policy.Number != null ? policy.Number : string.Empty;\r\n            if (document is SnilsDocument snils)\r\n                return snils.Number != null ? snils.Number : string.Empty;\r\n            \r\n            return string.Empty;\r\n        }\r\n\r\n        /// <summary>\r\n        /// Форматирует номер документа в зависимости от его типа\r\n        /// </summary>\r\n        /// <param name=\"documentType\">Тип документа</param>\r\n        /// <param name=\"number\">Номер документа от пользователя</param>\r\n        /// <returns>Отформатированный номер для хранения в базе</returns>\r\n        private static string FormatDocumentNumber(DocumentType documentType, string? number)\r\n        {\r\n            if (string.IsNullOrEmpty(number))\r\n                return string.Empty;\r\n\r\n            return documentType switch\r\n            {\r\n                var dt when dt == DocumentType.Passport => number,\r\n                var dt when dt == DocumentType.MedicalPolicy => number.Replace(\" \", \"\"),\r\n                var dt when dt == DocumentType.Snils => number,\r\n                _ => number\r\n            };\r\n        }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/MappingProfile/ProjectMappingProfile.cs b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/MappingProfile/ProjectMappingProfile.cs
+--- a/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/MappingProfile/ProjectMappingProfile.cs	(revision d026a00c98f869bf4ad419ed96c9d8f1e1cd9520)
++++ b/src/CRM.SocialDepartment.Presentation/CRM.SocialDepartment.Site/MappingProfile/ProjectMappingProfile.cs	(date 1756839163658)
+@@ -5,6 +5,7 @@
+ using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
+ using CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Data;
+ using CRM.SocialDepartment.Site.Models.Patient;
++using CRM.SocialDepartment.Site.ViewModels.Assignment;
+ using CRM.SocialDepartment.Site.ViewModels.Patient;
+ using CRM.SocialDepartment.Site.ViewModels.User;
+ 
+@@ -278,6 +279,7 @@
+ 
+             // Assignment ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+             CreateMap<Assignment, EditPatientDTO>();
++            CreateMap<CreateAssignmentViewModel, CreateOrEditAssignmentDto>();
+ 
+             CreateMap<Patient, ActivePatientDTO>()
+                 .ForMember(dest => dest.HospitalizationType, opt => opt.MapFrom(src =>
