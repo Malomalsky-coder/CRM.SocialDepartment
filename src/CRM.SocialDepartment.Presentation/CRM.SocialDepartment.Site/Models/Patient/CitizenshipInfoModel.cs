@@ -11,7 +11,7 @@ namespace CRM.SocialDepartment.Site.Models.Patient
     {
         [BindNever]
         [DisplayName("Список гражданств")]
-        public string[] Citizenships { get; init; }
+        public string[] Citizenships { get; init; } = [];
 
         /// <summary>
         /// Гражданство

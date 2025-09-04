@@ -47,7 +47,7 @@ namespace CRM.SocialDepartment.Site.Controllers
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("patients/{id:guid}")]
+        [Route("[controller]/Card/{id:guid}")]
         [LogDataRequest("Просмотр карточки пациента", "Пользователь запросил карточку пациента")]
         public async Task<IActionResult> Card(Guid id, CancellationToken cancellationToken = default)
         {
@@ -108,7 +108,7 @@ namespace CRM.SocialDepartment.Site.Controllers
         /// <param name="patientId"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("[controller]/modal/edit")]
+        [Route("[controller]/modal/edit/{patientId:guid}")]
         public async Task<IActionResult> GetEditPatientModalAsync(Guid patientId, CancellationToken cancellationToken = default)
         {
             //todo: Проверить права: Сотрудник, Администратор
@@ -706,11 +706,11 @@ namespace CRM.SocialDepartment.Site.Controllers
         }
 
         //5. Редактировать пользователя
-        [HttpPatch]
+        [HttpPost]
         [Route("api/patients/{id:guid}")]
         [ValidateAntiForgeryToken]
         [LogUpdate("Patient", "Редактирование пациента", "Пользователь отредактировал данные пациента")]
-        public async Task<JsonResult> EditPatientsAsync([FromRoute] Guid id, EditPatientViewModel input, CancellationToken cancellationToken)
+        public async Task<JsonResult> EditPatientAsync([FromRoute] Guid id, EditPatientViewModel input, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
@@ -731,21 +731,21 @@ namespace CRM.SocialDepartment.Site.Controllers
         }
 
         //6. Удалить пользователя
-        //[HttpDelete]
-        //[Route("api/patients/{id:guid}")]
-        //public async Task<JsonResult> DeletePatientsAsync([FromRoute] Guid id, [FromBody] CreateOrEditPatientDTO input, CancellationToken cancellationToken)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-        //        return new JsonResult(ModelState);
-        //    }
+        [HttpDelete]
+        [Route("api/patients/{id:guid}")]
+        public async Task<JsonResult> DeletePatientsAsync([FromRoute] Guid id, CancellationToken cancellationToken)
+        {
+            if (!ModelState.IsValid)
+            {
+                HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+                return new JsonResult(ModelState);
+            }
 
-        //    //TODO: Доделать реализацию логики
-        //    await _patientAppService.DeletePatientAsync(id, cancellationToken);
+            //TODO: Доделать реализацию логики
+            await _patientAppService.DeletePatientAsync(id, cancellationToken);
 
-        //    HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
-        //    return new JsonResult(new { });
-        //}
+            HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
+            return new JsonResult(new { });
+        }
     }
 }

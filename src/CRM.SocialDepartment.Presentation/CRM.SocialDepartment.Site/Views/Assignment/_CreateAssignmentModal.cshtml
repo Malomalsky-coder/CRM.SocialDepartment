@@ -40,22 +40,8 @@
 
         <div class="row g-3 mt-1">
             <div class="col">
-                <label asp-for="ForwardDepartment" class="form-label"></label>
-                <input asp-for="ForwardDepartment" type="text" class="form-control" />
-                <span asp-validation-for="ForwardDepartment" class="text-danger"></span>
-            </div>
-            <div class="col">
-                <label asp-for="ForwardDate" class="form-label"></label>
-                <input asp-for="ForwardDate" type="date" class="form-control" value="@(Model.ForwardDate.HasValue ? Model.ForwardDate.Value.ToString("yyyy-MM-dd") : "")" />
-                <span asp-validation-for="ForwardDate" class="text-danger"></span>
-            </div>
-        </div>
-
-        <div class="row g-3 mt-1">
-            <div class="col">
-                <label asp-for="DepartmentForwardDate" class="form-label"></label>
-                <input asp-for="DepartmentForwardDate" type="date" class="form-control" value="@(Model.DepartmentForwardDate.HasValue ? Model.DepartmentForwardDate.Value.ToString("yyyy-MM-dd") : "")" />
-                <span asp-validation-for="DepartmentForwardDate" class="text-danger"></span>
+                <label asp-for="DepartmentNumber" class="form-label"></label>
+                <input asp-for="DepartmentNumber" type="number" min="1" class="form-control" />
             </div>
         </div>
 

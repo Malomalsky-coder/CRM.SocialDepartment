@@ -992,6 +992,8 @@ body.datatable-fullscreen {
     border: 1px solid var(--border-light);
     border-radius: var(--radius-lg);
     padding: 0.5rem 0;
+    z-index: 9999 !important;
+    position: absolute !important;
 }
 
 .dropdown-item {
@@ -1009,6 +1011,124 @@ body.datatable-fullscreen {
 .dropdown-item.text-warning:hover {
     background: rgba(245, 158, 11, 0.1);
     color: #f59e0b;
+}
+
+/* Специальные стили для dropdown в таблице */
+#table .dropdown {
+    position: relative !important;
+    overflow: visible !important;
+}
+
+#table .dropdown-menu {
+    position: fixed !important;
+    z-index: 99999 !important;
+    min-width: 150px !important;
+    background: white !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    margin-top: 2px !important;
+    display: none !important;
+}
+
+#table .dropdown-menu.show {
+    display: block !important;
+}
+
+#table .dropdown-menu:not(.show) {
+    display: none !important;
+}
+
+/* Улучшенные стили для кнопки dropdown в таблице */
+#table .dropdown-toggle {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+#table .dropdown-toggle::after {
+    margin-left: 0.5rem !important;
+    vertical-align: middle !important;
+}
+
+/* Принудительное исправление overflow для DataTable */
+.dataTables_wrapper {
+    overflow: visible !important;
+}
+
+.dataTables_scrollBody {
+    overflow: visible !important;
+}
+
+.dataTables_scrollBodyInner {
+    overflow: visible !important;
+}
+
+/* Исправление для ячеек таблицы */
+#table td {
+    overflow: visible !important;
+    position: relative !important;
+}
+
+#table tbody tr {
+    overflow: visible !important;
+}
+
+/* Дополнительные исправления для dropdown */
+#table .dropdown-menu {
+    transform: none !important;
+    will-change: auto !important;
+    backface-visibility: visible !important;
+}
+
+/* Стили для кнопок действий в таблице */
+#table .btn-group {
+    display: flex;
+    gap: 2px;
+}
+
+#table .btn-group .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    min-width: 32px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#table .btn-group .btn i {
+    font-size: 0.8rem;
+}
+
+#table .btn-group .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#table .btn-group .btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+#table .btn-group .btn-outline-warning:hover {
+    background-color: var(--warning-color);
+    border-color: var(--warning-color);
+    color: white;
+}
+
+#table .btn-group .btn-outline-danger:hover {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    color: white;
+}
+
+/* Стили для строк таблицы */
+#table tbody tr:hover {
+    background: rgba(37, 99, 235, 0.04) !important;
 }
 
 /* Индикатор загрузки */

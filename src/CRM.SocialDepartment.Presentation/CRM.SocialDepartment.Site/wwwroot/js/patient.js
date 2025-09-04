@@ -49,12 +49,15 @@ function addPatient() {
 
 // Функция для редактирования пациента
 function editPatient(patientId) {
-    $.get(`/Patient/Edit/${patientId}`, function (data) {
-        $('#edit-patient-modal .modal-body').html(data);
-        $('#edit-patient-modal').modal('show');
-    }).fail(function () {
-        showMessage('error', 'Ошибка', 'Не удалось загрузить форму редактирования');
-    });
+
+    GetFormModal(`/Patient/modal/edit/${patientId}`, 'Редактировать пациента');
+
+    //$.get(`/Patient/modal/edit/${patientId}`, function (data) {
+    //    $('#edit-patient-modal .modal-body').html(data);
+    //    $('#edit-patient-modal').modal('show');
+    //}).fail(function () {
+    //    showMessage('error', 'Ошибка', 'Не удалось загрузить форму редактирования');
+    //});
 }
 
 // Функция для архивирования пациента
@@ -237,17 +240,19 @@ function initializePatientDataTable() {
                 title: 'Действия',
                 orderable: false,
                 searchable: false,
+                className: 'text-center',
                 render: function (data, type, row) {
                     return `
-                        <div class="dropdown">
-                            <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Действие
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm btn-view-patient" data-patient-id="${data}" title="Просмотр">
+                                <i class="fa fa-eye"></i>
                             </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item btn-view-patient" href="#" data-patient-id="${data}">Посмотреть</a></li>
-                                <li><a class="dropdown-item btn-edit-patient" href="#" data-patient-id="${data}">Редактировать</a></li>
-                                <li><a class="dropdown-item btn-archive-patient" href="#" data-patient-id="${data}">Архивировать</a></li>
-                            </ul>
+                            <button type="button" class="btn btn-outline-warning btn-sm btn-edit-patient" data-patient-id="${data}" title="Редактировать">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-archive-patient" data-patient-id="${data}" title="Архивировать">
+                                <i class="fa fa-archive"></i>
+                            </button>
                         </div>
                     `;
                 }
@@ -320,6 +325,7 @@ function initializePatientDataTable() {
         return null;
     }
 }
+
 
 // Функция для форматирования даты в формат dd.MM.yyyy
 function formatDate(date) {
@@ -579,26 +585,7 @@ $(document).ready(function () {
         }
     });
 
-    // Обработчик кнопки "Действие"
-    $(document).on('click', '.dropdown-toggle', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        // Закрываем все открытые dropdown
-        $('.dropdown-menu').not($(this).next('.dropdown-menu')).hide();
-
-        // Открываем/закрываем текущий dropdown
-        $(this).next('.dropdown-menu').toggle();
-    });
-
-    // Закрытие dropdown при клике вне его
-    $(document).on('click', function (e) {
-        if (!$(e.target).closest('.dropdown').length) {
-            $('.dropdown-menu').hide();
-        }
-    });
-
-    // Обработчики кнопок действий в таблице (делегирование событий)
+    // Обработчики кнопок действий в таблице
     $(document).on('click', '.btn-view-patient', function () {
         const patientId = $(this).data('patient-id');
         window.location.href = `/Patient/Card/${patientId}`;
@@ -613,6 +600,7 @@ $(document).ready(function () {
         const patientId = $(this).data('patient-id');
         archivePatient(patientId);
     });
+
 
     // Настройки таблицы
     $('#apply-settings').on('click', function () {

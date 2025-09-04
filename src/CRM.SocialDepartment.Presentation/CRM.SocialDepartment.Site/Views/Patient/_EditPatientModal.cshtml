@@ -3,7 +3,7 @@
 
 @model CRM.SocialDepartment.Site.ViewModels.Patient.EditPatientViewModel
 
-<form id="create-patient" method="post" asp-controller="Patient" asp-action="EditPatientAsync" asp-route-patientId="@Model.PatientId" asp-antiforgery="true">
+<form id="edit-patient" method="post" asp-controller="Patient" asp-action="EditPatientAsync" asp-route-id="@Model.PatientId" asp-antiforgery="true">
     <div class="card mb-3">
         <div class="card-header">История болезни</div>
         <div class="card-body">
@@ -27,7 +27,7 @@
 
             <div class="mb-3">
                 <label asp-for="MedicalHistory.DateOfReceipt" class="form-label param-title"></label>
-                <input asp-for="MedicalHistory.DateOfReceipt" value="" class="form-control" />
+                <input asp-for="MedicalHistory.DateOfReceipt" type="date" value="" class="form-control" />
                 <span asp-validation-for="MedicalHistory.DateOfReceipt" class="text-danger"></span>
             </div>
 
@@ -37,7 +37,7 @@
                 <span asp-validation-for="MedicalHistory.NumberDepartment" class="text-danger"></span>
             </div>
         </div>
-    </div>s
+    </div>
 
     <div class="card mb-3">
         <div class="card-header">Персональные данные</div>

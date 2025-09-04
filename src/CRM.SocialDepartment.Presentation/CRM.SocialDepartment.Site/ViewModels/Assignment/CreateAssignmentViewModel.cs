@@ -7,6 +7,7 @@ public class CreateAssignmentViewModel : IValidatableObject
 {
     public Guid Id { get; set; }
 
+    [DisplayName("Номер отделения")]
     public int DepartmentNumber { get; set; }
 
     [Required(ErrorMessage = "Название обязательно для заполнения")]
@@ -41,6 +42,7 @@ public class CreateAssignmentViewModel : IValidatableObject
     [DisplayName("Пациент")]
     public Guid PatientId { get; set; }
 
+    [DisplayName("Заметка")]
     public string? Note { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

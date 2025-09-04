@@ -232,6 +232,62 @@ namespace CRM.SocialDepartment.Site.MappingProfile
                 //.ForMember(dest => dest.Birthday, opt => opt.MapFrom(src => 
                 //    DateTime.SpecifyKind(src.Birthday, DateTimeKind.Utc)));
 
+            // Add missing mapping from Patient to EditPatientViewModel
+            CreateMap<Patient, EditPatientViewModel>()
+                .ForMember(dest => dest.PatientId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+                .ForMember(dest => dest.Birthday, opt => opt.MapFrom(src => src.Birthday))
+                .ForMember(dest => dest.MedicalHistory, opt => opt.MapFrom(src => new MedicalHistoryModel
+                {
+                    NumberDepartment = (sbyte)(src.ActiveHistory != null ? src.ActiveHistory.NumberDepartment : 0),
+                    HospitalizationType = src.ActiveHistory != null && src.ActiveHistory.HospitalizationType != null 
+                        ? src.ActiveHistory.HospitalizationType
+                        : HospitalizationType.Force,
+                    Resolution = src.ActiveHistory != null ? src.ActiveHistory.Resolution : string.Empty,
+                    NumberDocument = src.ActiveHistory != null ? src.ActiveHistory.NumberDocument : string.Empty,
+                    DateOfReceipt = src.ActiveHistory != null ? src.ActiveHistory.DateOfReceipt : DateTime.MinValue,
+                    DateOfDischarge = src.ActiveHistory != null ? src.ActiveHistory.DateOfDischarge : null,
+                    Note = src.ActiveHistory != null ? src.ActiveHistory.Note : null
+                }))
+                .ForMember(dest => dest.CitizenshipInfo, opt => opt.MapFrom(src => new CitizenshipInfoModel
+                {
+                    Citizenship = src.CitizenshipInfo != null ? src.CitizenshipInfo.Citizenship : null,
+                    Country = src.CitizenshipInfo != null ? src.CitizenshipInfo.Country : string.Empty,
+                    Registration = src.CitizenshipInfo != null ? src.CitizenshipInfo.Registration : string.Empty,
+                    EarlyRegistration = src.CitizenshipInfo != null ? src.CitizenshipInfo.EarlyRegistration : null,
+                    PlaceOfBirth = src.CitizenshipInfo != null ? src.CitizenshipInfo.PlaceOfBirth : null,
+                    DocumentAttached = src.CitizenshipInfo != null ? src.CitizenshipInfo.DocumentAttached : null
+                }))
+                .ForMember(dest => dest.Documents, opt => opt.MapFrom(src => 
+                    src.Documents.ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => new DocumentViewModel
+                        {
+                            Type = kvp.Key,
+                            Number = ExtractDocumentNumber(kvp.Value)
+                        }
+                    )))
+                .ForMember(dest => dest.IsCapable, opt => opt.MapFrom(src => src.IsCapable))
+                .ForMember(dest => dest.Capable, opt => opt.MapFrom(src => src.Capable != null ? new CapableModel
+                {
+                    CourtDecision = src.Capable.CourtDecision != null ? src.Capable.CourtDecision : string.Empty,
+                    TrialDate = src.Capable.TrialDate,
+                    Guardian = src.Capable.Guardian != null ? src.Capable.Guardian : string.Empty,
+                    GuardianOrderAppointment = src.Capable.GuardianOrderAppointment != null ? src.Capable.GuardianOrderAppointment : string.Empty
+                } : null))
+                .ForMember(dest => dest.ReceivesPension, opt => opt.MapFrom(src => src.ReceivesPension))
+                .ForMember(dest => dest.Pension, opt => opt.MapFrom(src => src.Pension != null ? new PensionModel
+                {
+                    DisabilityGroup = src.Pension.DisabilityGroup,
+                    PensionStartDateTime = src.Pension.PensionStartDateTime,
+                    PensionAddress = src.Pension.PensionAddress,
+                    SfrBranch = src.Pension.SfrBranch,
+                    SfrDepartment = src.Pension.SfrDepartment,
+                    Rsd = src.Pension.Rsd
+                } : null))
+                .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.Note))
+                .ForMember(dest => dest.IsChildren, opt => opt.MapFrom(src => src.IsChildren));
+
             // ❗ КРИТИЧЕСКИ ВАЖНЫЕ МАППИНГИ ДЛЯ ViewModel -> DTO ❗ //
             
             // MedicalHistory (ViewModel) -> MedicalHistoryDTO
