@@ -7,8 +7,8 @@ namespace CRM.SocialDepartment.Site.ViewModels.User
 {
     public class CreateUserViewModel : ValidationBase, IValidatableObject
     {
-        [Required(ErrorMessage = "Код пользователя обязателен для заполнения")]
-        [Display(Name = "Код пользователя")]
+        [Required(ErrorMessage = "Логин пользователя обязателен для заполнения")]
+        [Display(Name = "Логин пользователя")]
         public string UserName { get; set; }
 
         [Required(ErrorMessage = "Имя обязательно для заполнения")]
@@ -27,7 +27,7 @@ namespace CRM.SocialDepartment.Site.ViewModels.User
         [Required]
         [StringLength(100, ErrorMessage = "{0} Должен быть минимум {2} и максимум {1} символов", MinimumLength = 6)]
         [DataType(DataType.Password)]
-        [Display(Name = "Password")]
+        [Display(Name = "Пароль")]
         public string Password { get; set; }
 
         [DataType(DataType.Password)]

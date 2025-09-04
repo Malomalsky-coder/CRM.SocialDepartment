@@ -25,10 +25,11 @@ namespace CRM.SocialDepartment.Site.ViewModels.User
         public string Email { get; set; }
 
         [DataType(DataType.Password)]
-        [Display(Name = "Password")]
+        [Display(Name = "Пароль")]
         public string? Password { get; set; }
 
         [Compare("Password", ErrorMessage = "Введенные пароли не совпадают")]
+        [Display(Name = "Подтверждение пароля")]
         public string? ConfirmPassword { get; set; }
 
         [Required(ErrorMessage = "Роль в системе обязательна для заполнения")]

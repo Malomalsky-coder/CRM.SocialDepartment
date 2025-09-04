@@ -395,7 +395,7 @@
 .fa-step-backward:before {
   content: "\f048";
 }
-.fa-fast-backward:before {
+.fa-fat-backward:before {
   content: "\f049";
 }
 .fa-backward:before {
@@ -413,7 +413,7 @@
 .fa-forward:before {
   content: "\f04e";
 }
-.fa-fast-forward:before {
+.fa-fat-forward:before {
   content: "\f050";
 }
 .fa-step-forward:before {

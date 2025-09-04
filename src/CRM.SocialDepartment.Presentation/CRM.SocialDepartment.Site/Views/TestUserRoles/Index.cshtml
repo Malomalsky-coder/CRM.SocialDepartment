@@ -114,19 +114,19 @@
                 </div>
                 <div class="card-body">
                     <button id="refreshBtn" class="btn btn-primary me-2">
-                        <i class="fas fa-sync-alt"></i> Обновить данные
+                        <i class="fa fa-sync-alt"></i> Обновить данные
                     </button>
                     <button id="jsonBtn" class="btn btn-info me-2">
-                        <i class="fas fa-code"></i> Получить JSON
+                        <i class="fa fa-code"></i> Получить JSON
                     </button>
                     <a href="/TestUserRoles/GetData" target="_blank" class="btn btn-secondary me-2">
-                        <i class="fas fa-external-link-alt"></i> Открыть JSON в новой вкладке
+                        <i class="fa fa-external-link-alt"></i> Открыть JSON в новой вкладке
                     </a>
                     <a href="/TestUserRoles/TestAuth" target="_blank" class="btn btn-success me-2">
-                        <i class="fas fa-shield-alt"></i> Тест [Authorize(Roles = "Admin")]
+                        <i class="fa fa-shield-alt"></i> Тест [Authorize(Roles = "Admin")]
                     </a>
                     <a href="/TestUserRoles/TestAuthPolicy" target="_blank" class="btn btn-warning">
-                        <i class="fas fa-lock"></i> Тест [Authorize(Policy = "Admin")]
+                        <i class="fa fa-lock"></i> Тест [Authorize(Policy = "Admin")]
                     </a>
                 </div>
             </div>
@@ -160,7 +160,7 @@
                 var btn = $(this);
                 var originalText = btn.html();
                 
-                btn.html('<i class="fas fa-spinner fa-spin"></i> Загрузка...');
+                btn.html('<i class="fa fa-spinner fa-spin"></i> Загрузка...');
                 btn.prop('disabled', true);
 
                 $.get('/TestUserRoles/GetData')

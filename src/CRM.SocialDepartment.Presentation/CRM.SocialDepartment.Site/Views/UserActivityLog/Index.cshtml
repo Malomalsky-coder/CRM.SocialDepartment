@@ -10,14 +10,14 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-history"></i> Логи активности пользователей
+                        <i class="fa fa-history"></i> Логи активности пользователей
                     </h3>
                     <div class="card-tools">
                         <a href="@Url.Action("Statistics")" class="btn btn-info btn-sm">
-                            <i class="fas fa-chart-bar"></i> Статистика
+                            <i class="fa fa-chart-bar"></i> Статистика
                         </a>
                         <a href="@Url.Action("ExportJson", Model.Filter)" class="btn btn-success btn-sm">
-                            <i class="fas fa-download"></i> Экспорт JSON
+                            <i class="fa fa-download"></i> Экспорт JSON
                         </a>
                     </div>
                 </div>
@@ -31,12 +31,12 @@
                                     <option value="">Все типы</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            @* <div class="col-md-2">
                                 <label asp-for="Filter.EntityType" class="form-label">Тип сущности</label>
                                 <select asp-for="Filter.EntityType" class="form-select" asp-items="@(new SelectList(UserActivityLogFilterViewModel.EntityTypeOptions, "Key", "Value"))">
                                     <option value="">Все сущности</option>
                                 </select>
-                            </div>
+                            </div> *@
                             <div class="col-md-2">
                                 <label asp-for="Filter.StartDate" class="form-label">Дата начала</label>
                                 <input asp-for="Filter.StartDate" type="date" class="form-control" />
@@ -49,10 +49,10 @@
                                 <label class="form-label">&nbsp;</label>
                                 <div>
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-search"></i> Фильтровать
+                                        <i class="fa fa-search"></i> Фильтровать
                                     </button>
                                     <a href="@Url.Action("Index")" class="btn btn-secondary">
-                                        <i class="fas fa-times"></i> Сбросить
+                                        <i class="fa fa-times"></i> Сбросить
                                     </a>
                                 </div>
                             </div>
@@ -125,7 +125,7 @@
                                         </td>
                                         <td>
                                             <a href="@Url.Action("Details", new { id = log.Id })" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-eye"></i> Детали
+                                                <i class="fa fa-eye"></i> Детали
                                             </a>
                                         </td>
                                     </tr>
@@ -143,7 +143,7 @@
                                 {
                                     <li class="page-item">
                                         <a class="page-link" href="@Url.Action("Index", new { page = Model.PreviousPage, Model.Filter.ActivityType, Model.Filter.EntityType, Model.Filter.StartDate, Model.Filter.EndDate })">
-                                            <i class="fas fa-chevron-left"></i> Предыдущая
+                                            <i class="fa fa-chevron-left"></i> Предыдущая
                                         </a>
                                     </li>
                                 }
@@ -159,7 +159,7 @@
                                 {
                                     <li class="page-item">
                                         <a class="page-link" href="@Url.Action("Index", new { page = Model.NextPage, Model.Filter.ActivityType, Model.Filter.EntityType, Model.Filter.StartDate, Model.Filter.EndDate })">
-                                            Следующая <i class="fas fa-chevron-right"></i>
+                                            Следующая <i class="fa fa-chevron-right"></i>
                                         </a>
                                     </li>
                                 }

@@ -7819,7 +7819,7 @@
 
 	jQuery.fx.speeds = {
 		slow: 600,
-		fast: 200,
+		fat: 200,
 
 		// Default speed
 		_default: 400

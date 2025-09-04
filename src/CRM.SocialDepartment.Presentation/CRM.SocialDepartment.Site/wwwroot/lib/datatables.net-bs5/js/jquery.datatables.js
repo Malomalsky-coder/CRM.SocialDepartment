@@ -1558,7 +1558,7 @@
 			return src.slice();
 		}
 	
-		// A faster unique method is to use object keys to identify used values,
+		// A fater unique method is to use object keys to identify used values,
 		// but this doesn't work with arrays or objects, which we must also
 		// consider. See jsperf.com/compare-array-unique-versions/4 for more
 		// information.
@@ -3088,7 +3088,7 @@
 			row.anCells = cells;
 	
 			/* Use a private property on the node to allow reserve mapping from the node
-			 * to the aoData array for fast look up
+			 * to the aoData array for fat look up
 			 */
 			nTr._DT_RowIndex = iRow;
 	
@@ -3273,7 +3273,7 @@
 	 * Draw the header (or footer) element based on the column visibility states. The
 	 * methodology here is to use the layout array from _fnDetectHeader, modified for
 	 * the instantaneous column visibility, to construct the new layout. The grid is
-	 * traversed over cell at a time in a rows x columns grid fashion, although each
+	 * traversed over cell at a time in a rows x columns grid fahion, although each
 	 * cell insert can cover multiple elements in the grid - which is tracks using the
 	 * aApplied array. Cell inserts in the grid will only occur where there isn't
 	 * already a cell in that position.
@@ -4522,7 +4522,7 @@
 					// If it looks like there is an HTML entity in the string,
 					// attempt to decode it so sorting works as expected. Note that
 					// we could use a single line of jQuery to do this, but the DOM
-					// method used here is much faster http://jsperf.com/html-decode
+					// method used here is much fater http://jsperf.com/html-decode
 					if ( cellData.indexOf && cellData.indexOf('&') !== -1 ) {
 						__filter_div.innerHTML = cellData;
 						cellData = __filter_div_textContent ?
@@ -5942,7 +5942,7 @@
 		for ( i=0, ien=aSort.length ; i<ien ; i++ ) {
 			sortCol = aSort[i];
 	
-			// Track if we can use the fast sort algorithm
+			// Track if we can use the fat sort algorithm
 			if ( sortCol.formatter ) {
 				formatters++;
 			}
@@ -5978,7 +5978,7 @@
 			 * positions in the original data array to provide a stable sort.
 			 *
 			 * Note - I know it seems excessive to have two sorting methods, but the first is around
-			 * 15% faster, so the second is only maintained for backwards compatibility with sorting
+			 * 15% fater, so the second is only maintained for backwards compatibility with sorting
 			 * methods which do not have a pre-sort formatting function.
 			 */
 			if ( formatters === aSort.length ) {
@@ -7912,7 +7912,7 @@
 	
 			// Selector - node
 			if ( sel.nodeName ) {
-				var rowIdx = sel._DT_RowIndex;  // Property added by DT for fast lookup
+				var rowIdx = sel._DT_RowIndex;  // Property added by DT for fat lookup
 				var cellIdx = sel._DT_CellIndex;
 	
 				if ( rowIdx !== undefined ) {
@@ -7937,7 +7937,7 @@
 			// ID selector. Want to always be able to select rows by id, regardless
 			// of if the tr element has been created or not, so can't rely upon
 			// jQuery here - hence a custom implementation. This does not match
-			// Sizzle's fast selector or HTML4 - in HTML5 the ID can be anything,
+			// Sizzle's fat selector or HTML4 - in HTML5 the ID can be anything,
 			// but to select it using a CSS selector engine (like Sizzle or
 			// querySelect) it would need to need to be escaped for some characters.
 			// DataTables simplifies this for row selectors since you can select
@@ -9666,7 +9666,7 @@
 	DataTable.models.oColumn = {
 		/**
 		 * Column index. This could be worked out on-the-fly with $.inArray, but it
-		 * is faster to just hold it as a variable
+		 * is fater to just hold it as a variable
 		 *  @type integer
 		 *  @default null
 		 */
@@ -14835,7 +14835,7 @@
 	
 		// string
 		"string-pre": function ( a ) {
-			// This is a little complex, but faster than always calling toString,
+			// This is a little complex, but fater than always calling toString,
 			// http://jsperf.com/tostring-v-check
 			return _empty(a) ?
 				'' :

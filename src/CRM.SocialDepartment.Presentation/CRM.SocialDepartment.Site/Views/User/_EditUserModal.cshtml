@@ -41,7 +41,7 @@
 
             <div class="mb-3">
                 <label asp-for="DepartmentNumber" class="form-label"></label>
-                <input asp-for="DepartmentNumber" class="form-control" autocomplete="off">
+                <input asp-for="DepartmentNumber" type="number" min="0" class="form-control" autocomplete="off">
                 <span asp-validation-for="DepartmentNumber" class="text-danger"></span>
             </div>
 
