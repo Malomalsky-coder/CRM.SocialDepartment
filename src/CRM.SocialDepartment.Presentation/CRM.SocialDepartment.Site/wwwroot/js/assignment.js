@@ -109,6 +109,7 @@ function updateRecordsCount(count) {
 
 // Управление автообновлением данных
 let assignmentAutoRefreshInterval;
+let assignmentSubmitInProgress = false;
 function startAssignmentAutoRefresh() {
     if ($('#auto-refresh-setting').is(':checked') && window.assignmentDataTable) {
         stopAssignmentAutoRefresh();
@@ -124,6 +125,65 @@ function stopAssignmentAutoRefresh() {
         clearInterval(assignmentAutoRefreshInterval);
         assignmentAutoRefreshInterval = null;
     }
+}
+
+// Гарантированная инициализация таблицы задач (однократно, с поддержкой динамических вкладок)
+function ensureAssignmentTableInitialized(forceReload = false) {
+    const tableExistsInDom = $('#table').length > 0;
+
+    // Уже инициализировано — при необходимости мягко перезагрузим
+    if (window.assignmentDataTable && $.fn.DataTable.isDataTable('#table')) {
+        if (forceReload) {
+            window.assignmentDataTable.ajax.reload(null, false);
+        }
+        return;
+    }
+
+    // Если таблицы ещё нет в DOM — инициализируем при показе соответствующей вкладки
+    if (!tableExistsInDom) {
+        $(document)
+            .off('shown.bs.tab.assignment', 'a[data-bs-toggle="tab"]')
+            .on('shown.bs.tab.assignment', 'a[data-bs-toggle="tab"]', function () {
+                if ($('#table').length > 0 && !$.fn.DataTable.isDataTable('#table')) {
+                    const dt = initializeAssignmentDataTable();
+                    if (dt) startAssignmentAutoRefresh();
+                }
+            });
+        return;
+    }
+
+    // Инициализация прямо сейчас
+    const dt = initializeAssignmentDataTable();
+    if (dt) startAssignmentAutoRefresh();
+}
+
+// Гарантированная инициализация таблицы задач (один раз)
+function ensureAssignmentTableInitialized(forceReload = false) {
+    const tableExistsInDom = $('#table').length > 0;
+
+    // Уже инициализировано — по желанию только перезагрузим
+    if (window.assignmentDataTable && $.fn.DataTable.isDataTable('#table')) {
+        if (forceReload) {
+            window.assignmentDataTable.ajax.reload(null, false);
+        }
+        return;
+    }
+
+    // Если таблицы ещё нет в DOM — подождём события показа таба
+    if (!tableExistsInDom) {
+        // Подцепимся к событию Bootstrap табов — при первом показе попробуем инициализировать
+        $(document).off('shown.assignment.tab', 'a[data-bs-toggle="tab"]').on('shown.assignment.tab', 'a[data-bs-toggle="tab"]', function () {
+            if ($('#table').length > 0 && !$.fn.DataTable.isDataTable('#table')) {
+                const dt = initializeAssignmentDataTable();
+                if (dt) startAssignmentAutoRefresh();
+            }
+        });
+        return;
+    }
+
+    // Инициализация прямо сейчас
+    const dt = initializeAssignmentDataTable();
+    if (dt) startAssignmentAutoRefresh();
 }
 
 // Загрузка сохраненных настроек
@@ -226,6 +286,7 @@ function initializeAssignmentDataTable() {
         const dataTable = $('#table').DataTable({
             processing: true,
             serverSide: true,
+            rowId: COLUMNS_MAP.id,
             ajax: {
                 url: url,
                 type: 'POST',
@@ -282,7 +343,12 @@ function initializeAssignmentDataTable() {
                     render: function (data, type, row) {
                         return `
                             <div class="dropdown">
-                                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown"
+                                        data-bs-display="static"
+                                        data-bs-boundary="viewport"
+                                        data-bs-auto-close="outside"
+                                        aria-expanded="false">
                                     Действие
                                 </button>
                                 <ul class="dropdown-menu">
@@ -347,6 +413,17 @@ function initializeAssignmentDataTable() {
 
         window.assignmentDataTable = dataTable;
         console.log('DataTable сохранена в window.assignmentDataTable');
+
+        // Гарантируем отсутствие обрезания выпадающих меню в обертках DataTables
+        try {
+            const $wrapper = $('#table').closest('.dataTables_wrapper');
+            $wrapper.css('overflow', 'visible');
+            $wrapper.find('.dataTables_scroll, .dataTables_scrollBody').css('overflow', 'visible');
+            $('.modern-datatable-container').css('overflow', 'visible');
+        } catch (e) {
+            console.warn('Не удалось применить overflow fix к оберткам DataTables:', e);
+        }
+
         return dataTable;
     } catch (error) {
         console.error('Ошибка при инициализации DataTable (assignments):', error);
@@ -377,6 +454,33 @@ function formatDateForInput(dateString) {
     return `${year}-${month}-${day}`;
 }
 
+// CSS-фикс для dropdown внутри таблицы (DataTables + Bootstrap)
+function injectAssignmentDropdownFixStyles() {
+    if (document.getElementById('assignment-dropdown-fix')) return;
+    const style = document.createElement('style');
+    style.id = 'assignment-dropdown-fix';
+    style.textContent = `
+/* Разрешаем выпадающим меню выходить за границы оберток */
+.modern-datatable-container,
+.dataTables_wrapper,
+.table-responsive {
+    overflow: visible !important;
+}
+
+/* Если используется прокрутка DataTables */
+.dataTables_wrapper .dataTables_scroll,
+.dataTables_wrapper .dataTables_scrollBody {
+    overflow: visible !important;
+}
+
+/* Поднимаем меню над строками таблицы */
+table.dataTable td .dropdown-menu {
+    z-index: 1061; /* выше, чем стандартный 1000 */
+}
+    `;
+    document.head.appendChild(style);
+}
+
 // Обработчики событий
 $(document).ready(function () {
     console.log('Document ready: assignment.js');
@@ -390,44 +494,43 @@ $(document).ready(function () {
         return;
     }
 
+    // Инжектим CSS-фикс для dropdown внутри таблицы
+    injectAssignmentDropdownFixStyles();
+
     // Инициализация окружения
     loadAssignmentSettings();
     updateConnectionStatus();
     updateLastUpdateTime();
 
-    // Инициализация DataTable
-    const dataTableResult = initializeAssignmentDataTable();
-    if (dataTableResult) {
-        startAssignmentAutoRefresh();
-    }
+    // Инициализация DataTable (гарантированная)
+    ensureAssignmentTableInitialized();
 
-    // Кнопка "Добавить задачу"
-    $(document).on('click', '#add-assignment', function (e) {
-        e.preventDefault();
-        GetFormModal('Assignment/modal/create', 'Добавить задачу')
+    // Инициализация при показе вкладок (если таблица вставляется динамически)
+    $(document).off('shown.assignment.tab', 'a[data-bs-toggle="tab"]').on('shown.assignment.tab', 'a[data-bs-toggle="tab"]', function () {
+        ensureAssignmentTableInitialized();
     });
 
-    // Отправка данных из модального окна: Создать задачу
-    $('#form-modal').on('submit', '#create-assignment-form', function (e) {
+    // Кнопка "Добавить задачу" — одноразовая привязка
+    $(document).off('click.assignment', '#add-assignment').on('click.assignment', '#add-assignment', function (e) {
+        e.preventDefault();
+        openCreateAssignment();
+    });
+
+    // Отправка данных из модального окна: Создать задачу (одноразовая привязка с namespace)
+    $(document).off('submit.assignment', '#create-assignment-form').on('submit.assignment', '#create-assignment-form', function (e) {
         e.preventDefault();
 
         const $form = $(this);
         const url = $form.attr('action');
 
-        // Очищаем предыдущие ошибки
         if (window.AddAssignmentFormValidation) {
             AddAssignmentFormValidation.clearValidationErrors();
         }
 
-        // Преобразуем FormData в URLSearchParams (как в patient.js)
         const formData = new FormData($form[0]);
         const data = new URLSearchParams();
         for (const pair of formData.entries()) {
-            const key = pair[0];
-            let value = pair[1];
-
-            // Если потребуется специальная обработка дат — добавьте по аналогии с patient.js
-            data.append(key, value);
+            data.append(pair[0], pair[1]);
         }
 
         const headers = {
@@ -446,8 +549,11 @@ $(document).ready(function () {
             success: function () {
                 $('#form-modal').modal('hide');
                 showMessage('success', 'Успешно', 'Задача добавлена');
+
+                // Гарантируем инициализацию и мягкую перезагрузку
+                ensureAssignmentTableInitialized(true);
                 if (window.assignmentDataTable) {
-                    window.assignmentDataTable.ajax.reload();
+                    window.assignmentDataTable.ajax.reload(null, false);
                 }
             },
             error: function (xhr) {
@@ -458,7 +564,6 @@ $(document).ready(function () {
                         const response = JSON.parse(xhr.responseText);
                         console.log('Ответ с ошибками валидации:', response);
 
-                        // Поддержка двух форматов: массив ошибок или ModelState
                         if (Array.isArray(response)) {
                             AddAssignmentFormValidation.showValidationErrors(response);
                             return;

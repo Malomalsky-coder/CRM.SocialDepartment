@@ -5,22 +5,22 @@ using System.ComponentModel.DataAnnotations;
 
 public class CreateAssignmentViewModel : IValidatableObject
 {
-    public int Id { get; set; }
-    
+    public Guid Id { get; set; }
+
     public int DepartmentNumber { get; set; }
-    
+
     [Required(ErrorMessage = "Название обязательно для заполнения")]
     [DisplayName("Название")]
-    public string Name { get; init; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Дата принятия обязательна для заполнения")]
     [DisplayName("Дата принятия задания")]
     [DisplayFormat(DataFormatString = "{0:dd.MM.yyyy}", ApplyFormatInEditMode = true)]
-    public DateTime AcceptDate { get; init; }
+    public DateTime AcceptDate { get; set; }
 
     [Required(ErrorMessage = "Описание обязательно для заполнения")]
     [DisplayName("Описание")]
-    public string Description { get; init; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Исполнитель обязателен для заполнения")]
     [DisplayName("Исполнитель")]
@@ -28,9 +28,9 @@ public class CreateAssignmentViewModel : IValidatableObject
 
     [Required(ErrorMessage = "Пациент обязателен для заполнения")]
     [DisplayName("Пациент")]
-    public string PatientId { get; set; }
+    public Guid PatientId { get; set; }
 
-    public string Note { get; set; }
+    public string? Note { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -42,6 +42,8 @@ public class CreateAssignmentViewModel : IValidatableObject
             resultList.Add(new("Описание не может быть пустым", [nameof(Description)]));
         if (string.IsNullOrEmpty(Assignee))
             resultList.Add(new("Исполнитель не может отсутствовать", [nameof(Assignee)]));
+        if (PatientId == Guid.Empty)
+            resultList.Add(new("Пациент не выбран", [nameof(PatientId)]));
 
         return resultList;
     }

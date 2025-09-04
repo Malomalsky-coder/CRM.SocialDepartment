@@ -16,7 +16,11 @@
         <div class="row g-3">
             <div class="col">
                 <label asp-for="Assignee" class="form-label"></label>
-                <input asp-for="Assignee" class="form-control" />
+                <select id="assignee-select" class="form-select" name="Assignee" required>
+                    <option value="">-- Выберите исполнителя --</option>
+                </select>
+                <span asp-validation-for="Assignee" class="text-danger"></span>
+                <div id="assignee-help" class="form-text">Необходимо выбрать исполнителя из списка.</div>
             </div>
         </div>
         <div class="row g-3 mt-1">
@@ -25,6 +29,15 @@
                 <input asp-for="DepartmentNumber" type="number" class="form-control" />
             </div>
         </div>
+
+        <div class="mb-3 mt-2">
+            <label asp-for="PatientId" class="form-label"></label>
+            <select id="patient-select" class="form-select">
+                <option value="">-- Выберите пациента --</option>
+            </select>
+            <span asp-validation-for="PatientId" class="text-danger"></span>
+        </div>
+
         <input type="hidden" asp-for="PatientId" />
         <input type="hidden" asp-for="Id" value="00000000-0000-0000-0000-000000000000" />
         <input type="hidden" asp-for="AcceptDate" value="@DateTime.UtcNow.ToString("s")" />
@@ -40,18 +53,121 @@
 </form>
 
 <script>
-document.getElementById('create-assignment-form').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    const resp = await fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+(async function initPatientSelect() {
+    const select = document.getElementById('patient-select');
+    const hidden = document.querySelector('input[name="PatientId"]');
+
+    async function loadPatients(preselectId) {
+        try {
+            const resp = await fetch('/api/patients', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!resp.ok) return;
+            const patients = await resp.json();
+
+            // Очистим и добавим плейсхолдер
+            select.innerHTML = '<option value="">-- Выберите пациента --</option>';
+
+            const toText = (p) => {
+                const fullName = p.fullName ?? p.FullName ?? '';
+                const birthday = p.birthday ?? p.Birthday;
+                if (fullName && birthday) return `${fullName} (${birthday})`;
+                return fullName || (p.lastName && p.firstName ? `${p.lastName} ${p.firstName}` : `Пациент`);
+            };
+
+            patients.forEach(p => {
+                const id = p.id ?? p.Id;
+                if (!id) return;
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = toText(p);
+                select.appendChild(opt);
+            });
+
+            // Предустановим выбранного
+            if (preselectId) {
+                const exists = Array.from(select.options).some(o => o.value === preselectId);
+                if (exists) {
+                    select.value = preselectId;
+                }
+            }
+        } catch (e) {
+            console.error('Не удалось загрузить список пациентов', e);
+        }
+    }
+
+    // Синхронизация select -> hidden
+    select.addEventListener('change', function () {
+        hidden.value = this.value || '';
     });
-    if (resp.ok) {
-        bootstrap.Modal.getInstance(document.getElementById('form-modal')).hide();
-        if (window.assignmentTable) window.assignmentTable.ajax.reload(null, false);
+
+    // Инициализация
+    const currentId = hidden.value && hidden.value !== '00000000-0000-0000-0000-000000000000' ? hidden.value : '';
+    await loadPatients(currentId);
+
+    // Если после загрузки select выбран — убедимся, что hidden синхронизирован
+    if (select.value && !hidden.value) {
+        hidden.value = select.value;
+    }
+})();
+
+    (async function initAssigneeSelect() {
+        const form = document.getElementById('create-assignment-form');
+        const select = document.getElementById('assignee-select');
+        const help = document.getElementById('assignee-help');
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        // Блокируем сохранение до загрузки списка
+        if (submitBtn) submitBtn.disabled = true;
+
+        try {
+            const resp = await fetch('/api/users', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!resp.ok) throw new Error('resp not ok');
+
+            const users = await resp.json();
+            if (!Array.isArray(users) || users.length === 0) throw new Error('empty list');
+
+            // Очистим и добавим плейсхолдер
+            select.innerHTML = '<option value="">-- Выберите исполнителя --</option>';
+
+            users.forEach(u => {
+                const id = u.id ?? u.Id ?? '';
+                const userName = u.userName ?? u.UserName ?? '';
+                const fullName = u.fullName ?? u.FullName ?? userName;
+                if (!userName) return;
+                const opt = document.createElement('option');
+                // Отправляем в модель строковое имя пользователя (Assignee)
+                opt.value = userName;
+                opt.textContent = fullName && fullName !== userName ? `${fullName} (${userName})` : userName;
+                select.appendChild(opt);
+            });
+
+            // Разблокируем сохранение
+            if (submitBtn) submitBtn.disabled = false;
+            if (help) help.textContent = 'Выберите исполнителя из списка.';
+        } catch (e) {
+            console.error('Не удалось загрузить список пользователей', e);
+            // Сообщаем о невозможности выбора исполнителя и запрещаем сохранение
+            if (help) help.textContent = 'Не удалось загрузить список пользователей. Повторите попытку позже.';
+            if (submitBtn) submitBtn.disabled = true;
+            // Добавим заблокированную опцию с сообщением
+            select.innerHTML = '<option value="">— список пользователей недоступен —</option>';
+            select.setAttribute('disabled', 'disabled');
+        }
+    })();
+
+    document.getElementById('create-assignment-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const resp = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (resp.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('form-modal')).hide();
+            if (window.assignmentTable) window.assignmentTable.ajax.reload(null, false);
+            if (window.assignmentDataTable) window.assignmentDataTable.ajax.reload(null, false);
+        if (window.assignmentDataTable) window.assignmentDataTable.ajax.reload(null, false);
     } else {
         const text = await resp.text();
         console.error(text);

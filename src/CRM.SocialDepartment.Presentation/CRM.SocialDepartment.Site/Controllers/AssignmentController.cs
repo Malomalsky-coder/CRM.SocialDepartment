@@ -32,7 +32,7 @@ public class AssignmentController(
 
     [HttpGet]
     [Route("[controller]/modal/create")]
-    public IActionResult CreateModal()
+    public IActionResult CreateModal([FromQuery] Guid? patientId = null)
     {
         ViewData.Model = new CreateAssignmentViewModel()
         {
@@ -40,7 +40,7 @@ public class AssignmentController(
             AcceptDate = DateTime.UtcNow,
             Description = "Описание",
             Assignee = "Исполнитель",
-            PatientId = "Пациент"
+            PatientId = patientId ?? Guid.Empty
         };
 
         return new PartialViewResult
@@ -99,12 +99,21 @@ public class AssignmentController(
         // Используем доменный метод репозитория
         var result = await assignmentService.GetActiveAssignmentsForDataTableAsync(parameters, cancellationToken);
 
-        // Преобразовать данные для представления
-        var dataResult = result.Data.Select(x => new RepresentAssignmentDto
+        // Преобразовать данные для представления (полный набор полей, ожидаемых таблицей)
+        var dataResult = result.Data.Select(x => new
             {
-                Id = x.Id,
-                Description = x.Description,
-                CreateDate = x.CreationDate,
+                id = x.Id,
+                acceptDate = x.AcceptDate,
+                departmentNumber = x.DepartmentNumber,
+                description = x.Description,
+                forwardDate = x.ForwardDate,
+                forwardDepartment = x.ForwardDepartment,
+                name = x.Name,
+                departmentForwardDate = x.DepartmentForwardDate,
+                assignee = x.Assignee,
+                note = x.Note,
+                createdDate = x.CreationDate,
+                patient = x.PatientId
             }
         );
 
@@ -135,12 +144,21 @@ public class AssignmentController(
         // Используем доменный метод репозитория
         var result = await assignmentService.GetActiveAssignmentsForDataTableAsync(parameters, cancellationToken);
 
-        // Преобразовать данные для представления
-        var dataResult = result.Data.Where(x => x.IsArchive).Select(x => new RepresentAssignmentDto
+        // Преобразовать данные для представления (полный набор полей, ожидаемых таблицей)
+        var dataResult = result.Data.Where(x => x.IsArchive).Select(x => new
             {
-                Id = x.Id,
-                Description = x.Description,
-                CreateDate = x.CreationDate,
+                id = x.Id,
+                acceptDate = x.AcceptDate,
+                departmentNumber = x.DepartmentNumber,
+                description = x.Description,
+                forwardDate = x.ForwardDate,
+                forwardDepartment = x.ForwardDepartment,
+                name = x.Name,
+                departmentForwardDate = x.DepartmentForwardDate,
+                assignee = x.Assignee,
+                note = x.Note,
+                createdDate = x.CreationDate,
+                patient = x.PatientId
             }
         );
 
@@ -225,15 +243,15 @@ public class AssignmentController(
         {
             var dto = mapper.Map<CreateOrEditAssignmentDto>(input);
 
-            logger.LogInformation("💾 [AssignmentController] Сохранение пациента в базу данных");
+            logger.LogInformation("💾 [AssignmentController] Сохранение задачи в базу данных");
             var result = await assignmentService.CreateAssignmentAsync(dto, cancellationToken);
 
-            logger.LogInformation("✅ [AssignmentController] Пациент успешно создан с ID: {PatientId}", result);
+            logger.LogInformation("✅ [AssignmentController] Задача успешно создана с ID: {AssignmentId}", result);
             return new JsonResult(ApiResponse<Guid>.Ok(result));
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "🚨 [AssignmentController] Ошибка при создании пациента");
+            logger.LogError(ex, "🚨 [AssignmentController] Ошибка при создании задачи");
             throw;
         }
     }
