@@ -76,6 +76,25 @@ $(document).ready(function () {
             }
         },
         "columns": [
+            {
+                data: "UserName",
+                title: "Действия",
+                orderable: false,
+                searchable: false,
+                className: "text-center",
+                render: function (data, type, row) {
+                    return `
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-warning btn-sm btn-edit-user" data-user-name="${data}" title="Редактировать">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-delete-user" data-user-name="${data}" title="Удалить">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+            },
             { 
                 data: "UserName", 
                 name: "UserName",
@@ -118,26 +137,6 @@ $(document).ready(function () {
                 title: "Дата создания",
                 className: "text-center",
                 width: "150px"
-            },
-            {
-                data: "UserName",
-                render: function (data, type, row) {
-                    return '<button class="btn btn-outline-primary btn-sm edit-user" ' +
-                        'data-id="' + data + '" ' +
-                        'title="Редактировать">' +
-                        '<i class="fa fa-pencil"></i>' +
-                        '</button>';
-                }
-            },
-            {
-                data: "UserName",
-                render: function (data, type, row) {
-                    return '<button class="btn btn-outline-primary btn-sm delete-user" ' +
-                        'data-id="' + data + '" ' +
-                        'title="Удалить">' +
-                        '<i class="fa fa-trash"></i>' +
-                        '</button>';
-                }
             }
         ],
         "columnDefs": [
@@ -271,14 +270,13 @@ $(document).ready(function () {
         GetFormModal(window.location.origin + '/user/modal/create', 'Добавить пользователя');
     });
 
-    $('#table').on('click', '.edit-user', function () {
-        var userName = $(this).data('id');
+    $('#table').on('click', '.btn-edit-user', function () {
+        var userName = $(this).data('user-name');
         GetFormModal(window.location.origin + '/user/modal/edit?UserName='+userName, 'Редактировать пользователя');
     });
 
-
-    $('#table').on('click', '.delete-user', function () {
-        var userName = $(this).data('id');
+    $('#table').on('click', '.btn-delete-user', function () {
+        var userName = $(this).data('user-name');
         
         // Всегда показываем диалог подтверждения
         if (confirm('Вы уверены, что хотите удалить пользователя "' + userName + '"?')) {

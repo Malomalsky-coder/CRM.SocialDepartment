@@ -1,11 +1,8 @@
+using CRM.SocialDepartment.Domain.Common;
 using CRM.SocialDepartment.Domain.Entities.Patients;
 using CRM.SocialDepartment.Domain.Entities.Patients.Documents;
 using CRM.SocialDepartment.Domain.Repositories;
-using CRM.SocialDepartment.Domain.Common;
-using CRM.SocialDepartment.Domain.Specifications;
 using MongoDB.Driver;
-using DDD.Repositories;
-using System.Text.RegularExpressions;
 using System.Linq.Dynamic.Core;
 
 namespace CRM.SocialDepartment.Infrastructure.DataAccess.MongoDb.Repositories

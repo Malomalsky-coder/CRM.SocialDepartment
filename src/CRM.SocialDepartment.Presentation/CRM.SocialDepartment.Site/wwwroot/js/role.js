@@ -13,12 +13,12 @@ $(document).ready(function () {
         "language": {
             "processing": '<i class="fa fa-spinner fa-spin"></i> Загрузка данных...',
             "lengthMenu": "Показать _MENU_ записей",
-            "zeroRecords": '<div class="text-center py-4"><i class="fa fa-users fa-2x text-muted mb-2"></i><br><strong>Пользователи не найдены</strong><br><small class="text-muted">Попробуйте изменить критерии поиска</small></div>',
+            "zeroRecords": '<div class="text-center py-4"><i class="fa fa-shield fa-2x text-muted mb-2"></i><br><strong>Роли не найдены</strong><br><small class="text-muted">Попробуйте изменить критерии поиска</small></div>',
             "info": "Записи _START_-_END_ из _TOTAL_",
-            "infoEmpty": "Нет пользователей для отображения",
+            "infoEmpty": "Нет ролей для отображения",
             "infoFiltered": "(отфильтровано из _MAX_ записей)",
             "search": '<i class="fa fa-search me-2"></i>Поиск:',
-            "searchPlaceholder": "Поиск пользователей...",
+            "searchPlaceholder": "Поиск ролей...",
             "paginate": {
                 "first": '<i class="fa fa-angle-double-left"></i>',
                 "next": '<i class="fa fa-angle-right"></i>',
@@ -65,7 +65,7 @@ $(document).ready(function () {
 
                 // Обработка общих ошибок
                 if (window.malomalsky && window.malomalsky.message) {
-                    let errorMessage = 'Не удалось загрузить список пользователей. Попробуйте обновить страницу.';
+                    let errorMessage = 'Не удалось загрузить список ролей. Попробуйте обновить страницу.';
 
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
@@ -78,14 +78,28 @@ $(document).ready(function () {
         "columns": [
             {
                 data: "Name",
-                name: "Name",
-                title: "Название роли",
-                className: "fw-medium"
+                title: "Действия",
+                orderable: false,
+                searchable: false,
+                className: "text-center",
+                render: function (data, type, row) {
+                    return `
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-warning btn-sm btn-edit-role" data-role-name="${data}" title="Редактировать">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-delete-role" data-role-name="${data}" title="Удалить">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                }
             },
             {
                 data: "Name",
                 name: "Name",
-                title: "Название"
+                title: "Название роли",
+                className: "fw-medium"
             },
             {
                 data: "CreatedOn",
@@ -93,29 +107,15 @@ $(document).ready(function () {
                 title: "Дата создания",
                 className: "text-center",
                 width: "150px"
-
             }
         ],
         "columnDefs": [
-            {
-                "targets": 0,
-                "render": function (data, type, row) {
-                    if (type === 'display' && data) {
-                        return '<div class="d-flex align-items-center">' +
-                            '<i class="fa fa-user text-primary me-2"></i>' +
-                            '<span class="fw-medium">' + data + '</span>' +
-                            '</div>';
-                    }
-                    return data || '';
-                }
-            },
             {
                 "targets": 1,
                 "render": function (data, type, row) {
                     if (type === 'display' && data) {
                         return '<div class="d-flex align-items-center">' +
-                            '<i class="fa fa-envelope text-secondary me-2"></i>' +
-                            '<a href="mailto:' + data + '" class="text-decoration-none">' + data + '</a>' +
+                            '<span class="fw-medium">' + data + '</span>' +
                             '</div>';
                     }
                     return data || '';
@@ -139,7 +139,7 @@ $(document).ready(function () {
                 }
             }
         ],
-        "order": [[0, "desc"]],
+        "order": [[2, "desc"]],
         "drawCallback": function (settings) {
             // Добавляем анимацию для новых строк
             $(this.api().table().body()).find('tr').addClass('fade-in');
@@ -156,7 +156,7 @@ $(document).ready(function () {
             // Улучшаем поле поиска
             $('.dataTables_filter input')
                 .addClass('form-control-sm')
-                .attr('placeholder', 'Поиск пользователей...')
+                .attr('placeholder', 'Поиск ролей...')
                 .on('keyup', debounce(function () {
                     // Добавляем индикатор поиска
                     if (this.value.length > 0) {
@@ -188,7 +188,53 @@ $(document).ready(function () {
 
     // Обработчики событий для кнопок
     $('#add-role-btn').on('click', function () {
-        GetFormModal(window.location.origin + '/role/modal/create', 'Добавить пользователя');
+        GetFormModal(window.location.origin + '/role/modal/create', 'Добавить роль');
+    });
+
+    $('#table').on('click', '.btn-edit-role', function () {
+        var roleName = $(this).data('role-name');
+        GetFormModal(window.location.origin + '/role/modal/edit?roleName='+roleName, 'Редактировать роль');
+    });
+
+    $('#table').on('click', '.btn-delete-role', function () {
+        var roleName = $(this).data('role-name');
+        
+        // Всегда показываем диалог подтверждения
+        if (confirm('Вы уверены, что хотите удалить роль "' + roleName + '"?')) {
+            // Создаем данные для отправки
+            var deleteData = {
+                Name: roleName
+            };
+            
+            $.ajax({
+                url: '/Role/delete',
+                type: 'POST',
+                data: JSON.stringify(deleteData),
+                contentType: 'application/json',
+                success: function(response) {
+                    console.log('Роль удалена:', roleName);
+                    if (window.malomalsky && window.malomalsky.message) {
+                        var message = response.Message || 'Роль удалена';
+                        malomalsky.message.success('Успешно', message);
+                    }
+                    dataTable.ajax.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Ошибка при удалении роли:', error);
+                    var errorMessage = 'Произошла ошибка при удалении роли';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.Message) {
+                        errorMessage = xhr.responseJSON.Message;
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    
+                    if (window.malomalsky && window.malomalsky.message) {
+                        malomalsky.message.error(errorMessage, 'Ошибка удаления');
+                    }
+                }
+            });
+        }
     });
 
     // Обновить данные в таблице
@@ -239,7 +285,7 @@ $(document).ready(function () {
         $('#records-badge').text(info.recordsTotal);
 
         // Обновляем заголовок
-        let title = 'Список пользователей';
+        let title = 'Список ролей';
         if (info.recordsTotal > 0) {
             title += ` (${info.recordsTotal})`;
         }
@@ -275,8 +321,8 @@ $(document).ready(function () {
 
     // Обработка ошибок AJAX глобально
     $(document).ajaxError(function (event, xhr, settings, thrownError) {
-        if (settings.url && settings.url.includes('/User/GetAllUsers')) {
-            console.error('User API Error:', thrownError);
+        if (settings.url && settings.url.includes('/Role/GetAllRoles')) {
+            console.error('Role API Error:', thrownError);
         }
     });
 
