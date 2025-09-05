@@ -7,7 +7,7 @@ namespace CRM.SocialDepartment.Domain.Common
     {
         public long TotalRecords { get; set; }
         public long FilteredRecords { get; set; }
-        public IEnumerable<T> Data { get; set; } = Enumerable.Empty<T>();
+        public IEnumerable<T> Data { get; set; } = [];
     }
 
     /// <summary>
